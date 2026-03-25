@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,4 +5,114 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  INVESTOR
+  CONTRACTOR
+  ADMIN
+}
+
+enum JobStatus {
+  OPEN
+  AWARDED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum TradeType {
+  GENERAL
+  ELECTRICAL
+  PLUMBING
+  HVAC
+  ROOFING
+  FLOORING
+  PAINTING
+  LANDSCAPING
+  DEMOLITION
+  OTHER
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  password    String
+  role        Role
+  firstName   String
+  lastName    String
+  phone       String?
+  isVerified  Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  contractor  ContractorProfile?
+  postedJobs  Job[]     @relation("InvestorJobs")
+}
+
+model ContractorProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id])
+  bio               String?
+  yearsExperience   Int       @default(0)
+  specialties       String[]
+  licenseNumber     String?
+  licenseState      String?
+  isLicenseVerified Boolean   @default(false)
+  insuranceExpiry   DateTime?
+  hourlyRateMin     Float?
+  hourlyRateMax     Float?
+  portfolioImages   String[]
+  city              String?
+  state             String?
+  zipCode           String?
+  averageRating     Float     @default(0)
+  totalReviews      Int       @default(0)
+  completedJobs     Int       @default(0)
+  isAvailable       Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  tradeType   TradeType
+  budgetMin   Float
+  budgetMax   Float
+  city        String
+  state       String
+  zipCode     String
+  status      JobStatus @default(OPEN)
+  investorId  String
+  investor    User      @relation("InvestorJobs", fields: [investorId], references: [id])
+  bids        Bid[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Bid {
+  id           String    @id @default(cuid())
+  jobId        String
+  job          Job       @relation(fields: [jobId], references: [id])
+  contractorId String
+  amount       Float
+  message      String
+  status       BidStatus @default(PENDING)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
