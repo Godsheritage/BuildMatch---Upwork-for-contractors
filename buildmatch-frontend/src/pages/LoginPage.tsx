@@ -27,8 +27,9 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  // TODO: remove dummy credentials before production
+  const [email, setEmail] = useState('test@test.com');
+  const [password, setPassword] = useState('test');
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

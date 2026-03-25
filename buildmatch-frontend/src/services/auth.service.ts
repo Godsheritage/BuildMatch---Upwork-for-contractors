@@ -26,7 +26,26 @@ export interface AuthData {
   token: string;
 }
 
+// TODO: remove entire MOCK block before production
+const MOCK_TOKEN = '__mock__';
+const MOCK_USER: User = {
+  id: 'mock-001',
+  email: 'test@test.com',
+  role: 'INVESTOR',
+  firstName: 'Test',
+  lastName: 'User',
+  phone: null,
+  isVerified: true,
+  isActive: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
 export async function login(payload: LoginPayload): Promise<AuthData> {
+  // TODO: remove mock auth before production
+  if (payload.email === 'test@test.com' && payload.password === 'test') {
+    return { user: MOCK_USER, token: MOCK_TOKEN };
+  }
   const { data: res } = await api.post<ApiResponse<AuthData>>('/auth/login', payload);
   return res.data;
 }
@@ -37,6 +56,9 @@ export async function register(payload: RegisterPayload): Promise<AuthData> {
 }
 
 export async function getMe(): Promise<User> {
+  // TODO: remove mock auth before production
+  const token = localStorage.getItem('buildmatch_token');
+  if (token === MOCK_TOKEN) return MOCK_USER;
   const { data: res } = await api.get<ApiResponse<User>>('/auth/me');
   return res.data;
 }
