@@ -1,0 +1,16 @@
+import React from 'react';
+import styles from './Button.module.css';
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'sm' | 'md';
+}
+
+export function Button({ variant = 'primary', size = 'md', className, children, ...props }: ButtonProps) {
+  const cls = [styles.base, styles[variant], styles[size], className].filter(Boolean).join(' ');
+  return (
+    <button className={cls} {...props}>
+      {children}
+    </button>
+  );
+}

@@ -1,0 +1,25 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  padding: 2px 12px;
+  white-space: nowrap;
+  line-height: 1.6;
+}
+
+.default {
+  background: var(--color-highlight);
+  color: var(--color-accent);
+}
+
+.warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.muted {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}

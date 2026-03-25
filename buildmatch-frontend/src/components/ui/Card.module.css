@@ -1,0 +1,17 @@
+.card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.hoverable {
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hoverable:hover {
+  border-color: rgba(27, 58, 92, 0.15);
+  box-shadow: var(--shadow-card-hover);
+}

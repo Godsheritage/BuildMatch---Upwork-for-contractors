@@ -1,0 +1,16 @@
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star {
+  line-height: 1;
+}
+
+.label {
+  margin-left: 4px;
+  font-size: 0.85em;
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}

@@ -1,0 +1,116 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Structure
+
+Two independent Node.js projects in the same repo — run commands from within each directory:
+
+```
+BuildMatch/
+├── buildmatch-frontend/   # React 18 + TypeScript + Vite 5
+└── buildmatch-backend/    # Express 5 + TypeScript + Prisma 5 + PostgreSQL
+```
+
+## Frontend (buildmatch-frontend)
+
+```bash
+cd buildmatch-frontend
+
+npm run dev        # Start dev server (http://localhost:5173)
+npm run build      # Type-check then bundle for production
+npm run lint       # Run ESLint
+npm run preview    # Preview production build locally
+```
+
+**Note:** Node.js v18.12.1 is in use. Engine warnings from ESLint packages are expected and non-blocking.
+
+## Backend (buildmatch-backend)
+
+```bash
+cd buildmatch-backend
+
+npm run dev          # Start dev server with nodemon + ts-node (port 3001)
+npm run build        # Compile TypeScript → dist/
+npm start            # Run compiled production server
+
+npm run db:generate  # Regenerate Prisma client after schema changes
+npm run db:migrate   # Create and apply a new migration
+npm run db:studio    # Open Prisma Studio GUI
+```
+
+Environment variables live in `.env` (not committed). Required:
+- `DATABASE_URL` — PostgreSQL connection string
+- `PORT` — defaults to `3001`
+
+## Architecture
+
+### Frontend
+- Entry: `src/main.tsx` → `src/App.tsx`
+- Vite uses ESNext modules in dev; `tsc -b && vite build` for production
+- TypeScript is split across three configs: `tsconfig.json` (composite root), `tsconfig.app.json` (browser code), `tsconfig.node.json` (build tools)
+
+### Backend
+- Entry: `src/index.ts` — sets up Express with CORS and JSON middleware, mounts routes, starts the server
+- Prisma singleton: `src/lib/prisma.ts` — import this everywhere instead of instantiating `PrismaClient` directly
+- Schema: `prisma/schema.prisma` — PostgreSQL datasource; run `db:generate` after any schema change
+- TypeScript compiles to `dist/` (CommonJS) for production; ts-node runs source directly in dev
+
+### API
+- `GET /health` — liveness check, returns `{ status: "ok" }`
+- All new routes should be added as Express routers and imported into `src/index.ts`
+
+## Design System
+
+BuildMatch uses a custom design system. No external UI library (no Tailwind, no MUI).
+
+### Token File
+`buildmatch-frontend/src/styles/design-tokens.css` — all CSS custom properties. Imported at the top of `src/index.css`; tokens are globally available via `var(--token-name)`. Never hardcode color or spacing values in components — always use a token.
+
+### Component Library
+All UI primitives live in `buildmatch-frontend/src/components/ui/`. Import via the barrel:
+```ts
+import { Button, Card, Badge, Avatar, Input, StarRating } from '../components/ui';
+```
+
+| Component | Key Props |
+|---|---|
+| `Button` | `variant?: 'primary' \| 'secondary' \| 'danger'`, `size?: 'sm' \| 'md'` |
+| `Input` | `label?: string`, `error?: string` + all native input attrs |
+| `Card` | `hoverable?: boolean`, `onClick?`, `className?` |
+| `Badge` | `variant?: 'default' \| 'warning' \| 'muted'` |
+| `Avatar` | `name: string`, `src?: string`, `size?: 'sm' \| 'md' \| 'lg'` |
+| `StarRating` | `rating: number`, `maxStars?: number`, `size?: number` |
+
+Each component has a co-located `*.module.css` file. New components should follow the same pattern.
+
+### Colors
+| Token | Value | Use |
+|---|---|---|
+| `--color-primary` | `#1B3A5C` | CTAs, focus borders, active nav |
+| `--color-accent` | `#0F6E56` | Success, badge text |
+| `--color-highlight` | `#E8F4F0` | Badge backgrounds, hover tints |
+| `--color-warning` | `#BA7517` | Pending/caution text |
+| `--color-bg` | `#FFFFFF` | Page background |
+| `--color-surface` | `#F8F7F5` | Cards, sidebars, muted badge bg |
+| `--color-border` | `#E5E4E0` | Dividers, card edges, empty stars |
+| `--color-text-primary` | `#1A1A18` | Body text |
+| `--color-text-muted` | `#6B6B67` | Labels, metadata |
+| `--color-star` | `#F59E0B` | Star ratings |
+| `--color-danger` | `#DC2626` | Errors, danger actions |
+
+### Typography Rules
+- Font: `var(--font-family)` — system-ui / SF Pro stack
+- **Never use `font-weight` above 600.** Use `--font-weight-normal` (400), `--font-weight-medium` (500), `--font-weight-semibold` (600) only.
+- Heading letter spacing: `var(--tracking-tight)` (-0.02em) or `var(--tracking-tighter)` (-0.04em)
+- Body line height: `var(--leading-body)` (1.6)
+- Caps labels (11px, uppercase, 0.06em tracking): use `--tracking-wide` + `--font-weight-medium`
+
+### Spacing
+4px base scale. Use `var(--space-N)` tokens — `--space-1` (4px) through `--space-24` (96px). Common: `--space-2` (8px), `--space-4` (16px), `--space-6` (24px).
+
+### Visual Rules
+- No background gradients
+- Card shadows: `--shadow-card` only (very subtle). No heavy drop shadows.
+- Card border radius: `--radius-md` (12px). Button/input: `--radius-sm` (8px). Badges/pills: `--radius-pill` (20px).
+- Navigation: white bg, `border-bottom: 1px solid var(--color-border)`, 60px height, sticky.
