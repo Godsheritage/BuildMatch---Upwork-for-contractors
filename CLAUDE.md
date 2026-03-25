@@ -47,8 +47,34 @@ Environment variables live in `.env` (not committed). Required:
 
 ### Frontend
 - Entry: `src/main.tsx` → `src/App.tsx`
+- `App.tsx` mounts `QueryClientProvider` → `AuthProvider` → `BrowserRouter` → `Routes`
 - Vite uses ESNext modules in dev; `tsc -b && vite build` for production
 - TypeScript is split across three configs: `tsconfig.json` (composite root), `tsconfig.app.json` (browser code), `tsconfig.node.json` (build tools)
+- Tailwind v3 via PostCSS (`postcss.config.cjs` + `tailwind.config.cjs`). Tailwind brand colors map to token values (e.g. `text-primary`, `bg-surface`, `border-border`)
+- Env variable: `VITE_API_URL` (set in `.env.local`). See `.env.example` for all variables.
+
+#### Frontend folder structure
+```
+src/
+  components/
+    ui/          # Primitive design-system components (Button, Card, Badge, Avatar, Input, StarRating)
+    layout/      # Navbar, Footer, PageWrapper, Sidebar
+    auth/        # LoginForm, RegisterForm, ProtectedRoute
+    contractor/  # ContractorCard, ContractorProfile, ContractorList
+    job/         # JobCard, JobList, JobPostForm, JobDetail
+  pages/         # One file per route (HomePage, LoginPage, etc.)
+  hooks/         # useAuth, useContractors, useJobs
+  services/      # api.ts (Axios instance), auth.service.ts, contractor.service.ts
+  context/       # AuthContext.tsx — provides user/token/login/logout
+  types/         # user.types.ts, contractor.types.ts, job.types.ts
+  styles/        # design-tokens.css (CSS vars), globals.css (Tailwind directives)
+```
+
+#### Key patterns
+- **API client**: `src/services/api.ts` — Axios instance with `VITE_API_URL` base, JWT request interceptor (reads `localStorage.getItem('token')`), 401 response interceptor (redirects to `/login`)
+- **Auth state**: `AuthContext` + `useAuth()` hook — stores token in `localStorage`. `ProtectedRoute` redirects unauthenticated users to `/login`
+- **Server state**: TanStack Query v5. Query keys convention: `['contractors']`, `['contractors', id]`, `['jobs']`, `['jobs', id]`
+- **Routes**: `/`, `/login`, `/register`, `/contractors`, `/contractors/:id`, `/jobs/:id`, `/dashboard` (protected), `/post-job` (protected)
 
 ### Backend
 - Entry: `src/index.ts` — sets up Express with CORS and JSON middleware, mounts routes, starts the server
@@ -62,7 +88,7 @@ Environment variables live in `.env` (not committed). Required:
 
 ## Design System
 
-BuildMatch uses a custom design system. No external UI library (no Tailwind, no MUI).
+BuildMatch uses a custom design system. Tailwind v3 is installed for utility classes. No component library (no shadcn, no MUI).
 
 ### Token File
 `buildmatch-frontend/src/styles/design-tokens.css` — all CSS custom properties. Imported at the top of `src/index.css`; tokens are globally available via `var(--token-name)`. Never hardcode color or spacing values in components — always use a token.
