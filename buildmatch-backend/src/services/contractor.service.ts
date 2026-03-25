@@ -2,24 +2,24 @@ import prisma from '../lib/prisma';
 import type { ContractorProfileInput } from '../schemas/contractor.schemas';
 
 export async function getAllContractors() {
-  return prisma.contractor.findMany({
-    include: { user: { select: { name: true, email: true } } },
+  return prisma.contractorProfile.findMany({
+    include: { user: { select: { firstName: true, lastName: true, email: true } } },
   });
 }
 
 export async function getContractorById(id: string) {
-  const contractor = await prisma.contractor.findUnique({
+  const contractor = await prisma.contractorProfile.findUnique({
     where: { id },
-    include: { user: { select: { name: true, email: true } } },
+    include: { user: { select: { firstName: true, lastName: true, email: true } } },
   });
   if (!contractor) throw new Error('Contractor not found');
   return contractor;
 }
 
 export async function upsertContractorProfile(userId: string, input: ContractorProfileInput) {
-  return prisma.contractor.upsert({
+  return prisma.contractorProfile.upsert({
     where: { userId },
     update: input,
-    create: { ...input, userId },
+    create: { ...input, userId, specialties: [], portfolioImages: [] },
   });
 }

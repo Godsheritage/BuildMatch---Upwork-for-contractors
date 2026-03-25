@@ -11,6 +11,6 @@ export async function getJobById(id: string) {
   return job;
 }
 
-export async function createJob(clientId: string, input: CreateJobInput) {
-  return prisma.job.create({ data: { ...input, clientId } });
+export async function createJob(investorId: string, input: CreateJobInput) {
+  return prisma.job.create({ data: { ...input, investorId } });
 }
