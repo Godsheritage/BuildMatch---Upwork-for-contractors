@@ -9,7 +9,7 @@ Two independent Node.js projects in the same repo — run commands from within e
 ```
 BuildMatch/
 ├── buildmatch-frontend/   # React 18 + TypeScript + Vite 5
-└── buildmatch-backend/    # Express 5 + TypeScript + Prisma 5 + PostgreSQL
+└── buildmatch-backend/    # Express 4 + TypeScript + Prisma 5 + PostgreSQL
 ```
 
 ## Frontend (buildmatch-frontend)
@@ -30,7 +30,7 @@ npm run preview    # Preview production build locally
 ```bash
 cd buildmatch-backend
 
-npm run dev          # Start dev server with nodemon + ts-node (port 3001)
+npm run dev          # Start dev server with ts-node-dev hot reload (port 3001)
 npm run build        # Compile TypeScript → dist/
 npm start            # Run compiled production server
 
@@ -39,9 +39,12 @@ npm run db:migrate   # Create and apply a new migration
 npm run db:studio    # Open Prisma Studio GUI
 ```
 
-Environment variables live in `.env` (not committed). Required:
+Environment variables live in `.env` (not committed). See `.env.example` for all variables:
 - `DATABASE_URL` — PostgreSQL connection string
+- `JWT_SECRET` — long random string for signing tokens
+- `JWT_EXPIRES_IN` — token lifetime (e.g. `7d`)
 - `PORT` — defaults to `3001`
+- `FRONTEND_URL` — allowed CORS origin (e.g. `http://localhost:5173`)
 
 ## Architecture
 
@@ -77,14 +80,47 @@ src/
 - **Routes**: `/`, `/login`, `/register`, `/contractors`, `/contractors/:id`, `/jobs/:id`, `/dashboard` (protected), `/post-job` (protected)
 
 ### Backend
-- Entry: `src/index.ts` — sets up Express with CORS and JSON middleware, mounts routes, starts the server
+- Entry: `src/server.ts` → `src/app.ts`
+- `app.ts` applies all middleware (helmet, cors, rate-limit, body parsers) and mounts routes; `server.ts` starts the HTTP listener
 - Prisma singleton: `src/lib/prisma.ts` — import this everywhere instead of instantiating `PrismaClient` directly
 - Schema: `prisma/schema.prisma` — PostgreSQL datasource; run `db:generate` after any schema change
-- TypeScript compiles to `dist/` (CommonJS) for production; ts-node runs source directly in dev
+- TypeScript compiles to `dist/` (CommonJS); ts-node-dev runs source directly in dev with `--transpile-only`
 
-### API
-- `GET /health` — liveness check, returns `{ status: "ok" }`
-- All new routes should be added as Express routers and imported into `src/index.ts`
+#### Backend folder structure
+```
+src/
+  routes/       # Express routers (auth, user, contractor, job)
+  controllers/  # Request handlers — call service, send response
+  middleware/   # auth (JWT guard), validate (Zod), error (global handler)
+  services/     # Business logic — call Prisma, throw on errors
+  schemas/      # Zod schemas for request body validation + inferred types
+  types/        # express.d.ts — extends Request with req.user (JwtPayload)
+  utils/        # jwt.utils.ts, password.utils.ts, response.utils.ts
+  lib/          # prisma.ts singleton
+  app.ts        # Express app setup
+  server.ts     # HTTP server entry point
+```
+
+#### Key patterns
+- **Response shape**: always `{ success, data?, message?, errors? }` — use `sendSuccess` / `sendError` from `src/utils/response.utils.ts`
+- **Request validation**: `validate(zodSchema)` middleware in routes; parsed body replaces `req.body` with typed data
+- **Auth guard**: `authenticate` middleware reads `Authorization: Bearer <token>`, sets `req.user: { userId, role }`
+- **Service errors**: services throw `Error` with a descriptive message; controllers catch and forward to `sendError`
+- **CORS**: locked to `process.env.FRONTEND_URL` — do not use `*`
+
+#### API routes
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/health` | — | Liveness check |
+| POST | `/api/auth/register` | — | Register user |
+| POST | `/api/auth/login` | — | Login, returns JWT |
+| GET | `/api/auth/me` | ✓ | Current user |
+| GET | `/api/contractors` | — | List contractors |
+| GET | `/api/contractors/:id` | — | Contractor detail |
+| PUT | `/api/contractors/profile` | ✓ | Upsert contractor profile |
+| GET | `/api/jobs` | — | List jobs |
+| GET | `/api/jobs/:id` | — | Job detail |
+| POST | `/api/jobs` | ✓ | Create job |
 
 ## Design System
 
