@@ -1,13 +1,14 @@
-export type UserRole = 'client' | 'contractor' | 'admin';
+export type UserRole = 'INVESTOR' | 'CONTRACTOR' | 'ADMIN';
 
 export interface User {
   id: string;
   email: string;
-  name: string;
   role: UserRole;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  isVerified: boolean;
+  isActive: boolean;
   createdAt: string;
-}
-
-export interface AuthTokens {
-  accessToken: string;
+  updatedAt: string;
 }

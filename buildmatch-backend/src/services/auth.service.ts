@@ -34,6 +34,7 @@ export async function register(input: RegisterInput) {
         firstName: input.firstName,
         lastName: input.lastName,
         role: input.role as Role,
+        ...(input.phone ? { phone: input.phone } : {}),
       },
       select: USER_SELECT,
     });

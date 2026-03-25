@@ -1,41 +1,71 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useState, useCallback, useEffect } from 'react';
 import type { User } from '../types/user.types';
+import type { RegisterPayload } from '../services/auth.service';
+import * as authService from '../services/auth.service';
+import { TOKEN_KEY } from '../services/api';
 
 interface AuthContextValue {
   user: User | null;
-  token: string | null;
-  login: (token: string, user: User) => void;
-  logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (data: RegisterPayload) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = useCallback((newToken: string, newUser: User) => {
-    localStorage.setItem('token', newToken);
-    setToken(newToken);
-    setUser(newUser);
+  // Restore session on mount using the stored token
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+    authService
+      .getMe()
+      .then((userData) => setUser(userData))
+      .catch(() => localStorage.removeItem(TOKEN_KEY))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { user: userData, token } = await authService.login({ email, password });
+    localStorage.setItem(TOKEN_KEY, token);
+    setUser(userData);
+  }, []);
+
+  const register = useCallback(async (data: RegisterPayload) => {
+    const { user: userData, token } = await authService.register(data);
+    localStorage.setItem(TOKEN_KEY, token);
+    setUser(userData);
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    setToken(null);
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuthContext(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuthContext must be used within AuthProvider');
-  return ctx;
-}
+// Exported for use only by src/hooks/useAuth.ts — do not import directly elsewhere
+export { AuthContext };
+export type { AuthContextValue };

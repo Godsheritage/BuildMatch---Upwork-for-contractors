@@ -12,6 +12,7 @@ export const registerSchema = z.object({
   role: z.enum(['INVESTOR', 'CONTRACTOR'] as const, {
     error: 'Role must be INVESTOR or CONTRACTOR',
   }),
+  phone: z.string().optional(),
 });
 
 export const loginSchema = z.object({

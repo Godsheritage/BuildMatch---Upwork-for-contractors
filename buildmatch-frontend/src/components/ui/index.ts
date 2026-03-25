@@ -15,3 +15,6 @@ export type { AvatarProps } from './Avatar';
 
 export { StarRating } from './StarRating';
 export type { StarRatingProps } from './StarRating';
+
+export { Spinner } from './Spinner';
+export type { } from './Spinner';
