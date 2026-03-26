@@ -54,3 +54,21 @@
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
   --shadow-card-hover: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
+
+/* === Dark mode overrides === */
+[data-theme="dark"] {
+  --color-primary:      #4B8FCC;
+  --color-accent:       #1FAD86;
+  --color-highlight:    #0F2E28;
+  --color-warning:      #FBBC44;
+  --color-warning-bg:   #2E1F00;
+  --color-bg:           #111318;
+  --color-surface:      #1C1F2A;
+  --color-border:       #2E3241;
+  --color-text-primary: #EDEDEB;
+  --color-text-muted:   #9090A0;
+  --color-star:         #F59E0B;
+  --color-danger:       #F87171;
+  --shadow-card:        0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover:  0 2px 16px rgba(0, 0, 0, 0.45);
+}

@@ -1,90 +1,63 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import {
-  Home,
-  Search,
-  Briefcase,
-  PlusCircle,
-  User,
-  FileText,
-  Menu,
-  X,
-  LogOut,
+  Home, Search, Briefcase, PlusCircle,
+  User, FileText, Menu, X, LogOut, Moon, Sun,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../context/ThemeContext';
+import { useLang } from '../../context/LanguageContext';
+import type { Lang } from '../../i18n/translations';
 import { Avatar } from '../ui/Avatar';
 import styles from './DashboardLayout.module.css';
 
-interface NavItem {
-  to: string;
-  icon: React.ElementType;
-  label: string;
-}
-
-const INVESTOR_NAV: NavItem[] = [
-  { to: '/dashboard',     icon: Home,       label: 'Dashboard'          },
-  { to: '/contractors',   icon: Search,     label: 'Find Contractors'   },
-  { to: '/dashboard/jobs', icon: Briefcase,  label: 'My Jobs'            },
-  { to: '/dashboard/post-job', icon: PlusCircle, label: 'Post a Job' },
-];
-
-const CONTRACTOR_NAV: NavItem[] = [
-  { to: '/dashboard',     icon: Home,       label: 'Dashboard'          },
-  { to: '/profile',       icon: User,       label: 'My Profile'         },
-  { to: '/jobs',          icon: Search,     label: 'Browse Jobs'        },
-  { to: '/my-bids',       icon: FileText,   label: 'My Bids'            },
-];
-
 export function DashboardLayout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user, logout }          = useAuth();
+  const { theme, toggle: toggleTheme } = useTheme();
+  const { lang, setLang, t }      = useLang();
+  const navigate                  = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const navItems = user?.role === 'CONTRACTOR' ? CONTRACTOR_NAV : INVESTOR_NAV;
+  const investorNav = [
+    { to: '/dashboard',          icon: Home,       label: t.nav.dashboard       },
+    { to: '/contractors',        icon: Search,     label: t.nav.findContractors  },
+    { to: '/dashboard/jobs',     icon: Briefcase,  label: t.nav.myJobs          },
+    { to: '/dashboard/post-job', icon: PlusCircle, label: t.nav.postJob         },
+  ];
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const contractorNav = [
+    { to: '/dashboard',  icon: Home,     label: t.nav.dashboard   },
+    { to: '/profile',    icon: User,     label: t.nav.myProfile   },
+    { to: '/jobs',       icon: Search,   label: t.nav.browseJobs  },
+    { to: '/my-bids',    icon: FileText, label: t.nav.myBids      },
+  ];
 
+  const navItems = user?.role === 'CONTRACTOR' ? contractorNav : investorNav;
+
+  const handleLogout = () => { logout(); navigate('/login'); };
   const closeSidebar = () => setSidebarOpen(false);
+
+  const pillLeft = lang === 'en' ? '3px' : 'calc(50% + 1px)';
 
   return (
     <div className={styles.layout}>
       {/* Mobile top bar */}
       <header className={styles.mobileHeader}>
-        <button
-          className={styles.hamburger}
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Open menu"
-        >
+        <button className={styles.hamburger} onClick={() => setSidebarOpen(true)} aria-label="Open menu">
           <Menu size={22} strokeWidth={2} />
         </button>
-        <span
-          className={styles.wordmark}
-          style={{ fontSize: '15px' }}
-        >
-          BuildMatch
-        </span>
-        <div style={{ width: 34 }} /> {/* balance hamburger */}
+        <span className={styles.wordmark} style={{ fontSize: '15px' }}>BuildMatch</span>
+        <div style={{ width: 34 }} />
       </header>
 
       {/* Backdrop */}
-      {sidebarOpen && (
-        <div className={styles.backdrop} onClick={closeSidebar} aria-hidden />
-      )}
+      {sidebarOpen && <div className={styles.backdrop} onClick={closeSidebar} aria-hidden />}
 
       {/* Sidebar */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.sidebarHeader}>
-          <Link to="/" className={styles.wordmark}>
-            BuildMatch
-          </Link>
-          <button
-            className={styles.closeBtn}
-            onClick={closeSidebar}
-            aria-label="Close menu"
-          >
+          <Link to="/" className={styles.wordmark}>BuildMatch</Link>
+          <button className={styles.closeBtn} onClick={closeSidebar} aria-label="Close menu">
             <X size={18} strokeWidth={2} />
           </button>
         </div>
@@ -106,25 +79,42 @@ export function DashboardLayout() {
           ))}
         </nav>
 
+        {/* Language slider */}
+        <div className={styles.langSection}>
+          <p className={styles.langLabel}>{t.sidebar.language}</p>
+          <div
+            className={styles.langSliderWrap}
+            onClick={() => setLang(lang === 'en' ? 'es' : 'en' as Lang)}
+            role="switch"
+            aria-checked={lang === 'es'}
+            aria-label="Toggle language"
+          >
+            <div className={styles.langSliderPill} style={{ left: pillLeft }} />
+            <span className={`${styles.langOption} ${lang === 'en' ? styles.langOptionActive : ''}`}>EN</span>
+            <span className={`${styles.langOption} ${lang === 'es' ? styles.langOptionActive : ''}`}>ES</span>
+          </div>
+        </div>
+
+        {/* Theme toggle */}
+        <button className={styles.themeToggleBtn} onClick={toggleTheme} aria-label="Toggle dark mode">
+          {theme === 'dark' ? <Sun size={17} strokeWidth={1.75} /> : <Moon size={17} strokeWidth={1.75} />}
+          {theme === 'dark' ? t.sidebar.lightMode : t.sidebar.darkMode}
+        </button>
+
         {user && (
           <div className={styles.sidebarFooter}>
-            <Avatar
-              name={`${user.firstName} ${user.lastName}`}
-              size="sm"
-            />
-            <div className={styles.userInfo}>
-              <p className={styles.userName}>
-                {user.firstName} {user.lastName}
-              </p>
-              <p className={styles.userRole}>
-                {user.role.charAt(0) + user.role.slice(1).toLowerCase()}
-              </p>
-            </div>
+            <Link to="/dashboard/profile" onClick={closeSidebar} style={{ lineHeight: 0, flexShrink: 0 }}>
+              <Avatar name={`${user.firstName} ${user.lastName}`} size="sm" />
+            </Link>
+            <Link to="/dashboard/profile" onClick={closeSidebar} className={styles.userInfo} style={{ textDecoration: 'none' }}>
+              <p className={styles.userName}>{user.firstName} {user.lastName}</p>
+              <p className={styles.userRole}>{user.role.charAt(0) + user.role.slice(1).toLowerCase()}</p>
+            </Link>
             <button
               className={styles.logoutBtn}
               onClick={handleLogout}
-              aria-label="Sign out"
-              title="Sign out"
+              aria-label={t.nav.signOut}
+              title={t.nav.signOut}
             >
               <LogOut size={16} strokeWidth={2} />
             </button>

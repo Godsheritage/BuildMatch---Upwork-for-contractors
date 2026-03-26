@@ -44,6 +44,11 @@ export async function getContractorById(id: string): Promise<ContractorProfile> 
   return res.data;
 }
 
+export async function getMyContractorProfile(): Promise<ContractorProfile> {
+  const { data: res } = await api.get<ApiResponse<ContractorProfile>>('/contractors/me');
+  return res.data;
+}
+
 export async function updateMyProfile(payload: UpdateProfilePayload): Promise<ContractorProfile> {
   const { data: res } = await api.put<ApiResponse<ContractorProfile>>('/contractors/me', payload);
   return res.data;

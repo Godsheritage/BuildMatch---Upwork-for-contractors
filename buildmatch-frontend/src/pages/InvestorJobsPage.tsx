@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { MoreVertical, AlertTriangle, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../context/ToastContext';
+import { useLang } from '../context/LanguageContext';
 import { getMyJobs, cancelJob } from '../services/job.service';
 import { Button } from '../components/ui/Button';
 import type { JobPost, JobStatus } from '../types/job.types';
@@ -10,28 +11,16 @@ import styles from './InvestorJobsPage.module.css';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const TRADE_LABELS: Record<string, string> = {
-  GENERAL: 'General', ELECTRICAL: 'Electrical', PLUMBING: 'Plumbing',
-  HVAC: 'HVAC', ROOFING: 'Roofing', FLOORING: 'Flooring', PAINTING: 'Painting',
-  LANDSCAPING: 'Landscaping', DEMOLITION: 'Demolition', OTHER: 'Other',
+const STATUS_COLORS: Record<JobStatus, { bg: string; text: string }> = {
+  OPEN:        { bg: '#DCFCE7', text: '#166534' },
+  AWARDED:     { bg: '#DBEAFE', text: '#1E40AF' },
+  IN_PROGRESS: { bg: '#FEF9C3', text: '#854D0E' },
+  COMPLETED:   { bg: '#F3F4F6', text: '#374151' },
+  CANCELLED:   { bg: '#FEE2E2', text: '#991B1B' },
 };
 
-const STATUS_META: Record<JobStatus, { label: string; bg: string; text: string }> = {
-  OPEN:        { label: 'Open',        bg: '#DCFCE7', text: '#166534' },
-  AWARDED:     { label: 'Awarded',     bg: '#DBEAFE', text: '#1E40AF' },
-  IN_PROGRESS: { label: 'In Progress', bg: '#FEF9C3', text: '#854D0E' },
-  COMPLETED:   { label: 'Completed',   bg: '#F3F4F6', text: '#374151' },
-  CANCELLED:   { label: 'Cancelled',   bg: '#FEE2E2', text: '#991B1B' },
-};
-
-const TABS: { key: 'ALL' | JobStatus; label: string }[] = [
-  { key: 'ALL',         label: 'All'         },
-  { key: 'OPEN',        label: 'Open'        },
-  { key: 'AWARDED',     label: 'Awarded'     },
-  { key: 'IN_PROGRESS', label: 'In Progress' },
-  { key: 'COMPLETED',   label: 'Completed'   },
-  { key: 'CANCELLED',   label: 'Cancelled'   },
-];
+const TAB_KEYS = ['ALL', 'OPEN', 'AWARDED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as const;
+type TabKey = typeof TAB_KEYS[number];
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
 
@@ -44,10 +33,10 @@ function formatDate(dateStr: string): string {
 // ── Empty state ────────────────────────────────────────────────────────────────
 
 function EmptyState({ filtered }: { filtered: boolean }) {
+  const { t } = useLang();
   return (
     <div className={styles.emptyState}>
       <div className={styles.emptyIcon}>
-        {/* Inline SVG: clipboard with dashed border */}
         <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="10" y="14" width="32" height="32" rx="4" stroke="#D1D5DB" strokeWidth="2" strokeDasharray="4 3"/>
           <rect x="18" y="8" width="16" height="10" rx="3" fill="#F9FAFB" stroke="#D1D5DB" strokeWidth="2"/>
@@ -55,15 +44,13 @@ function EmptyState({ filtered }: { filtered: boolean }) {
         </svg>
       </div>
       <p className={styles.emptyTitle}>
-        {filtered ? 'No jobs in this category' : 'You have not posted any jobs yet.'}
+        {filtered ? t.investorJobs.empty.title : t.investorJobs.empty.desc}
       </p>
       {!filtered && (
         <>
-          <p className={styles.emptySubtitle}>
-            Post your first job to start receiving bids from qualified contractors.
-          </p>
+          <p className={styles.emptySubtitle}>{t.investorJobs.empty.desc2}</p>
           <Link to="/dashboard/post-job">
-            <Button variant="primary">Post your first job</Button>
+            <Button variant="primary">{t.investorJobs.empty.cta}</Button>
           </Link>
         </>
       )}
@@ -71,7 +58,7 @@ function EmptyState({ filtered }: { filtered: boolean }) {
   );
 }
 
-// ── Confirm cancel dialog (lightweight overlay) ────────────────────────────────
+// ── Confirm cancel dialog ──────────────────────────────────────────────────────
 
 function CancelConfirmDialog({
   job,
@@ -84,6 +71,7 @@ function CancelConfirmDialog({
   onClose: () => void;
   isPending: boolean;
 }) {
+  const { t } = useLang();
   return (
     <div className={styles.dialogBackdrop} onClick={onClose}>
       <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
@@ -95,17 +83,16 @@ function CancelConfirmDialog({
             <X size={16} strokeWidth={2} />
           </button>
         </div>
-        <h3 className={styles.dialogTitle}>Cancel this job?</h3>
+        <h3 className={styles.dialogTitle}>{t.investorJobs.cancelDialog.title}</h3>
         <p className={styles.dialogBody}>
-          <strong>{job.title}</strong> will be marked as cancelled and removed from
-          active listings. This cannot be undone.
+          <strong>{job.title}</strong> {t.investorJobs.cancelDialog.body}
         </p>
         <div className={styles.dialogActions}>
           <button className={styles.dialogCancelBtn} onClick={onClose} disabled={isPending}>
-            Keep Job
+            {t.investorJobs.cancelDialog.keepBtn}
           </button>
           <button className={styles.dialogConfirmBtn} onClick={onConfirm} disabled={isPending}>
-            {isPending ? 'Cancelling…' : 'Yes, Cancel Job'}
+            {isPending ? t.investorJobs.cancelDialog.loading : t.investorJobs.cancelDialog.confirmBtn}
           </button>
         </div>
       </div>
@@ -115,13 +102,8 @@ function CancelConfirmDialog({
 
 // ── Kebab menu ────────────────────────────────────────────────────────────────
 
-function KebabMenu({
-  job,
-  onCancel,
-}: {
-  job: JobPost;
-  onCancel: (job: JobPost) => void;
-}) {
+function KebabMenu({ job, onCancel }: { job: JobPost; onCancel: (job: JobPost) => void }) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -150,13 +132,13 @@ function KebabMenu({
             className={styles.kebabItem}
             onClick={() => setOpen(false)}
           >
-            Edit job
+            {t.investorJobs.actions.editJob}
           </Link>
           <button
             className={`${styles.kebabItem} ${styles.kebabItemDanger}`}
             onClick={() => { setOpen(false); onCancel(job); }}
           >
-            Cancel job
+            {t.investorJobs.actions.cancelJob}
           </button>
         </div>
       )}
@@ -167,13 +149,14 @@ function KebabMenu({
 // ── Status badge ──────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: JobStatus }) {
-  const meta = STATUS_META[status] ?? STATUS_META.OPEN;
+  const { t } = useLang();
+  const colors = STATUS_COLORS[status] ?? STATUS_COLORS.OPEN;
   return (
     <span
       className={styles.statusBadge}
-      style={{ background: meta.bg, color: meta.text }}
+      style={{ background: colors.bg, color: colors.text }}
     >
-      {meta.label}
+      {t.status[status as keyof typeof t.status] ?? status}
     </span>
   );
 }
@@ -203,40 +186,37 @@ function SkeletonRows() {
 
 // ── Mobile job card ───────────────────────────────────────────────────────────
 
-function MobileJobCard({
-  job,
-  onCancel,
-}: {
-  job: JobPost;
-  onCancel: (job: JobPost) => void;
-}) {
+function MobileJobCard({ job, onCancel }: { job: JobPost; onCancel: (job: JobPost) => void }) {
+  const { t } = useLang();
   const navigate = useNavigate();
   return (
     <div className={styles.mobileCard} onClick={() => navigate(`/jobs/${job.id}`)}>
       <div className={styles.mobileCardHeader}>
         <div className={styles.mobileCardTitle}>
           <p className={styles.mobileCardName}>{job.title}</p>
-          <p className={styles.mobileCardTrade}>{TRADE_LABELS[job.tradeType] ?? job.tradeType}</p>
+          <p className={styles.mobileCardTrade}>
+            {t.specialties[job.tradeType as keyof typeof t.specialties] ?? job.tradeType}
+          </p>
         </div>
         <StatusBadge status={job.status} />
       </div>
       <div className={styles.mobileCardMeta}>
         <span>${job.budgetMin.toLocaleString()}–${job.budgetMax.toLocaleString()}</span>
         <span className={styles.mobileMetaDot}>·</span>
-        <span>{job.bidCount} bid{job.bidCount !== 1 ? 's' : ''}</span>
+        <span>{job.bidCount} {t.investorJobs.mobileBids}</span>
         <span className={styles.mobileMetaDot}>·</span>
         <span>{formatDate(job.createdAt)}</span>
       </div>
       <div className={styles.mobileCardActions} onClick={(e) => e.stopPropagation()}>
         <Link to={`/jobs/${job.id}`} className={styles.mobileActionBtn}>
-          View{job.status === 'OPEN' ? ' Bids' : ''}
+          {job.status === 'OPEN' ? t.investorJobs.actions.viewBids : t.investorJobs.actions.view}
         </Link>
         {job.status === 'OPEN' && (
           <button
             className={`${styles.mobileActionBtn} ${styles.mobileActionDanger}`}
             onClick={() => onCancel(job)}
           >
-            Cancel
+            {t.investorJobs.actions.cancelJob}
           </button>
         )}
       </div>
@@ -250,8 +230,9 @@ export function InvestorJobsPage() {
   const navigate  = useNavigate();
   const qc        = useQueryClient();
   const { toast } = useToast();
-  const [activeTab,     setActiveTab]     = useState<'ALL' | JobStatus>('ALL');
-  const [cancelTarget,  setCancelTarget]  = useState<JobPost | null>(null);
+  const { t }     = useLang();
+  const [activeTab,    setActiveTab]    = useState<TabKey>('ALL');
+  const [cancelTarget, setCancelTarget] = useState<JobPost | null>(null);
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs', 'my-jobs'],
@@ -262,7 +243,7 @@ export function InvestorJobsPage() {
   const cancelMutation = useMutation({
     mutationFn: (job: JobPost) => cancelJob(job.id),
     onSuccess: () => {
-      toast('Job cancelled.');
+      toast(t.investorJobs.toast.cancelled);
       qc.invalidateQueries({ queryKey: ['jobs', 'my-jobs'] });
       setCancelTarget(null);
     },
@@ -273,11 +254,10 @@ export function InvestorJobsPage() {
 
   const handleCancel = useCallback((job: JobPost) => setCancelTarget(job), []);
 
-  // Tab counts
-  const counts = TABS.reduce<Record<string, number>>((acc, tab) => {
-    acc[tab.key] = tab.key === 'ALL'
+  const counts = TAB_KEYS.reduce<Record<string, number>>((acc, key) => {
+    acc[key] = key === 'ALL'
       ? jobs.length
-      : jobs.filter((j) => j.status === tab.key).length;
+      : jobs.filter((j) => j.status === key).length;
     return acc;
   }, {});
 
@@ -286,53 +266,56 @@ export function InvestorJobsPage() {
   return (
     <div className={styles.page}>
 
-      {/* ── Page header ────────────────────────────────── */}
+      {/* ── Page header ── */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>My Jobs</h1>
+          <h1 className={styles.title}>{t.investorJobs.title}</h1>
           <p className={styles.subtitle}>
-            {isLoading ? '…' : `${jobs.length} total job${jobs.length !== 1 ? 's' : ''} posted`}
+            {isLoading ? '…' : `${jobs.length} ${t.investorJobs.totalPosted}`}
           </p>
         </div>
         <Link to="/dashboard/post-job">
-          <Button variant="primary">Post a New Job</Button>
+          <Button variant="primary">{t.investorJobs.postNew}</Button>
         </Link>
       </div>
 
-      {/* ── Tabs ───────────────────────────────────────── */}
+      {/* ── Tabs ── */}
       <div className={styles.tabsWrap}>
         <div className={styles.tabs}>
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.label}
-              {!isLoading && counts[tab.key] > 0 && (
-                <span
-                  className={`${styles.tabCount} ${activeTab === tab.key ? styles.tabCountActive : ''}`}
-                >
-                  {counts[tab.key]}
-                </span>
-              )}
-            </button>
-          ))}
+          {TAB_KEYS.map((key) => {
+            const label = key === 'ALL'
+              ? t.investorJobs.tabs.ALL
+              : t.investorJobs.tabs[key as keyof typeof t.investorJobs.tabs] ?? key;
+            return (
+              <button
+                key={key}
+                className={`${styles.tab} ${activeTab === key ? styles.tabActive : ''}`}
+                onClick={() => setActiveTab(key)}
+              >
+                {label}
+                {!isLoading && counts[key] > 0 && (
+                  <span className={`${styles.tabCount} ${activeTab === key ? styles.tabCountActive : ''}`}>
+                    {counts[key]}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* ── Table (desktop) ────────────────────────────── */}
+      {/* ── Table (desktop) ── */}
       <div className={styles.tableWrap}>
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className={styles.th}>Job Title</th>
-              <th className={styles.th}>Trade</th>
-              <th className={styles.th}>Budget</th>
-              <th className={styles.th}>Bids</th>
-              <th className={styles.th}>Status</th>
-              <th className={styles.th}>Posted</th>
-              <th className={styles.th}>Actions</th>
+              <th className={styles.th}>{t.investorJobs.table.title}</th>
+              <th className={styles.th}>{t.investorJobs.table.trade}</th>
+              <th className={styles.th}>{t.investorJobs.table.budget}</th>
+              <th className={styles.th}>{t.investorJobs.table.bids}</th>
+              <th className={styles.th}>{t.investorJobs.table.status}</th>
+              <th className={styles.th}>{t.investorJobs.table.posted}</th>
+              <th className={styles.th}>{t.investorJobs.table.actions}</th>
             </tr>
           </thead>
           <tbody>
@@ -351,51 +334,35 @@ export function InvestorJobsPage() {
                   className={styles.row}
                   onClick={() => navigate(`/jobs/${job.id}`)}
                 >
-                  {/* Title */}
                   <td className={styles.td}>
                     <p className={styles.jobTitle}>{job.title}</p>
                     <p className={styles.jobLocation}>
                       {[job.city, job.state].filter(Boolean).join(', ') || '—'}
                     </p>
                   </td>
-
-                  {/* Trade */}
                   <td className={styles.td}>
                     <span className={styles.tradeChip}>
-                      {TRADE_LABELS[job.tradeType] ?? job.tradeType}
+                      {t.specialties[job.tradeType as keyof typeof t.specialties] ?? job.tradeType}
                     </span>
                   </td>
-
-                  {/* Budget */}
                   <td className={`${styles.td} ${styles.tdBudget}`}>
                     ${job.budgetMin.toLocaleString()}–${job.budgetMax.toLocaleString()}
                   </td>
-
-                  {/* Bids */}
                   <td className={`${styles.td} ${styles.tdCenter}`}>
                     <span className={job.bidCount > 0 ? styles.bidCountActive : styles.bidCount}>
                       {job.bidCount}
                     </span>
                   </td>
-
-                  {/* Status */}
                   <td className={styles.td}>
                     <StatusBadge status={job.status} />
                   </td>
-
-                  {/* Posted */}
                   <td className={`${styles.td} ${styles.tdMuted}`}>
                     {formatDate(job.createdAt)}
                   </td>
-
-                  {/* Actions */}
                   <td className={styles.tdActions} onClick={(e) => e.stopPropagation()}>
                     <div className={styles.actionsCell}>
-                      <Link
-                        to={`/jobs/${job.id}`}
-                        className={styles.viewBtn}
-                      >
-                        {job.status === 'OPEN' ? 'View Bids' : 'View'}
+                      <Link to={`/jobs/${job.id}`} className={styles.viewBtn}>
+                        {job.status === 'OPEN' ? t.investorJobs.actions.viewBids : t.investorJobs.actions.view}
                       </Link>
                       {job.status === 'OPEN' && (
                         <KebabMenu job={job} onCancel={handleCancel} />
@@ -409,7 +376,7 @@ export function InvestorJobsPage() {
         </table>
       </div>
 
-      {/* ── Mobile card list ────────────────────────────── */}
+      {/* ── Mobile card list ── */}
       <div className={styles.mobileList}>
         {isLoading ? (
           <div className={styles.mobileLoading}>
@@ -426,7 +393,7 @@ export function InvestorJobsPage() {
         )}
       </div>
 
-      {/* ── Cancel confirm dialog ───────────────────────── */}
+      {/* ── Cancel confirm dialog ── */}
       {cancelTarget && (
         <CancelConfirmDialog
           job={cancelTarget}

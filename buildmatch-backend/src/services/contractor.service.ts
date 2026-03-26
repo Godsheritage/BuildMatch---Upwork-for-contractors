@@ -112,6 +112,15 @@ export async function getContractorById(id: string) {
   return contractor;
 }
 
+export async function getMyProfile(userId: string) {
+  const contractor = await prisma.contractorProfile.findUnique({
+    where: { userId },
+    select: DETAIL_SELECT,
+  });
+  if (!contractor) throw new AppError('Contractor profile not found', 404);
+  return contractor;
+}
+
 export async function updateMyProfile(userId: string, input: UpdateContractorProfileInput) {
   const existing = await prisma.contractorProfile.findUnique({ where: { userId } });
   if (!existing) throw new AppError('Contractor profile not found', 404);

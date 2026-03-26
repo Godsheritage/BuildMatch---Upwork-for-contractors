@@ -54,6 +54,15 @@ export async function getById(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function getMyProfile(req: Request, res: Response): Promise<void> {
+  try {
+    const profile = await contractorService.getMyProfile(req.user!.userId);
+    sendSuccess(res, profile);
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
 export async function updateMyProfile(req: Request, res: Response): Promise<void> {
   try {
     const profile = await contractorService.updateMyProfile(req.user!.userId, req.body);

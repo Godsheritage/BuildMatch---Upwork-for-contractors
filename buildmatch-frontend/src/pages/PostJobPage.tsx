@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { createJob } from '../services/job.service';
 import { useToast } from '../context/ToastContext';
+import { useLang } from '../context/LanguageContext';
 import type { TradeType, CreateJobPayload } from '../types/job.types';
 import styles from './PostJobPage.module.css';
 
@@ -17,20 +18,19 @@ import styles from './PostJobPage.module.css';
 
 const TRADE_OPTIONS: {
   value: TradeType;
-  label: string;
   icon: React.ElementType;
   color: string;
 }[] = [
-  { value: 'GENERAL',     label: 'General Contractor', icon: Building2,  color: '#1D4ED8' },
-  { value: 'ELECTRICAL',  label: 'Electrical',          icon: Zap,        color: '#854D0E' },
-  { value: 'PLUMBING',    label: 'Plumbing',            icon: Droplets,   color: '#0369A1' },
-  { value: 'HVAC',        label: 'HVAC',                icon: Wind,       color: '#0F766E' },
-  { value: 'ROOFING',     label: 'Roofing',             icon: HomeIcon,   color: '#166534' },
-  { value: 'FLOORING',    label: 'Flooring',            icon: Layers,     color: '#7E22CE' },
-  { value: 'PAINTING',    label: 'Painting',            icon: Paintbrush, color: '#C2410C' },
-  { value: 'LANDSCAPING', label: 'Landscaping',         icon: Trees,      color: '#15803D' },
-  { value: 'DEMOLITION',  label: 'Demolition',          icon: Hammer,     color: '#B91C1C' },
-  { value: 'OTHER',       label: 'Other Trade',         icon: Wrench,     color: '#6B6B67' },
+  { value: 'GENERAL',     icon: Building2,  color: '#1D4ED8' },
+  { value: 'ELECTRICAL',  icon: Zap,        color: '#854D0E' },
+  { value: 'PLUMBING',    icon: Droplets,   color: '#0369A1' },
+  { value: 'HVAC',        icon: Wind,       color: '#0F766E' },
+  { value: 'ROOFING',     icon: HomeIcon,   color: '#166534' },
+  { value: 'FLOORING',    icon: Layers,     color: '#7E22CE' },
+  { value: 'PAINTING',    icon: Paintbrush, color: '#C2410C' },
+  { value: 'LANDSCAPING', icon: Trees,      color: '#15803D' },
+  { value: 'DEMOLITION',  icon: Hammer,     color: '#B91C1C' },
+  { value: 'OTHER',       icon: Wrench,     color: '#6B6B67' },
 ];
 
 const BUDGET_GUIDE: Record<TradeType, [number, number]> = {
@@ -100,37 +100,31 @@ interface FormErrors {
 }
 
 const EMPTY_FORM: FormValues = {
-  title:       '',
-  tradeType:   '',
-  description: '',
-  budgetMin:   '',
-  budgetMax:   '',
-  city:        '',
-  state:       '',
-  zipCode:     '',
+  title: '', tradeType: '', description: '',
+  budgetMin: '', budgetMax: '', city: '', state: '', zipCode: '',
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-/** Custom dropdown with icons for trade type selection */
 function TradeTypeSelect({
   value,
   onChange,
   error,
+  placeholder,
 }: {
   value: string;
   onChange: (v: string) => void;
   error?: string;
+  placeholder: string;
 }) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selected = TRADE_OPTIONS.find((o) => o.value === value);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -148,12 +142,12 @@ function TradeTypeSelect({
         {selected ? (
           <>
             <selected.icon size={15} color={selected.color} strokeWidth={1.75} />
-            <span style={{ flex: 1 }}>{selected.label}</span>
+            <span style={{ flex: 1 }}>
+              {t.specialties[selected.value as keyof typeof t.specialties] ?? selected.value}
+            </span>
           </>
         ) : (
-          <span className={styles.selectPlaceholder} style={{ flex: 1 }}>
-            Select a trade type
-          </span>
+          <span className={styles.selectPlaceholder} style={{ flex: 1 }}>{placeholder}</span>
         )}
         <ChevronDown
           size={15}
@@ -167,6 +161,7 @@ function TradeTypeSelect({
           {TRADE_OPTIONS.map((opt) => {
             const Icon = opt.icon;
             const isActive = value === opt.value;
+            const label = t.specialties[opt.value as keyof typeof t.specialties] ?? opt.value;
             return (
               <button
                 key={opt.value}
@@ -176,8 +171,8 @@ function TradeTypeSelect({
                 className={[styles.selectOption, isActive ? styles.selectOptionActive : ''].join(' ')}
                 onClick={() => { onChange(opt.value); setOpen(false); }}
               >
-                <Icon size={14} color={isActive ? opt.color : opt.color} strokeWidth={1.75} />
-                {opt.label}
+                <Icon size={14} color={opt.color} strokeWidth={1.75} />
+                {label}
               </button>
             );
           })}
@@ -189,7 +184,6 @@ function TradeTypeSelect({
   );
 }
 
-/** Dollar-prefixed number input */
 function MoneyInput({
   value,
   onChange,
@@ -225,9 +219,12 @@ function MoneyInput({
   );
 }
 
-/** Live preview card shown below the form */
 function JobPreviewCard({ form }: { form: FormValues }) {
-  const trade   = TRADE_OPTIONS.find((o) => o.value === form.tradeType);
+  const { t } = useLang();
+  const trade    = TRADE_OPTIONS.find((o) => o.value === form.tradeType);
+  const tradeLabel = trade
+    ? (t.specialties[trade.value as keyof typeof t.specialties] ?? trade.value)
+    : null;
   const location = [form.city, form.state].filter(Boolean).join(', ');
   const min = parseFloat(form.budgetMin);
   const max = parseFloat(form.budgetMax);
@@ -237,14 +234,13 @@ function JobPreviewCard({ form }: { form: FormValues }) {
 
   return (
     <div className={styles.previewCard}>
-      {/* Top row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
             fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', marginBottom: 4,
             color: hasTitle ? 'var(--color-text-primary)' : 'var(--color-border)',
           }}>
-            {hasTitle ? form.title : 'Your job title will appear here'}
+            {hasTitle ? form.title : t.postJob.preview.titlePH}
           </p>
           {location ? (
             <p style={{ fontSize: 12, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -252,7 +248,7 @@ function JobPreviewCard({ form }: { form: FormValues }) {
               {location}
             </p>
           ) : (
-            <p style={{ fontSize: 12, color: 'var(--color-border)' }}>City, State</p>
+            <p style={{ fontSize: 12, color: 'var(--color-border)' }}>{t.postJob.preview.locationPH}</p>
           )}
         </div>
         <span style={{
@@ -260,12 +256,11 @@ function JobPreviewCard({ form }: { form: FormValues }) {
           padding: '3px 10px', borderRadius: 'var(--radius-pill)',
           background: 'var(--color-highlight)', color: 'var(--color-accent)',
         }}>
-          Open
+          {t.status.OPEN}
         </span>
       </div>
 
-      {/* Trade badge */}
-      {trade && (
+      {trade && tradeLabel && (
         <div style={{ marginBottom: 12 }}>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -276,31 +271,27 @@ function JobPreviewCard({ form }: { form: FormValues }) {
             color: 'var(--color-text-muted)',
           }}>
             <trade.icon size={11} color={trade.color} strokeWidth={1.75} />
-            {trade.label}
+            {tradeLabel}
           </span>
         </div>
       )}
 
-      {/* Description */}
       {hasDesc ? (
         <p style={{
-          fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.6,
-          marginBottom: 14,
+          fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: 14,
           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>
           {form.description}
         </p>
       ) : (
         <p style={{ fontSize: 13, color: 'var(--color-border)', lineHeight: 1.6, marginBottom: 14 }}>
-          Your job description will appear here…
+          {t.postJob.preview.descPH}
         </p>
       )}
 
-      {/* Footer */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 16,
-        paddingTop: 12, borderTop: '1px solid var(--color-border)',
-        fontSize: 13,
+        paddingTop: 12, borderTop: '1px solid var(--color-border)', fontSize: 13,
       }}>
         {hasBudget ? (
           <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>
@@ -309,49 +300,40 @@ function JobPreviewCard({ form }: { form: FormValues }) {
         ) : (
           <span style={{ color: 'var(--color-border)' }}>$0–$0</span>
         )}
-        <span style={{ color: 'var(--color-text-muted)' }}>0 bids</span>
-        <span style={{ marginLeft: 'auto', color: 'var(--color-text-muted)' }}>Just now</span>
+        <span style={{ color: 'var(--color-text-muted)' }}>{t.postJob.preview.bids}</span>
+        <span style={{ marginLeft: 'auto', color: 'var(--color-text-muted)' }}>{t.postJob.preview.justNow}</span>
       </div>
     </div>
   );
 }
 
-// ── Validation ────────────────────────────────────────────────────────────────
-
-function validate(form: FormValues): FormErrors {
-  const errs: FormErrors = {};
-
-  if (form.title.length < 10)        errs.title = 'Title must be at least 10 characters';
-  else if (form.title.length > 120)  errs.title = 'Title must be at most 120 characters';
-
-  if (!form.tradeType) errs.tradeType = 'Please select a trade type';
-
-  if (form.description.length < 50)        errs.description = 'Description must be at least 50 characters';
-  else if (form.description.length > 2000) errs.description = 'Description must be at most 2000 characters';
-
-  const min = parseFloat(form.budgetMin);
-  const max = parseFloat(form.budgetMax);
-  if (!form.budgetMin || isNaN(min) || min <= 0) errs.budgetMin = 'Enter a valid minimum budget';
-  if (!form.budgetMax || isNaN(max) || max <= 0) errs.budgetMax = 'Enter a valid maximum budget';
-  if (!errs.budgetMin && !errs.budgetMax && min >= max) {
-    errs.budgetMin = 'Minimum must be less than maximum';
-  }
-
-  if (!form.city.trim())    errs.city    = 'City is required';
-  if (!form.state)          errs.state   = 'State is required';
-  if (!form.zipCode.trim()) errs.zipCode = 'Zip code is required';
-
-  return errs;
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function PostJobPage() {
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
   const { toast }  = useToast();
-  const [form, setForm]   = useState<FormValues>(EMPTY_FORM);
+  const { t }      = useLang();
+  const [form, setForm]     = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
+
+  function validate(form: FormValues): FormErrors {
+    const errs: FormErrors = {};
+    if (form.title.length < 10)        errs.title = t.postJob.validation.titleMin;
+    else if (form.title.length > 120)  errs.title = t.postJob.validation.titleMax;
+    if (!form.tradeType) errs.tradeType = t.postJob.validation.tradeRequired;
+    if (form.description.length < 50)        errs.description = t.postJob.validation.descMin;
+    else if (form.description.length > 2000) errs.description = t.postJob.validation.descMax;
+    const min = parseFloat(form.budgetMin);
+    const max = parseFloat(form.budgetMax);
+    if (!form.budgetMin || isNaN(min) || min <= 0) errs.budgetMin = t.postJob.validation.minBudget;
+    if (!form.budgetMax || isNaN(max) || max <= 0) errs.budgetMax = t.postJob.validation.maxBudget;
+    if (!errs.budgetMin && !errs.budgetMax && min >= max) errs.budgetMin = t.postJob.validation.budgetOrder;
+    if (!form.city.trim())    errs.city    = t.postJob.validation.cityRequired;
+    if (!form.state)          errs.state   = t.postJob.validation.stateRequired;
+    if (!form.zipCode.trim()) errs.zipCode = t.postJob.validation.zipRequired;
+    return errs;
+  }
 
   const set = (field: keyof FormValues) => (
     (v: string | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -364,11 +346,11 @@ export function PostJobPage() {
   const mutation = useMutation({
     mutationFn: (payload: CreateJobPayload) => createJob(payload),
     onSuccess: (job) => {
-      toast('Job posted! Contractors will start sending you bids soon.');
+      toast(t.postJob.toast.success);
       navigate(`/dashboard/jobs/${job.id}`);
     },
     onError: () => {
-      toast('Failed to post job. Please try again.', 'error');
+      toast(t.postJob.toast.error, 'error');
     },
   });
 
@@ -378,7 +360,6 @@ export function PostJobPage() {
     const errs = validate(form);
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
-      // Scroll to first error
       const firstField = document.querySelector('[data-error="true"]');
       firstField?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
@@ -396,33 +377,33 @@ export function PostJobPage() {
     });
   }
 
-  const tradeMeta = TRADE_OPTIONS.find((o) => o.value === form.tradeType);
-  const budgetRange = form.tradeType ? BUDGET_GUIDE[form.tradeType as TradeType] : null;
+  const tradeMeta    = TRADE_OPTIONS.find((o) => o.value === form.tradeType);
+  const tradeLabel   = tradeMeta
+    ? (t.specialties[tradeMeta.value as keyof typeof t.specialties] ?? tradeMeta.value)
+    : null;
+  const budgetRange  = form.tradeType ? BUDGET_GUIDE[form.tradeType as TradeType] : null;
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
 
-        {/* ── Page header ─────────────────────────────────── */}
+        {/* ── Page header ── */}
         <div className={styles.pageHeader}>
-          <h1 className={styles.heading}>Post a New Job</h1>
-          <p className={styles.subheading}>
-            Describe the work you need done and contractors will send you bids.
-          </p>
+          <h1 className={styles.heading}>{t.postJob.title}</h1>
+          <p className={styles.subheading}>{t.postJob.subtitle}</p>
         </div>
 
-        {/* ── Form card ───────────────────────────────────── */}
+        {/* ── Form card ── */}
         <form onSubmit={handleSubmit} noValidate>
           <div className={styles.card}>
 
-            {/* ── Section 1: Job Details ─────────────────── */}
+            {/* Section 1: Job Details */}
             <div className={styles.section}>
-              <p className={styles.sectionTitle}>Job Details</p>
+              <p className={styles.sectionTitle}>{t.postJob.sections.jobDetails}</p>
 
-              {/* Title */}
               <div className={styles.field} data-error={!!errors.title || undefined}>
                 <div className={styles.fieldHeader}>
-                  <label htmlFor="title" className={styles.label}>Job title</label>
+                  <label htmlFor="title" className={styles.label}>{t.postJob.labels.jobTitle}</label>
                   <span className={[styles.charCount, form.title.length > 120 ? styles.charCountOver : ''].join(' ')}>
                     {form.title.length}/120
                   </span>
@@ -433,26 +414,25 @@ export function PostJobPage() {
                   maxLength={140}
                   value={form.title}
                   onChange={set('title')}
-                  placeholder="e.g., Full kitchen renovation for rental property"
+                  placeholder={t.postJob.placeholders.jobTitle}
                   className={[styles.input, errors.title ? styles.inputError : ''].join(' ')}
                 />
                 {errors.title && <p className={styles.errorMsg}>{errors.title}</p>}
               </div>
 
-              {/* Trade type */}
               <div className={styles.field} data-error={!!errors.tradeType || undefined}>
-                <label className={styles.label}>Trade type</label>
+                <label className={styles.label}>{t.postJob.labels.tradeType}</label>
                 <TradeTypeSelect
                   value={form.tradeType}
                   onChange={set('tradeType')}
                   error={errors.tradeType}
+                  placeholder={t.postJob.placeholders.tradeType}
                 />
               </div>
 
-              {/* Description */}
               <div className={styles.field} data-error={!!errors.description || undefined} style={{ marginBottom: 0 }}>
                 <div className={styles.fieldHeader}>
-                  <label htmlFor="description" className={styles.label}>Description</label>
+                  <label htmlFor="description" className={styles.label}>{t.postJob.labels.description}</label>
                   <span className={[styles.charCount, form.description.length > 2000 ? styles.charCountOver : ''].join(' ')}>
                     {form.description.length}/2000
                   </span>
@@ -462,85 +442,83 @@ export function PostJobPage() {
                   rows={6}
                   value={form.description}
                   onChange={set('description')}
-                  placeholder="Describe the scope of work, materials, timeline, and any specific requirements..."
+                  placeholder={t.postJob.placeholders.description}
                   className={[styles.textarea, errors.description ? styles.inputError : ''].join(' ')}
                 />
                 {errors.description && <p className={styles.errorMsg}>{errors.description}</p>}
               </div>
             </div>
 
-            {/* ── Section 2: Budget ──────────────────────── */}
+            {/* Section 2: Budget */}
             <div className={styles.section}>
-              <p className={styles.sectionTitle}>Budget</p>
+              <p className={styles.sectionTitle}>{t.postJob.sections.budget}</p>
 
               <div className={styles.budgetGrid}>
                 <div className={styles.field} data-error={!!errors.budgetMin || undefined} style={{ marginBottom: 0 }}>
-                  <label htmlFor="budgetMin" className={styles.label}>Minimum budget</label>
+                  <label htmlFor="budgetMin" className={styles.label}>{t.postJob.labels.minBudget}</label>
                   <MoneyInput
                     id="budgetMin"
                     value={form.budgetMin}
                     onChange={set('budgetMin')}
-                    placeholder="1,000"
+                    placeholder={t.postJob.placeholders.minBudget}
                     error={errors.budgetMin}
                   />
                 </div>
                 <div className={styles.field} data-error={!!errors.budgetMax || undefined} style={{ marginBottom: 0 }}>
-                  <label htmlFor="budgetMax" className={styles.label}>Maximum budget</label>
+                  <label htmlFor="budgetMax" className={styles.label}>{t.postJob.labels.maxBudget}</label>
                   <MoneyInput
                     id="budgetMax"
                     value={form.budgetMax}
                     onChange={set('budgetMax')}
-                    placeholder="5,000"
+                    placeholder={t.postJob.placeholders.maxBudget}
                     error={errors.budgetMax}
                   />
                 </div>
               </div>
 
-              <p className={styles.budgetHelper}>
-                Set a realistic range to attract quality bids
-              </p>
+              <p className={styles.budgetHelper}>{t.postJob.helpers.budgetRange}</p>
 
-              {/* Budget guide callout */}
-              {budgetRange && (
+              {budgetRange && tradeLabel && (
                 <div className={styles.tipBox}>
                   <Lightbulb size={14} strokeWidth={1.75} style={{ flexShrink: 0, marginTop: 1 }} />
                   <span>
-                    <strong>Tip:</strong> Most {tradeMeta?.label} projects in your area range from{' '}
-                    <strong>${budgetRange[0].toLocaleString()}–${budgetRange[1].toLocaleString()}</strong>
+                    {t.postJob.helpers.budgetTip
+                      .replace('{trade}', tradeLabel)
+                      .replace('${min}', `$${budgetRange[0].toLocaleString()}`)
+                      .replace('${max}', `$${budgetRange[1].toLocaleString()}`)
+                    }
                   </span>
                 </div>
               )}
             </div>
 
-            {/* ── Section 3: Location ────────────────────── */}
+            {/* Section 3: Location */}
             <div className={styles.section} style={{ borderBottom: 'none' }}>
-              <p className={styles.sectionTitle}>Location</p>
+              <p className={styles.sectionTitle}>{t.postJob.sections.location}</p>
 
               <div className={styles.locationGrid}>
-                {/* City */}
                 <div className={styles.field} data-error={!!errors.city || undefined} style={{ marginBottom: 0 }}>
-                  <label htmlFor="city" className={styles.label}>City</label>
+                  <label htmlFor="city" className={styles.label}>{t.postJob.labels.city}</label>
                   <input
                     id="city"
                     type="text"
                     value={form.city}
                     onChange={set('city')}
-                    placeholder="San Francisco"
+                    placeholder={t.postJob.placeholders.city}
                     className={[styles.input, errors.city ? styles.inputError : ''].join(' ')}
                   />
                   {errors.city && <p className={styles.errorMsg}>{errors.city}</p>}
                 </div>
 
-                {/* State */}
                 <div className={styles.field} data-error={!!errors.state || undefined} style={{ marginBottom: 0 }}>
-                  <label htmlFor="state" className={styles.label}>State</label>
+                  <label htmlFor="state" className={styles.label}>{t.postJob.labels.state}</label>
                   <select
                     id="state"
                     value={form.state}
                     onChange={set('state')}
                     className={[styles.nativeSelect, errors.state ? styles.inputError : ''].join(' ')}
                   >
-                    <option value="">Select state</option>
+                    <option value="">{t.postJob.placeholders.state}</option>
                     {US_STATES.map((s) => (
                       <option key={s.value} value={s.value}>{s.label}</option>
                     ))}
@@ -549,15 +527,14 @@ export function PostJobPage() {
                 </div>
               </div>
 
-              {/* Zip code */}
               <div className={styles.field} data-error={!!errors.zipCode || undefined} style={{ marginTop: 14 }}>
-                <label htmlFor="zipCode" className={styles.label}>Zip code</label>
+                <label htmlFor="zipCode" className={styles.label}>{t.postJob.labels.zipCode}</label>
                 <input
                   id="zipCode"
                   type="text"
                   value={form.zipCode}
                   onChange={set('zipCode')}
-                  placeholder="94103"
+                  placeholder={t.postJob.placeholders.zipCode}
                   maxLength={10}
                   style={{ maxWidth: 200 }}
                   className={[styles.input, errors.zipCode ? styles.inputError : ''].join(' ')}
@@ -565,15 +542,14 @@ export function PostJobPage() {
                 {errors.zipCode && <p className={styles.errorMsg}>{errors.zipCode}</p>}
               </div>
 
-              {/* Privacy note */}
               <div className={styles.locationNote}>
                 <Info size={13} strokeWidth={2} style={{ flexShrink: 0 }} />
-                Only your city and state will be shown to contractors publicly.
+                {t.postJob.helpers.locationNote}
               </div>
             </div>
           </div>
 
-          {/* ── Submit ──────────────────────────────────────── */}
+          {/* ── Submit ── */}
           <div className={styles.submitRow}>
             <Button
               type="submit"
@@ -584,18 +560,18 @@ export function PostJobPage() {
               {mutation.isPending ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Spinner size="sm" />
-                  Posting job…
+                  {t.postJob.loading}
                 </span>
               ) : (
-                'Post Job'
+                t.postJob.submit
               )}
             </Button>
           </div>
         </form>
 
-        {/* ── Live preview ─────────────────────────────────── */}
+        {/* ── Live preview ── */}
         <div className={styles.previewSection}>
-          <p className={styles.previewLabel}>Preview — how contractors will see your job</p>
+          <p className={styles.previewLabel}>{t.postJob.preview.heading}</p>
           <JobPreviewCard form={form} />
         </div>
 

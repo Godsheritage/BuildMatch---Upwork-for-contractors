@@ -1,26 +1,15 @@
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Star, ShieldCheck } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
+import { useLang } from '../../context/LanguageContext';
 import type { ContractorProfile } from '../../types/contractor.types';
-
-const SPECIALTY_LABELS: Record<string, string> = {
-  GENERAL:     'General Contractor',
-  ELECTRICAL:  'Electrician',
-  PLUMBING:    'Plumber',
-  HVAC:        'HVAC',
-  ROOFING:     'Roofer',
-  FLOORING:    'Flooring',
-  PAINTING:    'Painter',
-  LANDSCAPING: 'Landscaper',
-  DEMOLITION:  'Demolition',
-  OTHER:       'Other Trade',
-};
 
 interface ContractorCardProps {
   contractor: ContractorProfile;
 }
 
 export function ContractorCard({ contractor }: ContractorCardProps) {
+  const { t } = useLang();
   const { user, id } = contractor;
   const fullName = `${user.firstName} ${user.lastName}`;
   const location = [contractor.city, contractor.state].filter(Boolean).join(', ');
@@ -41,19 +30,23 @@ export function ContractorCard({ contractor }: ContractorCardProps) {
       style={{ textDecoration: 'none', display: 'block' }}
     >
       <div
-        className="bg-white border border-border rounded-xl p-5 transition-all"
         style={{
           display: 'flex', flexDirection: 'column', gap: 0,
+          background: 'var(--color-bg)',
+          border: '1px solid var(--color-border)',
+          borderRadius: '12px',
+          padding: '20px',
           boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
           cursor: 'pointer',
+          transition: 'border-color 0.15s, box-shadow 0.15s',
         }}
         onMouseEnter={(e) => {
           (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
-          (e.currentTarget as HTMLDivElement).style.borderColor = '#C8C8C4';
+          (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--color-text-muted)';
         }}
         onMouseLeave={(e) => {
           (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
-          (e.currentTarget as HTMLDivElement).style.borderColor = '';
+          (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--color-border)';
         }}
       >
         {/* Header */}
@@ -131,7 +124,7 @@ export function ContractorCard({ contractor }: ContractorCardProps) {
                   border: '1px solid var(--color-border)',
                 }}
               >
-                {SPECIALTY_LABELS[s] ?? s}
+                {t.specialties[s as keyof typeof t.specialties] ?? s}
               </span>
             ))}
             {extraCount > 0 && (
