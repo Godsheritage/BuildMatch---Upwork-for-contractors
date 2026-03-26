@@ -12,6 +12,8 @@ import { ContractorsPage } from './pages/ContractorsPage';
 import { ContractorProfilePage } from './pages/ContractorProfilePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { PostJobPage } from './pages/PostJobPage';
+import { JobsPage } from './pages/JobsPage';
+import { InvestorJobsPage } from './pages/InvestorJobsPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { ProfileSetupPage } from './pages/ProfileSetupPage';
 
@@ -31,6 +33,7 @@ export default function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/contractors" element={<ContractorsPage />} />
               <Route path="/contractors/:id" element={<ContractorProfilePage />} />
+              <Route path="/jobs" element={<JobsPage />} />
               <Route path="/jobs/:id" element={<JobDetailPage />} />
 
               {/* Protected dashboard shell — all nested pages rendered via Outlet */}
@@ -42,6 +45,14 @@ export default function App() {
                 }
               >
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route
+                  path="/dashboard/jobs"
+                  element={
+                    <ProtectedRoute roles={['INVESTOR']}>
+                      <InvestorJobsPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/dashboard/post-job"
                   element={

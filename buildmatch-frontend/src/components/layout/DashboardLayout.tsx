@@ -24,7 +24,7 @@ interface NavItem {
 const INVESTOR_NAV: NavItem[] = [
   { to: '/dashboard',     icon: Home,       label: 'Dashboard'          },
   { to: '/contractors',   icon: Search,     label: 'Find Contractors'   },
-  { to: '/my-jobs',       icon: Briefcase,  label: 'My Jobs'            },
+  { to: '/dashboard/jobs', icon: Briefcase,  label: 'My Jobs'            },
   { to: '/dashboard/post-job', icon: PlusCircle, label: 'Post a Job' },
 ];
 

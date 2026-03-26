@@ -1,8 +1,8 @@
-import type { Job } from '../../types/job.types';
+import type { JobPost } from '../../types/job.types';
 import { JobCard } from './JobCard';
 
 interface JobListProps {
-  jobs: Job[];
+  jobs: JobPost[];
 }
 
 export function JobList({ jobs }: JobListProps) {

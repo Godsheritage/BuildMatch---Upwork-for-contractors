@@ -1,5 +1,8 @@
 import api from './api';
-import type { JobPost, CreateJobPayload, JobListResult, JobListParams } from '../types/job.types';
+import type {
+  JobPost, CreateJobPayload, JobListResult, JobListParams,
+  Bid, BidWithContractor, CreateBidPayload,
+} from '../types/job.types';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -24,5 +27,37 @@ export async function getJobById(id: string): Promise<JobPost> {
 
 export async function getMyJobs(): Promise<JobPost[]> {
   const { data: res } = await api.get<ApiResponse<JobPost[]>>('/jobs/my-jobs');
+  return res.data;
+}
+
+export async function cancelJob(id: string): Promise<JobPost> {
+  const { data: res } = await api.delete<ApiResponse<JobPost>>(`/jobs/${id}`);
+  return res.data;
+}
+
+// ── Bid service functions ──────────────────────────────────────────────────────
+
+export async function createBid(jobId: string, payload: CreateBidPayload): Promise<Bid> {
+  const { data: res } = await api.post<ApiResponse<Bid>>(`/jobs/${jobId}/bids`, payload);
+  return res.data;
+}
+
+export async function getJobBids(jobId: string): Promise<BidWithContractor[]> {
+  const { data: res } = await api.get<ApiResponse<BidWithContractor[]>>(`/jobs/${jobId}/bids`);
+  return res.data;
+}
+
+export async function getMyBid(jobId: string): Promise<Bid> {
+  const { data: res } = await api.get<ApiResponse<Bid>>(`/jobs/${jobId}/bids/my-bid`);
+  return res.data;
+}
+
+export async function acceptBid(jobId: string, bidId: string): Promise<Bid> {
+  const { data: res } = await api.put<ApiResponse<Bid>>(`/jobs/${jobId}/bids/${bidId}/accept`);
+  return res.data;
+}
+
+export async function withdrawBid(jobId: string, bidId: string): Promise<Bid> {
+  const { data: res } = await api.put<ApiResponse<Bid>>(`/jobs/${jobId}/bids/${bidId}/withdraw`);
   return res.data;
 }

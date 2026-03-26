@@ -36,6 +36,42 @@ export interface JobPost {
   bidCount: number;
   createdAt: string;
   updatedAt: string;
+  /** Present on detail endpoint when caller is authenticated */
+  hasBid?: boolean;
+}
+
+// ── Bid types ─────────────────────────────────────────────────────────────────
+
+export type BidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
+
+export interface Bid {
+  id: string;
+  jobId: string;
+  contractorId: string;
+  amount: number;
+  message: string;
+  status: BidStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BidWithContractor extends Bid {
+  contractor: {
+    userId: string;
+    city: string | null;
+    state: string | null;
+    specialties: string[];
+    averageRating: number;
+    totalReviews: number;
+    yearsExperience: number;
+    isAvailable: boolean;
+    user: { firstName: string; lastName: string };
+  } | null;
+}
+
+export interface CreateBidPayload {
+  amount: number;
+  message: string;
 }
 
 export interface CreateJobPayload {
