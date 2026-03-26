@@ -27,6 +27,7 @@ export interface ContractorProfile {
   insuranceExpiry: string | null;
   hourlyRateMin: number | null;
   hourlyRateMax: number | null;
+  avatarUrl: string | null;
   portfolioImages: string[];
   city: string | null;
   state: string | null;
@@ -57,4 +58,5 @@ export interface UpdateProfilePayload {
   state?: string;
   zipCode?: string;
   isAvailable?: boolean;
+  avatarUrl?: string;
 }

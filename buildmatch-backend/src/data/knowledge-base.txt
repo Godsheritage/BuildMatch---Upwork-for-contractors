@@ -1,0 +1,44 @@
+Q: What is BuildMatch?
+A: BuildMatch is a platform that connects property investors with licensed contractors for construction, renovation, and trade work. Investors post jobs and contractors submit competitive bids.
+
+Q: How do I post a job?
+A: Log in as an investor, click "Post a Job" from your dashboard, fill in the project title, description, trade type, budget range, and location, then submit. The job goes live immediately and contractors can start bidding.
+
+Q: How does bidding work?
+A: Contractors browse open jobs and submit bids with a price and a cover message explaining their approach. Investors see all bids on the job detail page and choose the best fit.
+
+Q: What happens when I accept a bid?
+A: Accepting a bid automatically declines all other pending bids and changes the job status to "Awarded". Only investors who own the job can accept bids.
+
+Q: How do I message a contractor or investor?
+A: Once a contractor has a pending or accepted bid on a job, both the investor and contractor can use the built-in messaging panel on the job detail page to communicate directly.
+
+Q: Are contractors verified?
+A: Contractors can add their license number, license state, and insurance expiry to their profile. A verification badge appears when credentials have been reviewed. Investors should always verify credentials independently before awarding a project.
+
+Q: How are contractors rated?
+A: After a job is completed, investors and contractors can each leave a star rating and written review. Average ratings appear on contractor profiles and in job bid lists.
+
+Q: What trade types are supported?
+A: BuildMatch supports ten trade categories: General Contractor, Electrical, Plumbing, HVAC, Roofing, Flooring, Painting, Landscaping, Demolition, and Other.
+
+Q: How is the budget range used?
+A: Investors set a minimum and maximum budget to guide contractors on expected pricing. Contractors may bid above or below this range. The awarded amount is the accepted bid price.
+
+Q: Can I cancel a job after posting?
+A: Yes. Open jobs can be cancelled from the job detail page as long as no bid has been accepted. Once a bid is accepted the job is Awarded and cannot be cancelled.
+
+Q: How do I withdraw a bid?
+A: Contractors can withdraw a pending bid by visiting the job page and clicking "Withdraw Bid." Accepted bids cannot be withdrawn.
+
+Q: What is the AI Polish Reply feature?
+A: When writing a message, click "✦ Polish Reply" to get an AI-improved version of your draft. A side-by-side preview shows the original and polished text. You choose which version to send.
+
+Q: What is the thread summarizer?
+A: For jobs with five or more messages, a "✦ Summarize thread" button appears. Clicking it generates a bullet-point AI summary of the conversation so you can quickly catch up without reading every message.
+
+Q: What is the AI trade classification hint?
+A: When posting a job, after you type a title and description the system automatically suggests the most relevant trade type. You can accept the suggestion with one click or ignore it and pick your own.
+
+Q: How do I set up my contractor profile?
+A: Go to your dashboard and open Profile Setup. You can add your bio, years of experience, specialties, hourly rate range, location, license details, and portfolio images.

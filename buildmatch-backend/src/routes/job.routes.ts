@@ -3,9 +3,11 @@ import {
   listJobs, getJobById, createJob, updateJob, cancelJob, getMyJobs,
   createBid, getJobBids, getMyBid, getMyBids, acceptBid, withdrawBid,
 } from '../controllers/job.controller';
+import { createMessage, getJobMessages } from '../controllers/message.controller';
 import { authenticate, optionalAuthenticate, requireRole } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
 import { createJobSchema, updateJobSchema, createBidSchema } from '../schemas/job.schemas';
+import { createMessageSchema } from '../schemas/ai.schemas';
 
 const router = Router();
 
@@ -31,5 +33,10 @@ router.post('/:jobId/bids', authenticate, requireRole('CONTRACTOR'), validate(cr
 
 router.put('/:jobId/bids/:bidId/accept',   authenticate, requireRole('INVESTOR'),   acceptBid);
 router.put('/:jobId/bids/:bidId/withdraw', authenticate, requireRole('CONTRACTOR'), withdrawBid);
+
+// ── Message routes ────────────────────────────────────────────────────────────
+
+router.get( '/:jobId/messages', authenticate, getJobMessages);
+router.post('/:jobId/messages', authenticate, validate(createMessageSchema), createMessage);
 
 export default router;

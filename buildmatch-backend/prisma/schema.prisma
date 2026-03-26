@@ -74,14 +74,18 @@ model User {
   firstName   String
   lastName    String
   phone       String?
+  avatarUrl   String?
   isVerified  Boolean   @default(false)
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  contractor      ContractorProfile?
-  postedJobs      Job[]                    @relation("InvestorJobs")
-  stripeAccount   ContractorStripeAccount?
+  contractor       ContractorProfile?
+  postedJobs       Job[]                    @relation("InvestorJobs")
+  stripeAccount    ContractorStripeAccount?
+  reviewsGiven     Review[]                 @relation("ReviewsGiven")
+  reviewsReceived  Review[]                 @relation("ReviewsReceived")
+  messagesSent     Message[]
 }
 
 model ContractorProfile {
@@ -97,6 +101,7 @@ model ContractorProfile {
   insuranceExpiry   DateTime?
   hourlyRateMin     Float?
   hourlyRateMax     Float?
+  avatarUrl         String?
   portfolioImages   String[]
   city              String?
   state             String?
@@ -110,22 +115,28 @@ model ContractorProfile {
 }
 
 model Job {
-  id          String    @id @default(cuid())
-  title       String
-  description String
-  tradeType   TradeType
-  budgetMin   Float
-  budgetMax   Float
-  city        String
-  state       String
-  zipCode     String
-  status      JobStatus @default(OPEN)
-  investorId  String
-  investor    User      @relation("InvestorJobs", fields: [investorId], references: [id])
-  bids          Bid[]
-  escrowPayment EscrowPayment?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  title            String
+  description      String
+  tradeType        TradeType
+  budgetMin        Float
+  budgetMax        Float
+  city             String
+  state            String
+  zipCode          String
+  photos                 String[]
+  status                 JobStatus  @default(OPEN)
+  isCompleted            Boolean    @default(false)
+  reviewsUnlocked        Boolean    @default(false)
+  aiSuggestedTradeType   TradeType?
+  investorId             String
+  investor               User       @relation("InvestorJobs", fields: [investorId], references: [id])
+  bids                   Bid[]
+  escrowPayment          EscrowPayment?
+  reviews                Review[]
+  messages               Message[]
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
 }
 
 model Bid {
@@ -182,4 +193,33 @@ model Milestone {
   completionNotes  String?
   approvedAt       DateTime?
   releasedAt       DateTime?
+}
+
+model Message {
+  id            String   @id @default(cuid())
+  jobId         String
+  job           Job      @relation(fields: [jobId], references: [id])
+  senderId      String
+  sender        User     @relation(fields: [senderId], references: [id])
+  body          String
+  isAiGenerated Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  jobId        String
+  job          Job      @relation(fields: [jobId], references: [id])
+  reviewerId   String
+  reviewer     User     @relation("ReviewsGiven",    fields: [reviewerId],  references: [id])
+  revieweeId   String
+  reviewee     User     @relation("ReviewsReceived", fields: [revieweeId],  references: [id])
+  rating       Int
+  title        String
+  body         String
+  reviewerRole Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([jobId, reviewerId])
 }

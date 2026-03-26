@@ -30,6 +30,7 @@ export interface JobPost {
   city: string;
   state: string;
   zipCode: string;
+  photos: string[];
   status: JobStatus;
   investorId: string;
   investor: { firstName: string; lastName: string };
@@ -38,6 +39,8 @@ export interface JobPost {
   updatedAt: string;
   /** Present on detail endpoint when caller is authenticated */
   hasBid?: boolean;
+  isCompleted?: boolean;
+  reviewsUnlocked?: boolean;
 }
 
 // ── Bid types ─────────────────────────────────────────────────────────────────
@@ -83,6 +86,7 @@ export interface CreateJobPayload {
   city: string;
   state: string;
   zipCode: string;
+  photos?: string[];
 }
 
 export interface JobListResult {
@@ -102,4 +106,16 @@ export interface JobListParams {
   maxBudget?: number;
   status?: JobStatus;
   search?: string;
+}
+
+// ── Message types ─────────────────────────────────────────────────────────────
+
+export interface Message {
+  id: string;
+  jobId: string;
+  senderId: string;
+  sender: { firstName: string; lastName: string; role: string };
+  body: string;
+  isAiGenerated: boolean;
+  createdAt: string;
 }

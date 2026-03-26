@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import {
   Zap, Droplets, Wind, Home as HomeIcon, Layers, Paintbrush,
   Trees, Hammer, Wrench, Building2, ChevronDown,
-  MapPin, Info, Lightbulb, DollarSign,
+  MapPin, Info, Lightbulb, DollarSign, ImagePlus, X,
 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { createJob } from '../services/job.service';
+import { classifyPreview } from '../services/ai.service';
+import { uploadJobPhoto } from '../services/storage.service';
+import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { useLang } from '../context/LanguageContext';
 import type { TradeType, CreateJobPayload } from '../types/job.types';
@@ -313,9 +316,37 @@ export function PostJobPage() {
   const navigate   = useNavigate();
   const { toast }  = useToast();
   const { t }      = useLang();
+  const { user }   = useAuth();
   const [form, setForm]     = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
+  const [aiHint, setAiHint] = useState<string | null>(null);
+  const classifyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (classifyTimer.current) clearTimeout(classifyTimer.current);
+    if (form.title.length >= 10 && form.description.length >= 50) {
+      classifyTimer.current = setTimeout(async () => {
+        try {
+          const { suggestedTradeType } = await classifyPreview(form.title, form.description);
+          if (suggestedTradeType && suggestedTradeType !== form.tradeType) {
+            setAiHint(suggestedTradeType);
+          } else {
+            setAiHint(null);
+          }
+        } catch {
+          // silently ignore classification errors
+        }
+      }, 1000);
+    } else {
+      setAiHint(null);
+    }
+    return () => {
+      if (classifyTimer.current) clearTimeout(classifyTimer.current);
+    };
+  }, [form.title, form.description, form.tradeType]);
 
   function validate(form: FormValues): FormErrors {
     const errs: FormErrors = {};
@@ -365,16 +396,25 @@ export function PostJobPage() {
       return;
     }
     setErrors({});
-    mutation.mutate({
-      title:       form.title,
-      description: form.description,
-      tradeType:   form.tradeType as TradeType,
-      budgetMin:   parseFloat(form.budgetMin),
-      budgetMax:   parseFloat(form.budgetMax),
-      city:        form.city.trim(),
-      state:       form.state,
-      zipCode:     form.zipCode.trim(),
-    });
+
+    const uploadAndSubmit = async () => {
+      let photos: string[] = [];
+      if (photoFiles.length > 0 && user) {
+        photos = await Promise.all(photoFiles.map((f) => uploadJobPhoto(f, user.id)));
+      }
+      mutation.mutate({
+        title:       form.title,
+        description: form.description,
+        tradeType:   form.tradeType as TradeType,
+        budgetMin:   parseFloat(form.budgetMin),
+        budgetMax:   parseFloat(form.budgetMax),
+        city:        form.city.trim(),
+        state:       form.state,
+        zipCode:     form.zipCode.trim(),
+        photos,
+      });
+    };
+    uploadAndSubmit().catch(() => toast('Failed to upload photos', 'error'));
   }
 
   const tradeMeta    = TRADE_OPTIONS.find((o) => o.value === form.tradeType);
@@ -446,7 +486,69 @@ export function PostJobPage() {
                   className={[styles.textarea, errors.description ? styles.inputError : ''].join(' ')}
                 />
                 {errors.description && <p className={styles.errorMsg}>{errors.description}</p>}
+                {aiHint && (
+                  <button
+                    type="button"
+                    className={styles.aiHintBadge}
+                    onClick={() => {
+                      set('tradeType')(aiHint);
+                      setAiHint(null);
+                    }}
+                  >
+                    ✦ AI suggests: {t.specialties[aiHint as keyof typeof t.specialties] ?? aiHint}
+                  </button>
+                )}
               </div>
+            </div>
+
+            {/* Section: Photos */}
+            <div className={styles.section}>
+              <p className={styles.sectionTitle}>Job Photos <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 11, color: 'var(--color-text-muted)' }}>(optional, up to 5)</span></p>
+
+              <div className={styles.photoGrid}>
+                {photoFiles.map((file, i) => {
+                  const src = URL.createObjectURL(file);
+                  return (
+                    <div key={i} className={styles.photoThumb}>
+                      <img src={src} alt={`Photo ${i + 1}`} className={styles.photoImg} />
+                      <button
+                        type="button"
+                        className={styles.photoRemove}
+                        onClick={() => setPhotoFiles((prev) => prev.filter((_, j) => j !== i))}
+                        aria-label="Remove photo"
+                      >
+                        <X size={12} strokeWidth={2.5} />
+                      </button>
+                    </div>
+                  );
+                })}
+                {photoFiles.length < 5 && (
+                  <button
+                    type="button"
+                    className={styles.photoAdd}
+                    onClick={() => photoInputRef.current?.click()}
+                  >
+                    <ImagePlus size={20} strokeWidth={1.5} color="var(--color-text-muted)" />
+                    <span>Add photo</span>
+                  </button>
+                )}
+              </div>
+
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  setPhotoFiles((prev) => {
+                    const combined = [...prev, ...files.filter((f) => f.size <= 5 * 1024 * 1024)];
+                    return combined.slice(0, 5);
+                  });
+                  e.target.value = '';
+                }}
+              />
             </div>
 
             {/* Section 2: Budget */}

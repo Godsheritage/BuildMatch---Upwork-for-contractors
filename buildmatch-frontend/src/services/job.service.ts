@@ -1,7 +1,7 @@
 import api from './api';
 import type {
   JobPost, CreateJobPayload, JobListResult, JobListParams,
-  Bid, BidWithContractor, CreateBidPayload,
+  Bid, BidWithContractor, CreateBidPayload, Message,
 } from '../types/job.types';
 
 interface ApiResponse<T> {
@@ -68,5 +68,17 @@ export async function acceptBid(jobId: string, bidId: string): Promise<Bid> {
 
 export async function withdrawBid(jobId: string, bidId: string): Promise<Bid> {
   const { data: res } = await api.put<ApiResponse<Bid>>(`/jobs/${jobId}/bids/${bidId}/withdraw`);
+  return res.data;
+}
+
+// ── Message service functions ──────────────────────────────────────────────────
+
+export async function getJobMessages(jobId: string): Promise<Message[]> {
+  const { data: res } = await api.get<ApiResponse<Message[]>>(`/jobs/${jobId}/messages`);
+  return res.data;
+}
+
+export async function sendJobMessage(jobId: string, body: string): Promise<Message> {
+  const { data: res } = await api.post<ApiResponse<Message>>(`/jobs/${jobId}/messages`, { body });
   return res.data;
 }

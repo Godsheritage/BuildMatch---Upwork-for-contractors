@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, MapPin, Star, Clock, ShieldCheck } from 'lucide-react';
+import { Check, MapPin, Star, Clock, ShieldCheck, Camera } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
 import { updateMyProfile } from '../services/contractor.service';
+import { uploadAvatar } from '../services/storage.service';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -69,6 +70,7 @@ interface FormData {
   state: string;
   zipCode: string;
   isAvailable: boolean;
+  avatarUrl: string;
 }
 
 const INITIAL: FormData = {
@@ -77,6 +79,7 @@ const INITIAL: FormData = {
   hourlyRateMin: '', hourlyRateMax: '',
   city: '', state: '', zipCode: '',
   isAvailable: true,
+  avatarUrl: '',
 };
 
 // ── Shared field styles ────────────────────────────────────────────────────
@@ -158,11 +161,16 @@ function StepIndicator({ current }: { current: number }) {
 // ── Step 1: Basic Info ─────────────────────────────────────────────────────
 
 function Step1({
-  data, onChange,
+  data, onChange, avatarFile, onAvatarFile,
 }: {
   data: FormData;
   onChange: (patch: Partial<FormData>) => void;
+  avatarFile: File | null;
+  onAvatarFile: (f: File | null) => void;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrl = avatarFile ? URL.createObjectURL(avatarFile) : data.avatarUrl || null;
+
   const toggleSpecialty = (val: string) => {
     const next = data.specialties.includes(val)
       ? data.specialties.filter((s) => s !== val)
@@ -172,6 +180,66 @@ function Step1({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Avatar upload */}
+      <div>
+        <label style={labelStyle}>Profile photo (optional)</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 4 }}>
+          <div
+            style={{
+              width: 72, height: 72, borderRadius: '50%', overflow: 'hidden',
+              border: '2px dashed #E0E0E0', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: '#F8F8F8', cursor: 'pointer', position: 'relative',
+            }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {previewUrl ? (
+              <img src={previewUrl} alt="Avatar preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <Camera size={22} color="#bbb" strokeWidth={1.5} />
+            )}
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                fontSize: 13, fontWeight: 500, color: '#111',
+                background: 'none', border: '1px solid #E0E0E0',
+                borderRadius: 8, padding: '7px 14px', cursor: 'pointer',
+              }}
+            >
+              {previewUrl ? 'Change photo' : 'Upload photo'}
+            </button>
+            {previewUrl && (
+              <button
+                type="button"
+                onClick={() => { onAvatarFile(null); onChange({ avatarUrl: '' }); }}
+                style={{
+                  fontSize: 12, color: '#999', background: 'none',
+                  border: 'none', cursor: 'pointer', marginLeft: 10,
+                  textDecoration: 'underline', textUnderlineOffset: 2,
+                }}
+              >
+                Remove
+              </button>
+            )}
+            <p style={{ fontSize: 11, color: '#aaa', marginTop: 5 }}>JPG or PNG, max 2 MB</p>
+          </div>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file && file.size <= 2 * 1024 * 1024) onAvatarFile(file);
+            e.target.value = '';
+          }}
+        />
+      </div>
+
       {/* Bio */}
       <div>
         <label style={labelStyle}>Bio</label>
@@ -574,6 +642,7 @@ export function ProfileSetupPage() {
 
   const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(INITIAL);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -638,6 +707,11 @@ export function ProfileSetupPage() {
       if (data.state)                payload.state           = data.state;
       if (data.zipCode)              payload.zipCode         = data.zipCode;
 
+      if (avatarFile) {
+        const url = await uploadAvatar(avatarFile, user.id);
+        payload.avatarUrl = url;
+      }
+
       await updateMyProfile(payload as never);
       navigate('/dashboard');
     } catch (err) {
@@ -681,7 +755,7 @@ export function ProfileSetupPage() {
 
           {/* Step content */}
           <div style={{ minHeight: 280 }}>
-            {step === 0 && <Step1 data={data} onChange={update} />}
+            {step === 0 && <Step1 data={data} onChange={update} avatarFile={avatarFile} onAvatarFile={setAvatarFile} />}
             {step === 1 && <Step2 data={data} onChange={update} />}
             {step === 2 && <Step3 data={data} onChange={update} errors={stepErrors} />}
             {step === 3 && (

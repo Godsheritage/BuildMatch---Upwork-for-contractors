@@ -1,7 +1,8 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, TradeType } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { AppError } from '../utils/app-error';
 import type { CreateJobInput, UpdateJobInput, CreateBidInput } from '../schemas/job.schemas';
+import { classifyJob } from './ai.service';
 
 // ── Selects ──────────────────────────────────────────────────────────────────
 
@@ -24,8 +25,17 @@ export interface ListJobsParams {
 // ── Job services ─────────────────────────────────────────────────────────────
 
 export async function createJob(investorId: string, input: CreateJobInput) {
+  // Run AI classification in background — never block job creation if it fails
+  let aiSuggestedTradeType: TradeType | undefined;
+  try {
+    const suggested = await classifyJob(input.title, input.description);
+    if (suggested !== input.tradeType) aiSuggestedTradeType = suggested;
+  } catch {
+    // Non-critical — continue without suggestion
+  }
+
   return prisma.job.create({
-    data:    { ...input, investorId, status: 'OPEN' },
+    data:    { ...input, investorId, status: 'OPEN', aiSuggestedTradeType },
     include: { investor: INVESTOR_SELECT },
   });
 }

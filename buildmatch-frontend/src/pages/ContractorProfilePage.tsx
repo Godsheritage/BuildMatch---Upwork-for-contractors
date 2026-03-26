@@ -1,10 +1,14 @@
+import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, CheckCircle2, Briefcase, Clock, Shield } from 'lucide-react';
+import { ArrowLeft, MapPin, CheckCircle2, Briefcase, Clock, Shield, ChevronDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getContractorById } from '../services/contractor.service';
+import { getContractorReviews } from '../services/review.service';
+import type { ReviewSort } from '../services/review.service';
 import { Button } from '../components/ui/Button';
 import { StarRating } from '../components/ui/StarRating';
 import type { ContractorProfile } from '../types/contractor.types';
+import type { Review, ReviewBreakdown } from '../types/review.types';
 import styles from './ContractorProfilePage.module.css';
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -246,6 +250,176 @@ function ProfileSidebar({ contractor }: { contractor: ContractorProfile }) {
   );
 }
 
+// ── Reviews section ────────────────────────────────────────────────────────
+
+const SORT_LABELS: Record<ReviewSort, string> = {
+  newest:  'Newest',
+  highest: 'Highest rated',
+  lowest:  'Lowest rated',
+};
+
+const TRADE_LABELS: Record<string, string> = {
+  GENERAL: 'General', ELECTRICAL: 'Electrical', PLUMBING: 'Plumbing',
+  HVAC: 'HVAC', ROOFING: 'Roofing', FLOORING: 'Flooring',
+  PAINTING: 'Painting', LANDSCAPING: 'Landscaping', DEMOLITION: 'Demolition',
+  OTHER: 'Other',
+};
+
+function ReviewCard({ review }: { review: Review }) {
+  const name = `${review.reviewer.firstName} ${review.reviewer.lastName}`;
+  const color = getAvatarColor(name);
+  const initials = getInitials(name);
+  const date = new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const trade = review.job?.tradeType ? (TRADE_LABELS[review.job.tradeType] ?? review.job.tradeType) : null;
+
+  return (
+    <div className={styles.reviewCard}>
+      <div className={styles.reviewHeader}>
+        <div className={styles.reviewerRow}>
+          <div
+            className={styles.reviewerAvatar}
+            style={{ background: color.bg, color: color.text }}
+          >
+            {initials}
+          </div>
+          <div>
+            <p className={styles.reviewerName}>{name}</p>
+            <p className={styles.reviewDate}>{date}</p>
+          </div>
+        </div>
+        <div className={styles.reviewMeta}>
+          <StarRating rating={review.rating} size={12} />
+          {trade && <span className={styles.tradeBadge}>{trade}</span>}
+        </div>
+      </div>
+      <p className={styles.reviewTitle}>{review.title}</p>
+      <p className={styles.reviewBody}>{review.body}</p>
+    </div>
+  );
+}
+
+function ReviewsSection({ contractorUserId, totalReviews }: { contractorUserId: string; totalReviews: number }) {
+  const [sort, setSort]       = useState<ReviewSort>('newest');
+  const [page, setPage]       = useState(1);
+  const [allReviews, setAllReviews] = useState<Review[]>([]);
+  const [sortOpen, setSortOpen]     = useState(false);
+
+  const { data, isFetching } = useQuery({
+    queryKey: ['contractors', contractorUserId, 'reviews', sort, page],
+    queryFn: () => getContractorReviews(contractorUserId, { sort, page, limit: 5 }),
+    staleTime: 60_000,
+    enabled: totalReviews > 0,
+  });
+
+  // Accumulate reviews across load-more pages; reset when sort changes
+  const [lastSort, setLastSort] = useState<ReviewSort>(sort);
+  if (sort !== lastSort) {
+    setAllReviews([]);
+    setLastSort(sort);
+  }
+  if (data && data.reviews.length > 0) {
+    const ids = new Set(allReviews.map((r) => r.id));
+    const fresh = data.reviews.filter((r) => !ids.has(r.id));
+    if (fresh.length > 0) setAllReviews((prev) => [...prev, ...fresh]);
+  }
+
+  const breakdown: ReviewBreakdown[] = data?.breakdown ?? [];
+  const maxCount = useMemo(() => Math.max(...breakdown.map((b) => b.count), 1), [breakdown]);
+  const avgRating = data ? (breakdown.reduce((s, b) => s + b.rating * b.count, 0) / (breakdown.reduce((s, b) => s + b.count, 0) || 1)) : 0;
+
+  const hasMore = data ? page < data.totalPages : false;
+
+  function handleSort(s: ReviewSort) {
+    setSort(s);
+    setPage(1);
+    setSortOpen(false);
+  }
+
+  if (totalReviews === 0) return null;
+
+  return (
+    <section className={styles.section}>
+      <h2 className={styles.sectionTitle}>Reviews</h2>
+
+      {/* Summary row */}
+      <div className={styles.reviewSummary}>
+        <div className={styles.reviewSummaryLeft}>
+          <span className={styles.reviewBigRating}>{avgRating.toFixed(1)}</span>
+          <div>
+            <StarRating rating={avgRating} size={16} />
+            <p className={styles.reviewCount}>Based on {totalReviews} review{totalReviews !== 1 ? 's' : ''}</p>
+          </div>
+        </div>
+
+        {/* Breakdown bars */}
+        <div className={styles.breakdownList}>
+          {[5, 4, 3, 2, 1].map((star) => {
+            const entry = breakdown.find((b) => b.rating === star);
+            const count = entry?.count ?? 0;
+            const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+            return (
+              <div key={star} className={styles.breakdownRow}>
+                <span className={styles.breakdownStar}>{star}</span>
+                <div className={styles.breakdownTrack}>
+                  <div className={styles.breakdownFill} style={{ width: `${pct}%` }} />
+                </div>
+                <span className={styles.breakdownCount}>{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Sort dropdown */}
+      <div className={styles.reviewToolbar}>
+        <div className={styles.sortWrap}>
+          <button
+            type="button"
+            className={styles.sortBtn}
+            onClick={() => setSortOpen((o) => !o)}
+          >
+            {SORT_LABELS[sort]}
+            <ChevronDown size={13} strokeWidth={2} />
+          </button>
+          {sortOpen && (
+            <div className={styles.sortMenu}>
+              {(Object.keys(SORT_LABELS) as ReviewSort[]).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`${styles.sortOption} ${s === sort ? styles.sortOptionActive : ''}`}
+                  onClick={() => handleSort(s)}
+                >
+                  {SORT_LABELS[s]}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Review cards */}
+      <div className={styles.reviewList}>
+        {allReviews.map((r) => <ReviewCard key={r.id} review={r} />)}
+      </div>
+
+      {/* Load more */}
+      {hasMore && (
+        <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center' }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={isFetching}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            {isFetching ? 'Loading…' : 'Load more reviews'}
+          </Button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 
 export function ContractorProfilePage() {
@@ -408,6 +582,12 @@ export function ContractorProfilePage() {
                 )}
               </div>
             </section>
+
+            {/* Reviews */}
+            <ReviewsSection
+              contractorUserId={contractor.userId}
+              totalReviews={contractor.totalReviews}
+            />
 
           </div>
         </div>

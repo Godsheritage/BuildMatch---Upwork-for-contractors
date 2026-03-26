@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Calendar, DollarSign, Briefcase,
-  Users, AlertTriangle, CheckCircle2,
+  Users, AlertTriangle, CheckCircle2, Star,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
@@ -10,10 +10,13 @@ import { useToast } from '../context/ToastContext';
 import {
   getJobById, getJobBids, getMyBid,
   createBid, acceptBid, withdrawBid, cancelJob,
+  getJobMessages, sendJobMessage,
 } from '../services/job.service';
+import { polishReply, summarizeThread } from '../services/ai.service';
+import { ReviewModal } from '../components/review/ReviewModal';
 import { StarRating } from '../components/ui/StarRating';
 import { Button } from '../components/ui/Button';
-import type { BidWithContractor, JobPost } from '../types/job.types';
+import type { BidWithContractor, JobPost, Message } from '../types/job.types';
 import styles from './JobDetailPage.module.css';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -429,6 +432,243 @@ function GuestCard() {
   );
 }
 
+// ── Messages section ───────────────────────────────────────────────────────────
+
+function MessagesSection({
+  jobId,
+  userId,
+  userRole,
+}: {
+  jobId:    string;
+  userId:   string;
+  userRole: string;
+}) {
+  const { toast } = useToast();
+  const qc        = useQueryClient();
+  const listRef   = useRef<HTMLDivElement>(null);
+
+  const [draft,       setDraft]       = useState('');
+  const [polished,    setPolished]    = useState<string | null>(null);
+  const [showPolish,  setShowPolish]  = useState(false);
+  const [isPolishing, setIsPolishing] = useState(false);
+
+  const [summaryOpen,   setSummaryOpen]   = useState(false);
+  const [summary,       setSummary]       = useState<{ text: string; count: number } | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+
+  const { data: messages = [], isLoading } = useQuery({
+    queryKey: ['jobs', jobId, 'messages'],
+    queryFn:  () => getJobMessages(jobId),
+    staleTime: 10_000,
+    refetchInterval: 20_000,
+  });
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
+  }, [messages.length]);
+
+  const sendMutation = useMutation({
+    mutationFn: (body: string) => sendJobMessage(jobId, body),
+    onSuccess: () => {
+      setDraft('');
+      setPolished(null);
+      setShowPolish(false);
+      qc.invalidateQueries({ queryKey: ['jobs', jobId, 'messages'] });
+    },
+    onError: (err: Error) => toast(err.message || 'Failed to send message', 'error'),
+  });
+
+  async function handlePolish() {
+    const text = draft.trim();
+    if (!text) return;
+    setIsPolishing(true);
+    try {
+      const result = await polishReply(text, userRole === 'INVESTOR' ? 'investor' : 'contractor');
+      setPolished(result.polished);
+      setShowPolish(true);
+    } catch {
+      toast('AI polish unavailable', 'error');
+    } finally {
+      setIsPolishing(false);
+    }
+  }
+
+  async function handleSummarize() {
+    setIsSummarizing(true);
+    try {
+      const result = await summarizeThread(jobId);
+      setSummary({ text: result.summary, count: result.messageCount });
+      setSummaryOpen(true);
+    } catch {
+      toast('Summarization unavailable', 'error');
+    } finally {
+      setIsSummarizing(false);
+    }
+  }
+
+  function handleSend() {
+    const text = (showPolish && polished ? polished : draft).trim();
+    if (!text || sendMutation.isPending) return;
+    sendMutation.mutate(text);
+  }
+
+  const context: 'investor' | 'contractor' = userRole === 'INVESTOR' ? 'investor' : 'contractor';
+  void context; // used above in handlePolish
+
+  return (
+    <section className={styles.section}>
+
+      {/* Header row */}
+      <div className={styles.msgSectionHeader}>
+        <h2 className={styles.sectionTitle} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>
+          Messages
+        </h2>
+        {messages.length >= 5 && (
+          <button
+            type="button"
+            className={styles.summarizeBtn}
+            onClick={handleSummarize}
+            disabled={isSummarizing}
+          >
+            {isSummarizing ? '…' : '✦ Summarize thread'}
+          </button>
+        )}
+      </div>
+
+      {/* Summary card */}
+      {summaryOpen && summary && (
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryHeader}>
+            <span className={styles.summaryTitle}>✦ Thread Summary</span>
+            <span className={styles.summaryMeta}>Based on {summary.count} messages</span>
+            <button type="button" className={styles.summaryClose} onClick={() => setSummaryOpen(false)}>
+              ×
+            </button>
+          </div>
+          <div className={styles.summaryBody}>
+            {summary.text.split('\n').filter(Boolean).map((line, i) => (
+              <p key={i} className={styles.summaryLine}>{line}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Message list */}
+      <div className={styles.msgList} ref={listRef}>
+        {isLoading ? (
+          <div className={styles.skeleton} style={{ height: 48, borderRadius: 8, margin: '8px 0' }} />
+        ) : messages.length === 0 ? (
+          <p className={styles.msgEmpty}>No messages yet. Start the conversation below.</p>
+        ) : (
+          messages.map((msg: Message) => {
+            const isOwn = msg.senderId === userId;
+            const name  = `${msg.sender.firstName} ${msg.sender.lastName}`;
+            return (
+              <div key={msg.id} className={`${styles.msgRow} ${isOwn ? styles.msgRowOwn : styles.msgRowOther}`}>
+                {!isOwn && (
+                  <div className={styles.msgAvatar}>{getInitials(name)}</div>
+                )}
+                <div className={styles.msgBubbleWrap}>
+                  {!isOwn && <span className={styles.msgSenderName}>{name}</span>}
+                  <div className={`${styles.msgBubble} ${isOwn ? styles.msgBubbleOwn : styles.msgBubbleOther}`}>
+                    {msg.isAiGenerated && (
+                      <span className={styles.msgAiBadge}>✦ AI</span>
+                    )}
+                    <p className={styles.msgText}>{msg.body}</p>
+                  </div>
+                  <span className={`${styles.msgTime} ${isOwn ? styles.msgTimeOwn : ''}`}>
+                    {timeAgo(msg.createdAt)}
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Polish diff card */}
+      {showPolish && polished && (
+        <div className={styles.polishCard}>
+          <div className={styles.polishCardHeader}>
+            <span className={styles.polishCardTitle}>✦ AI Polish Suggestion</span>
+            <button
+              type="button"
+              className={styles.polishCardClose}
+              onClick={() => { setShowPolish(false); setPolished(null); }}
+            >
+              ×
+            </button>
+          </div>
+          <div className={styles.polishCardBody}>
+            <div className={styles.polishCol}>
+              <span className={styles.polishColLabel}>Original</span>
+              <p className={styles.polishColText}>{draft}</p>
+            </div>
+            <div className={styles.polishDivider} />
+            <div className={styles.polishCol}>
+              <span className={styles.polishColLabel}>Polished</span>
+              <p className={styles.polishColText}>{polished}</p>
+            </div>
+          </div>
+          <div className={styles.polishCardActions}>
+            <button
+              type="button"
+              className={styles.polishUseBtn}
+              onClick={() => { setDraft(polished); setShowPolish(false); setPolished(null); }}
+            >
+              Use polished version
+            </button>
+            <button
+              type="button"
+              className={styles.polishKeepBtn}
+              onClick={() => { setShowPolish(false); setPolished(null); }}
+            >
+              Keep original
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Input area */}
+      <div className={styles.msgInputWrap}>
+        <textarea
+          className={styles.msgTextarea}
+          rows={3}
+          placeholder="Type a message… (Cmd+Enter to send)"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          maxLength={2000}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend();
+          }}
+        />
+        <div className={styles.msgInputActions}>
+          <button
+            type="button"
+            className={styles.polishReplyBtn}
+            onClick={handlePolish}
+            disabled={!draft.trim() || isPolishing}
+          >
+            {isPolishing ? '…' : '✦ Polish Reply'}
+          </button>
+          <button
+            type="button"
+            className={styles.msgSendBtn}
+            onClick={handleSend}
+            disabled={(!draft.trim() && !(showPolish && polished)) || sendMutation.isPending}
+          >
+            {sendMutation.isPending ? 'Sending…' : 'Send'}
+          </button>
+        </div>
+      </div>
+
+    </section>
+  );
+}
+
 // ── Bids list (investor only) ──────────────────────────────────────────────────
 
 function BidsList({ jobId }: { jobId: string }) {
@@ -540,6 +780,7 @@ export function JobDetailPage() {
   const { id }        = useParams<{ id: string }>();
   const { user }      = useAuth();
   const bidsRef       = useRef<HTMLElement | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   const { data: job, isLoading, isError } = useQuery({
     queryKey: ['jobs', id],
@@ -551,6 +792,20 @@ export function JobDetailPage() {
   const isContractor   = user?.role === 'CONTRACTOR';
   const isInvestor     = user?.role === 'INVESTOR';
   const isOwner        = isInvestor && job?.investorId === user?.id;
+
+  // Fetch bids when investor owns job (for accepted contractor name in review modal)
+  const { data: bids } = useQuery({
+    queryKey: ['jobs', id, 'bids'],
+    queryFn:  () => getJobBids(id!),
+    enabled:  !!id && isOwner,
+    staleTime: 30_000,
+  });
+
+  const acceptedBid    = bids?.find((b) => b.status === 'ACCEPTED');
+  const contractorName = acceptedBid?.contractor
+    ? `${acceptedBid.contractor.user.firstName} ${acceptedBid.contractor.user.lastName}`
+    : 'the contractor';
+  const investorName   = job ? `${job.investor.firstName} ${job.investor.lastName}` : '';
 
   // Sidebar state machine
   let sidebarVariant: 'bid-form' | 'my-bid' | 'investor' | 'guest';
@@ -693,6 +948,54 @@ export function JobDetailPage() {
               </div>
             </section>
 
+            {/* Complete job callout (investor, IN_PROGRESS, not yet completed) */}
+            {isOwner && job.status === 'IN_PROGRESS' && !job.isCompleted && (
+              <section className={styles.section}>
+                <div className={styles.completeCallout}>
+                  <div className={styles.completeCalloutIcon}>
+                    <CheckCircle2 size={20} color="#16A34A" strokeWidth={2} />
+                  </div>
+                  <div className={styles.completeCalloutBody}>
+                    <p className={styles.completeCalloutTitle}>All milestones complete — ready to close this job</p>
+                    <p className={styles.completeCalloutDesc}>
+                      Mark the job as complete to release final payments and leave a review for the contractor.
+                    </p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setReviewModalOpen(true)}
+                  >
+                    Mark as Complete &amp; Leave a Review
+                  </Button>
+                </div>
+              </section>
+            )}
+
+            {/* Contractor review banner (job complete, reviews unlocked) */}
+            {isContractor && job.reviewsUnlocked && (
+              <section className={styles.section}>
+                <div className={styles.reviewBanner}>
+                  <Star size={16} strokeWidth={1.75} color="#F59E0B" fill="#F59E0B" />
+                  <div className={styles.reviewBannerBody}>
+                    <p className={styles.reviewBannerTitle}>
+                      Leave a review for {investorName} to complete the job
+                    </p>
+                    <p className={styles.reviewBannerDesc}>
+                      Share your experience working with this client.
+                    </p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setReviewModalOpen(true)}
+                  >
+                    Leave a Review
+                  </Button>
+                </div>
+              </section>
+            )}
+
             {/* Bids (investor/owner only) */}
             {isOwner && (
               <section
@@ -702,6 +1005,15 @@ export function JobDetailPage() {
                 <h2 className={styles.sectionTitle}>Bids</h2>
                 <BidsList jobId={job.id} />
               </section>
+            )}
+
+            {/* Messages (investor who owns job, or contractor with a bid) */}
+            {user && (isOwner || (isContractor && job.hasBid)) && (
+              <MessagesSection
+                jobId={job.id}
+                userId={user.id}
+                userRole={user.role}
+              />
             )}
 
           </div>
@@ -729,6 +1041,19 @@ export function JobDetailPage() {
           </aside>
 
         </div>
+      )}
+
+      {/* Review modal */}
+      {job && (
+        <ReviewModal
+          open={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          jobId={job.id}
+          revieweeName={isOwner ? contractorName : investorName}
+          reviewerRole={isOwner ? 'INVESTOR' : 'CONTRACTOR'}
+          alreadyCompleted={!!job.isCompleted}
+          onSuccess={() => setReviewModalOpen(false)}
+        />
       )}
     </div>
   );

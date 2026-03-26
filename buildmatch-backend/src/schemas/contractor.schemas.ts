@@ -13,6 +13,7 @@ export const updateContractorProfileSchema = z
     state: z.string().length(2).toUpperCase().optional(),
     zipCode: z.string().max(10).optional(),
     isAvailable: z.boolean().optional(),
+    avatarUrl: z.string().min(1).optional(),
     // ISO-8601 string → coerced to Date; null clears the stored value
     insuranceExpiry: z
       .union([
