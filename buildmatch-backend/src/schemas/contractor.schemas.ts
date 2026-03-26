@@ -1,12 +1,34 @@
 import { z } from 'zod';
 
-export const contractorProfileSchema = z.object({
-  bio: z.string().min(10).max(1000),
-  specialty: z.array(z.string()).min(1),
-  hourlyRateMin: z.number().positive(),
-  hourlyRateMax: z.number().positive(),
-  yearsExperience: z.number().int().nonnegative(),
-  location: z.string().min(2),
-});
+export const updateContractorProfileSchema = z
+  .object({
+    bio: z.string().max(2000).optional(),
+    yearsExperience: z.number().int().min(0).max(60).optional(),
+    specialties: z.array(z.string().min(1).max(100)).max(20).optional(),
+    licenseNumber: z.string().max(100).optional(),
+    licenseState: z.string().length(2).toUpperCase().optional(),
+    hourlyRateMin: z.number().min(0).optional(),
+    hourlyRateMax: z.number().min(0).optional(),
+    city: z.string().max(100).optional(),
+    state: z.string().length(2).toUpperCase().optional(),
+    zipCode: z.string().max(10).optional(),
+    isAvailable: z.boolean().optional(),
+    // ISO-8601 string → coerced to Date; null clears the stored value
+    insuranceExpiry: z
+      .union([
+        z.string().datetime({ offset: true }).transform((v) => new Date(v)),
+        z.null(),
+      ])
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.hourlyRateMin !== undefined && data.hourlyRateMax !== undefined) {
+        return data.hourlyRateMin <= data.hourlyRateMax;
+      }
+      return true;
+    },
+    { message: 'hourlyRateMin must be ≤ hourlyRateMax', path: ['hourlyRateMin'] },
+  );
 
-export type ContractorProfileInput = z.infer<typeof contractorProfileSchema>;
+export type UpdateContractorProfileInput = z.infer<typeof updateContractorProfileSchema>;

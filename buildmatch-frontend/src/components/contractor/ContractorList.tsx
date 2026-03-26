@@ -1,8 +1,8 @@
-import type { Contractor } from '../../types/contractor.types';
+import type { ContractorProfile } from '../../types/contractor.types';
 import { ContractorCard } from './ContractorCard';
 
 interface ContractorListProps {
-  contractors: Contractor[];
+  contractors: ContractorProfile[];
 }
 
 export function ContractorList({ contractors }: ContractorListProps) {

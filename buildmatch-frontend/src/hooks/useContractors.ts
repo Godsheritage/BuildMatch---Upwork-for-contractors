@@ -4,7 +4,7 @@ import { getContractors, getContractorById } from '../services/contractor.servic
 export function useContractors() {
   return useQuery({
     queryKey: ['contractors'],
-    queryFn: getContractors,
+    queryFn: () => getContractors(),
   });
 }
 

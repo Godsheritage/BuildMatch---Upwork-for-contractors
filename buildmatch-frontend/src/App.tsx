@@ -12,6 +12,7 @@ import { ContractorProfilePage } from './pages/ContractorProfilePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { PostJobPage } from './pages/PostJobPage';
 import { JobDetailPage } from './pages/JobDetailPage';
+import { ProfileSetupPage } from './pages/ProfileSetupPage';
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,14 @@ export default function App() {
             >
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/post-job" element={<PostJobPage />} />
+              <Route
+                path="/dashboard/profile/setup"
+                element={
+                  <ProtectedRoute roles={['CONTRACTOR']}>
+                    <ProfileSetupPage />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
           </Routes>
         </BrowserRouter>

@@ -1,0 +1,176 @@
+/* ── Outer page ──────────────────────────────────────── */
+.page {
+  min-height: 100vh;
+  background: var(--color-surface);
+}
+
+/* ── Navbar ──────────────────────────────────────────── */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 32px;
+}
+
+.navWordmark {
+  font-size: 16px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  letter-spacing: var(--tracking-tight);
+  text-decoration: none;
+}
+
+.navBack {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: var(--font-weight-medium);
+  transition: color 0.15s;
+}
+.navBack:hover { color: var(--color-text-primary); }
+
+/* ── Two-column wrapper ──────────────────────────────── */
+.wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 36px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 32px;
+}
+
+/* ── Left sidebar ────────────────────────────────────── */
+.sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+  align-self: flex-start;
+}
+
+.sidebarCard {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Stats row ───────────────────────────────────────── */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.statCell {
+  padding: 12px 10px;
+  text-align: center;
+  border-right: 1px solid var(--color-border);
+}
+
+.statCell:last-child { border-right: none; }
+
+.statValue {
+  font-size: 18px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+/* ── Right content ───────────────────────────────────── */
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.section {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 28px 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.section:last-child { margin-bottom: 0; }
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ── Specialty pills ─────────────────────────────────── */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+/* ── Skeleton ────────────────────────────────────────── */
+.skeleton {
+  background: #EFEFED;
+  border-radius: 4px;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .wrap {
+    flex-direction: column;
+    padding: 16px;
+    gap: 20px;
+  }
+
+  .sidebar {
+    width: 100%;
+    position: static;
+  }
+
+  .nav { padding: 0 16px; }
+}
