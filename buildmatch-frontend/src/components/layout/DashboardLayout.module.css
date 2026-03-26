@@ -92,12 +92,35 @@
 
 /* ── Sidebar footer ──────────────────────────────────── */
 .sidebarFooter {
-  padding: 14px 16px;
+  padding: 10px 14px;
   border-top: 1px solid #EBEBEB;
   display: flex;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+  width: 100%;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: background 0.15s;
+}
+
+.sidebarFooter:hover {
+  background: var(--color-surface);
+}
+
+.footerChevron {
+  color: var(--color-text-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.footerChevronOpen {
+  transform: rotate(180deg);
 }
 
 .userInfo {
@@ -355,6 +378,10 @@
 
 :global([data-theme="dark"]) .sidebarFooter {
   border-top-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .sidebarFooter:hover {
+  background: #1E2130;
 }
 
 :global([data-theme="dark"]) .userName {

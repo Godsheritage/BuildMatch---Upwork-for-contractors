@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
-import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   Home, Search, Briefcase, PlusCircle,
-  User, FileText, Menu, X, LogOut, Moon, Sun,
-  HelpCircle, Bell, Settings,
+  User, FileText, Menu, X, Moon, Sun,
+  HelpCircle, Bell, Settings, ChevronUp,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
@@ -12,16 +12,17 @@ import type { Lang } from '../../i18n/translations';
 import { Avatar } from '../ui/Avatar';
 import { HelpDrawer } from './HelpDrawer';
 import { NotificationsPopup, useNotificationCount } from './NotificationsPopup';
+import { ProfilePopup } from './ProfilePopup';
 import styles from './DashboardLayout.module.css';
 
 export function DashboardLayout() {
-  const { user, logout }          = useAuth();
+  const { user }                       = useAuth();
   const { theme, toggle: toggleTheme } = useTheme();
-  const { lang, setLang, t }      = useLang();
-  const navigate                  = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [helpOpen, setHelpOpen]       = useState(false);
-  const [notifOpen, setNotifOpen]     = useState(false);
+  const { lang, setLang, t }           = useLang();
+  const [sidebarOpen, setSidebarOpen]   = useState(false);
+  const [helpOpen, setHelpOpen]         = useState(false);
+  const [notifOpen, setNotifOpen]       = useState(false);
+  const [profileOpen, setProfileOpen]   = useState(false);
   const notifBtnRef = useRef<HTMLButtonElement>(null);
   const unreadCount = useNotificationCount();
 
@@ -41,7 +42,6 @@ export function DashboardLayout() {
 
   const navItems = user?.role === 'CONTRACTOR' ? contractorNav : investorNav;
 
-  const handleLogout = () => { logout(); navigate('/login'); };
   const closeSidebar = () => setSidebarOpen(false);
 
   const pillLeft = lang === 'en' ? '3px' : 'calc(50% + 1px)';
@@ -137,25 +137,23 @@ export function DashboardLayout() {
         </button>
 
         {user && (
-          <div className={styles.sidebarFooter}>
-            <Link to="/dashboard/profile" onClick={closeSidebar} style={{ lineHeight: 0, flexShrink: 0 }}>
-              <Avatar name={`${user.firstName} ${user.lastName}`} size="sm" />
-            </Link>
-            <Link to="/dashboard/profile" onClick={closeSidebar} className={styles.userInfo} style={{ textDecoration: 'none' }}>
+          <button
+            className={styles.sidebarFooter}
+            onClick={() => setProfileOpen((v) => !v)}
+            aria-label="Open profile menu"
+          >
+            <Avatar name={`${user.firstName} ${user.lastName}`} size="sm" />
+            <div className={styles.userInfo}>
               <p className={styles.userName}>{user.firstName} {user.lastName}</p>
               <p className={styles.userRole}>{user.role.charAt(0) + user.role.slice(1).toLowerCase()}</p>
-            </Link>
-            <button
-              className={styles.logoutBtn}
-              onClick={handleLogout}
-              aria-label={t.nav.signOut}
-              title={t.nav.signOut}
-            >
-              <LogOut size={16} strokeWidth={2} />
-            </button>
-          </div>
+            </div>
+            <ChevronUp size={14} strokeWidth={2} className={`${styles.footerChevron} ${profileOpen ? styles.footerChevronOpen : ''}`} />
+          </button>
         )}
       </aside>
+
+      {/* Profile popup */}
+      <ProfilePopup open={profileOpen} onClose={() => setProfileOpen(false)} />
 
       {/* Help drawer */}
       <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />

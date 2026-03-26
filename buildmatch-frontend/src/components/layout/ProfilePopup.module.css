@@ -1,0 +1,197 @@
+/* ── Popup shell ─────────────────────────────────── */
+.popup {
+  position: fixed;
+  bottom: 72px;
+  left: 8px;
+  width: 226px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.13), 0 2px 8px rgba(0, 0, 0, 0.07);
+  z-index: 200;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 14px 12px;
+}
+
+.headerInfo {
+  min-width: 0;
+  flex: 1;
+}
+
+.headerName {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 0 2px;
+  letter-spacing: -0.01em;
+}
+
+.headerRole {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ── Online row ──────────────────────────────────── */
+.onlineRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 10px;
+}
+
+.onlineLabel {
+  flex: 1;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+/* ── Toggle switch ───────────────────────────────── */
+.toggle {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--color-border);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.toggleOn {
+  background: #0F6E56;
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(16px);
+}
+
+/* ── Divider ─────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 2px 0;
+}
+
+/* ── Group ───────────────────────────────────────── */
+.group {
+  padding: 4px 0;
+}
+
+/* ── Item button ─────────────────────────────────── */
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+  border-radius: 0;
+}
+
+.item:hover {
+  background: var(--color-surface);
+}
+
+/* ── Theme row ───────────────────────────────────── */
+.themeRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.themeRow:hover {
+  background: var(--color-surface);
+}
+
+.themeLabel {
+  flex: 1;
+}
+
+.themeChevron {
+  color: var(--color-text-muted);
+  transition: transform 0.15s;
+}
+
+/* ── Logout row ──────────────────────────────────── */
+.logoutRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px 12px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.logoutRow:hover {
+  background: #FEF2F2;
+  color: var(--color-danger);
+}
+
+/* ── Dark mode ───────────────────────────────────── */
+:global([data-theme="dark"]) .popup {
+  background: #16181F;
+  border-color: #2E3241;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+}
+
+:global([data-theme="dark"]) .divider {
+  background: #2E3241;
+}
+
+:global([data-theme="dark"]) .item:hover,
+:global([data-theme="dark"]) .themeRow:hover {
+  background: #1E2130;
+}
+
+:global([data-theme="dark"]) .logoutRow:hover {
+  background: rgba(220, 38, 38, 0.1);
+}
