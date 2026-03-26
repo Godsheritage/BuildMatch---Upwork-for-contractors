@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAll = getAll;
 exports.getById = getById;
+exports.getMyProfile = getMyProfile;
 exports.updateMyProfile = updateMyProfile;
 const contractorService = __importStar(require("../services/contractor.service"));
 const response_utils_1 = require("../utils/response.utils");
@@ -84,6 +85,15 @@ async function getById(req, res) {
     try {
         const contractor = await contractorService.getContractorById(req.params.id);
         (0, response_utils_1.sendSuccess)(res, contractor);
+    }
+    catch (err) {
+        handleError(res, err);
+    }
+}
+async function getMyProfile(req, res) {
+    try {
+        const profile = await contractorService.getMyProfile(req.user.userId);
+        (0, response_utils_1.sendSuccess)(res, profile);
     }
     catch (err) {
         handleError(res, err);

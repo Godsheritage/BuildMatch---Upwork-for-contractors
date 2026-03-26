@@ -20,6 +20,10 @@ import { JobDetailPage } from './pages/JobDetailPage';
 import { ProfileSetupPage } from './pages/ProfileSetupPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { TermsPage } from './pages/TermsPage';
+import { PaymentsPage } from './pages/PaymentsPage';
+import { OnboardCompletePage } from './pages/OnboardCompletePage';
+import { OnboardRefreshPage } from './pages/OnboardRefreshPage';
+import { FundJobPage } from './pages/FundJobPage';
 
 const queryClient = new QueryClient();
 
@@ -74,6 +78,38 @@ export default function App() {
                   element={
                     <ProtectedRoute roles={['CONTRACTOR']}>
                       <ProfileSetupPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/payments"
+                  element={
+                    <ProtectedRoute roles={['CONTRACTOR']}>
+                      <PaymentsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/payments/onboard/complete"
+                  element={
+                    <ProtectedRoute roles={['CONTRACTOR']}>
+                      <OnboardCompletePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/payments/onboard/refresh"
+                  element={
+                    <ProtectedRoute roles={['CONTRACTOR']}>
+                      <OnboardRefreshPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/jobs/:jobId/fund"
+                  element={
+                    <ProtectedRoute roles={['INVESTOR']}>
+                      <FundJobPage />
                     </ProtectedRoute>
                   }
                 />

@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import {
   Home, Search, Briefcase, PlusCircle,
   User, FileText, Menu, X, LogOut, Moon, Sun,
+  HelpCircle, Bell, Settings,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
 import { useLang } from '../../context/LanguageContext';
 import type { Lang } from '../../i18n/translations';
 import { Avatar } from '../ui/Avatar';
+import { HelpDrawer } from './HelpDrawer';
+import { NotificationsPopup, useNotificationCount } from './NotificationsPopup';
 import styles from './DashboardLayout.module.css';
 
 export function DashboardLayout() {
@@ -17,6 +20,10 @@ export function DashboardLayout() {
   const { lang, setLang, t }      = useLang();
   const navigate                  = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [helpOpen, setHelpOpen]       = useState(false);
+  const [notifOpen, setNotifOpen]     = useState(false);
+  const notifBtnRef = useRef<HTMLButtonElement>(null);
+  const unreadCount = useNotificationCount();
 
   const investorNav = [
     { to: '/dashboard',          icon: Home,       label: t.nav.dashboard       },
@@ -79,6 +86,34 @@ export function DashboardLayout() {
           ))}
         </nav>
 
+        {/* Utility icons */}
+        <div className={styles.utilityRow}>
+          <button
+            className={styles.utilityBtn}
+            onClick={() => setHelpOpen(true)}
+            aria-label="Help"
+            title="Help"
+          >
+            <HelpCircle size={17} strokeWidth={1.75} />
+          </button>
+          <button
+            ref={notifBtnRef}
+            className={styles.utilityBtn}
+            onClick={() => setNotifOpen((v) => !v)}
+            aria-label="Notifications"
+            title="Notifications"
+            style={{ position: 'relative' }}
+          >
+            <Bell size={17} strokeWidth={1.75} />
+            {unreadCount > 0 && (
+              <span className={styles.notifBadge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
+            )}
+          </button>
+          <Link to="/dashboard/profile" onClick={closeSidebar} className={styles.utilityBtn} aria-label="Settings" title="Settings">
+            <Settings size={17} strokeWidth={1.75} />
+          </Link>
+        </div>
+
         {/* Language slider */}
         <div className={styles.langSection}>
           <p className={styles.langLabel}>{t.sidebar.language}</p>
@@ -121,6 +156,17 @@ export function DashboardLayout() {
           </div>
         )}
       </aside>
+
+      {/* Help drawer */}
+      <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      {/* Notifications popup */}
+      <NotificationsPopup
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        anchorRef={notifBtnRef}
+        unreadCount={unreadCount}
+      />
 
       {/* Main content */}
       <main className={styles.main}>

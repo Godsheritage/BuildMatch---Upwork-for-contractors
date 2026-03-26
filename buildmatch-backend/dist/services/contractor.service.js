@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.listContractors = listContractors;
 exports.getContractorById = getContractorById;
+exports.getMyProfile = getMyProfile;
 exports.updateMyProfile = updateMyProfile;
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const app_error_1 = require("../utils/app-error");
@@ -92,6 +93,15 @@ async function getContractorById(id) {
     });
     if (!contractor)
         throw new app_error_1.AppError('Contractor not found', 404);
+    return contractor;
+}
+async function getMyProfile(userId) {
+    const contractor = await prisma_1.default.contractorProfile.findUnique({
+        where: { userId },
+        select: DETAIL_SELECT,
+    });
+    if (!contractor)
+        throw new app_error_1.AppError('Contractor profile not found', 404);
     return contractor;
 }
 async function updateMyProfile(userId, input) {

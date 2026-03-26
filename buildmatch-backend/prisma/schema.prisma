@@ -31,6 +31,26 @@ enum BidStatus {
   WITHDRAWN
 }
 
+enum PaymentStatus {
+  PENDING
+  FUNDED
+  IN_PROGRESS
+  RELEASED
+  FULLY_RELEASED
+  DISPUTED
+  REFUNDED
+  CANCELLED
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  APPROVED
+  DISPUTED
+  RELEASED
+}
+
 enum TradeType {
   GENERAL
   ELECTRICAL
@@ -59,8 +79,9 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  contractor  ContractorProfile?
-  postedJobs  Job[]     @relation("InvestorJobs")
+  contractor      ContractorProfile?
+  postedJobs      Job[]                    @relation("InvestorJobs")
+  stripeAccount   ContractorStripeAccount?
 }
 
 model ContractorProfile {
@@ -101,9 +122,10 @@ model Job {
   status      JobStatus @default(OPEN)
   investorId  String
   investor    User      @relation("InvestorJobs", fields: [investorId], references: [id])
-  bids        Bid[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  bids          Bid[]
+  escrowPayment EscrowPayment?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Bid {
@@ -116,4 +138,48 @@ model Bid {
   status       BidStatus @default(PENDING)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model EscrowPayment {
+  id                     String        @id @default(cuid())
+  jobId                  String        @unique
+  job                    Job           @relation(fields: [jobId], references: [id])
+  investorId             String
+  contractorId           String
+  totalAmount            Float
+  platformFeeAmount      Float
+  stripePaymentIntentId  String?       @unique
+  status                 PaymentStatus @default(PENDING)
+  milestones             Milestone[]
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+}
+
+model ContractorStripeAccount {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+  stripeAccountId   String   @unique
+  chargesEnabled    Boolean  @default(false)
+  payoutsEnabled    Boolean  @default(false)
+  detailsSubmitted  Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Milestone {
+  id              String          @id @default(cuid())
+  escrowPaymentId String
+  escrowPayment   EscrowPayment   @relation(fields: [escrowPaymentId], references: [id])
+  title           String
+  description     String?
+  percentage      Float
+  amount          Float
+  order           Int
+  status          MilestoneStatus @default(PENDING)
+  stripeTransferId String?
+  disputeReason    String?
+  completionNotes  String?
+  approvedAt       DateTime?
+  releasedAt       DateTime?
 }

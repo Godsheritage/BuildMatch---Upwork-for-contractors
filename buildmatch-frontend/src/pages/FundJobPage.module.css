@@ -1,0 +1,551 @@
+/* ── Page ────────────────────────────────────────── */
+.page {
+  padding: 32px 24px 64px;
+  min-height: 100%;
+  background: var(--color-surface);
+}
+
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* ── Back link ───────────────────────────────────── */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  margin-bottom: 20px;
+  transition: color 0.15s;
+}
+
+.backLink:hover { color: var(--color-text-primary); }
+
+/* ── Page header ─────────────────────────────────── */
+.pageHeader { margin-bottom: 24px; }
+
+.heading {
+  font-size: 22px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+.subheading {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+/* ── Step indicator ──────────────────────────────── */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 24px;
+}
+
+.stepDotWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.stepDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.stepDotActive {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.stepDotDone {
+  background: #0F6E56;
+  color: #fff;
+}
+
+.stepLabel {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.stepLabelActive { color: var(--color-text-primary); }
+
+.stepLine {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+  margin: 0 8px;
+  margin-bottom: 20px;
+}
+
+/* ── Summary card ────────────────────────────────── */
+.summaryCard {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+.summaryRow {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.summaryLabel {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-muted);
+}
+
+.summaryValue {
+  font-size: 13.5px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summaryAmount {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ── Card ────────────────────────────────────────── */
+.card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.cardBody { padding: 20px; }
+
+.cardFooter {
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.footerHint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ── Auto-suggest button ─────────────────────────── */
+.autoBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid #C4C9FF;
+  background: #F5F6FF;
+  color: #4B5CF0;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.autoBtn:hover { background: #EAECFF; border-color: #7C86F0; }
+
+/* ── Milestone list ──────────────────────────────── */
+.milestoneList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.milestoneRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.milestoneOrder {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.milestoneFields { flex: 1; min-width: 0; }
+
+.milestoneTitle {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  outline: none;
+  margin-bottom: 8px;
+  transition: border-color 0.15s;
+}
+
+.milestoneTitle:focus { border-color: var(--color-primary); }
+.milestoneTitle::placeholder { color: var(--color-text-muted); }
+
+.milestoneBottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.milestoneDesc {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.milestoneDesc:focus { border-color: var(--color-primary); }
+.milestoneDesc::placeholder { color: var(--color-text-muted); }
+
+.pctWrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--color-bg);
+  flex-shrink: 0;
+}
+
+.pctInput {
+  width: 52px;
+  border: none;
+  padding: 6px 6px 6px 10px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  background: transparent;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.pctInput::-webkit-outer-spin-button,
+.pctInput::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.pctSymbol {
+  padding: 0 8px 0 2px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.milestoneAmount {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent);
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.removeBtn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  margin-top: 2px;
+}
+
+.removeBtn:hover { background: #FEE2E2; color: var(--color-danger); }
+
+/* ── Totals bar ──────────────────────────────────── */
+.totalsBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+}
+
+.totalPct {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.totalPctOk  { color: var(--color-accent); }
+.totalPctError { color: var(--color-danger); }
+
+.totalAmount {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+/* ── Add button ──────────────────────────────────── */
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s;
+}
+
+.addBtn:hover { opacity: 0.7; }
+
+/* ── Empty milestones ────────────────────────────── */
+.emptyMilestones {
+  padding: 24px;
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+
+.emptyMilestones p {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ── Error banner ────────────────────────────────── */
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-danger);
+  margin-top: 12px;
+}
+
+/* ── Payment step ────────────────────────────────── */
+.paymentSummary {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.paymentRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+  padding: 5px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.paymentRow:last-child { border-bottom: none; }
+
+.paymentTotal {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.stripeWrap {
+  padding: 4px 0 8px;
+}
+
+.backBtn {
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.backBtn:hover { color: var(--color-text-primary); }
+.backBtn:disabled { opacity: 0.4; cursor: default; }
+
+/* ── Success / error states ──────────────────────── */
+.successState,
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.successTitle {
+  font-size: 22px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.03em;
+}
+
+.successBody {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  max-width: 360px;
+}
+
+.errorState p {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  max-width: 360px;
+}
+
+/* ── Skeleton ────────────────────────────────────── */
+.skeleton {
+  background: #EFEFED;
+  border-radius: 8px;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Dark mode ───────────────────────────────────── */
+:global([data-theme="dark"]) .card,
+:global([data-theme="dark"]) .summaryCard {
+  background: #16181F;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .cardHeader,
+:global([data-theme="dark"]) .cardFooter {
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .milestoneRow {
+  background: #1E2130;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .milestoneTitle,
+:global([data-theme="dark"]) .milestoneDesc,
+:global([data-theme="dark"]) .pctWrap {
+  background: #16181F;
+  border-color: #2E3241;
+  color: #EDEDEB;
+}
+
+:global([data-theme="dark"]) .totalsBar,
+:global([data-theme="dark"]) .paymentSummary {
+  background: #1E2130;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .paymentRow {
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .emptyMilestones {
+  background: #1E2130;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .skeleton {
+  background: #2E3241;
+}

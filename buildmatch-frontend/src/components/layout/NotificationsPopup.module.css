@@ -1,0 +1,282 @@
+/* ── Popup shell ─────────────────────────────────── */
+.popup {
+  position: fixed;
+  bottom: 80px;
+  left: 248px;
+  width: 340px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  max-height: 480px;
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.headerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: none;
+  font-size: 11.5px;
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.headerBtn:hover {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+/* ── Tabs ───────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--color-text-primary);
+}
+
+.tabActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* ── List ───────────────────────────────────────── */
+.list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Notification item ──────────────────────────── */
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.12s;
+  position: relative;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.item:hover {
+  background: var(--color-surface);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+  border: 1.5px solid var(--color-border);
+}
+
+.itemBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemText {
+  font-size: 12.5px;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  margin: 0 0 3px;
+  font-weight: var(--font-weight-medium);
+}
+
+.itemTextRead {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-normal);
+}
+
+.itemDate {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.moreBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  padding: 0;
+}
+
+.item:hover .moreBtn {
+  opacity: 1;
+}
+
+.moreBtn:hover {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+/* ── Empty state ────────────────────────────────── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.emptyState p {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.emptyState span {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ── Skeleton ───────────────────────────────────── */
+.loadingState {
+  display: flex;
+  flex-direction: column;
+}
+
+.skeletonItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.skeletonBlock {
+  background: #EFEFED;
+  border-radius: 4px;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Footer ─────────────────────────────────────── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.footerCount {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.viewAll {
+  font-size: 11.5px;
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s;
+}
+
+.viewAll:hover {
+  opacity: 0.75;
+}
+
+/* ── Dark mode ──────────────────────────────────── */
+:global([data-theme="dark"]) .popup {
+  background: #16181F;
+  border-color: #2E3241;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+:global([data-theme="dark"]) .header {
+  border-bottom-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .tabs {
+  border-bottom-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .item {
+  border-bottom-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .item:hover {
+  background: #1E2130;
+}
+
+:global([data-theme="dark"]) .footer {
+  border-top-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .skeletonBlock {
+  background: #2E3241;
+}

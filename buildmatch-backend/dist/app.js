@@ -12,6 +12,10 @@ const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const contractor_routes_1 = __importDefault(require("./routes/contractor.routes"));
 const job_routes_1 = __importDefault(require("./routes/job.routes"));
+const ai_routes_1 = __importDefault(require("./routes/ai.routes"));
+const notification_routes_1 = __importDefault(require("./routes/notification.routes"));
+const stripe_routes_1 = __importDefault(require("./routes/stripe.routes"));
+const escrow_routes_1 = __importDefault(require("./routes/escrow.routes"));
 const error_middleware_1 = require("./middleware/error.middleware");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -29,6 +33,8 @@ app.use((0, express_rate_limit_1.default)({
     standardHeaders: true,
     legacyHeaders: false,
 }));
+// Raw body for Stripe webhook signature verification — must come before express.json()
+app.use('/api/stripe/webhooks', express_1.default.raw({ type: 'application/json' }));
 // Body parsing
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
@@ -40,6 +46,10 @@ app.use('/api/auth', auth_routes_1.default);
 app.use('/api/users', user_routes_1.default);
 app.use('/api/contractors', contractor_routes_1.default);
 app.use('/api/jobs', job_routes_1.default);
+app.use('/api/ai', ai_routes_1.default);
+app.use('/api/notifications', notification_routes_1.default);
+app.use('/api/stripe', stripe_routes_1.default);
+app.use('/api/escrow', escrow_routes_1.default);
 // Global error handler — must be last
 app.use(error_middleware_1.errorHandler);
 exports.default = app;

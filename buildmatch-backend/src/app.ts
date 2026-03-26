@@ -8,6 +8,10 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import contractorRoutes from './routes/contractor.routes';
 import jobRoutes from './routes/job.routes';
+import aiRoutes from './routes/ai.routes';
+import notificationRoutes from './routes/notification.routes';
+import stripeRoutes from './routes/stripe.routes';
+import escrowRoutes from './routes/escrow.routes';
 import { errorHandler } from './middleware/error.middleware';
 
 dotenv.config();
@@ -35,6 +39,9 @@ app.use(
   })
 );
 
+// Raw body for Stripe webhook signature verification — must come before express.json()
+app.use('/api/stripe/webhooks', express.raw({ type: 'application/json' }));
+
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -48,6 +55,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/contractors', contractorRoutes);
 app.use('/api/jobs', jobRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/stripe', stripeRoutes);
+app.use('/api/escrow', escrowRoutes);
 
 // Global error handler — must be last
 app.use(errorHandler);

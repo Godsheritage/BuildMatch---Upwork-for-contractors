@@ -138,6 +138,56 @@
   color: #111;
 }
 
+/* ── Utility icon row ────────────────────────────────── */
+.utilityRow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 12px;
+  border-top: 1px solid #EBEBEB;
+  flex-shrink: 0;
+}
+
+.utilityBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: #888;
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.utilityBtn:hover {
+  background: #F5F5F5;
+  color: #111;
+}
+
+.notifBadge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  background: #DC2626;
+  color: #fff;
+  font-size: 9px;
+  font-weight: var(--font-weight-semibold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
 /* ── Language switcher ───────────────────────────────── */
 .langSection {
   padding: 12px 16px 0;
@@ -312,6 +362,19 @@
 }
 
 :global([data-theme="dark"]) .logoutBtn:hover {
+  background: #1E2130;
+  color: #EDEDEB;
+}
+
+:global([data-theme="dark"]) .utilityRow {
+  border-top-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .utilityBtn {
+  color: #9090A0;
+}
+
+:global([data-theme="dark"]) .utilityBtn:hover {
   background: #1E2130;
   color: #EDEDEB;
 }

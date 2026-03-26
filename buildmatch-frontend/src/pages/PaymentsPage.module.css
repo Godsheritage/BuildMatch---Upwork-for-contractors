@@ -1,0 +1,245 @@
+/* ── Page ────────────────────────────────────────── */
+.page {
+  padding: 40px 24px 64px;
+  min-height: 100%;
+  background: var(--color-surface);
+}
+
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* ── Header ──────────────────────────────────────── */
+.pageHeader { margin-bottom: 28px; }
+
+.heading {
+  font-size: 22px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+.subheading {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+/* ── Card ────────────────────────────────────────── */
+.card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+/* ── Setup callout ───────────────────────────────── */
+.calloutHeader {
+  display: flex;
+  gap: 16px;
+  padding: 28px 28px 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.iconWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #EEF2FF;
+  color: #4F46E5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.calloutTitle {
+  font-size: 16px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.calloutBody {
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ── Steps ───────────────────────────────────────── */
+.stepsSection {
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.stepsLabel {
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+}
+
+.stepsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stepItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.stepNumber {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.stepText {
+  font-size: 13.5px;
+  color: var(--color-text-primary);
+  line-height: 1.55;
+}
+
+/* ── Footer ──────────────────────────────────────── */
+.calloutFooter {
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.secureNote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ── Connected card ──────────────────────────────── */
+.connectedHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.connectedTitle {
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.statusGrid {
+  padding: 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statusLabel {
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+}
+
+.statusValue {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.statusOk {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.statusPending {
+  background: #FEF3C7;
+  color: var(--color-warning);
+}
+
+.connectedFooter {
+  padding: 16px 28px;
+}
+
+.manageLink {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.manageLink:hover { opacity: 0.75; }
+
+/* ── Skeleton ────────────────────────────────────── */
+.skeleton {
+  background: #EFEFED;
+  border-radius: 6px;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Dark mode ───────────────────────────────────── */
+:global([data-theme="dark"]) .card {
+  background: #16181F;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .calloutHeader,
+:global([data-theme="dark"]) .stepsSection,
+:global([data-theme="dark"]) .calloutFooter,
+:global([data-theme="dark"]) .connectedHeader,
+:global([data-theme="dark"]) .statusGrid,
+:global([data-theme="dark"]) .connectedFooter {
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .iconWrap {
+  background: #1E2130;
+  color: #7C86F0;
+}
+
+:global([data-theme="dark"]) .skeleton {
+  background: #2E3241;
+}
