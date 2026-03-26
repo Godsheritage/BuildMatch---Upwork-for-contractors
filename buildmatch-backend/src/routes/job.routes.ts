@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   listJobs, getJobById, createJob, updateJob, cancelJob, getMyJobs,
-  createBid, getJobBids, getMyBid, acceptBid, withdrawBid,
+  createBid, getJobBids, getMyBid, getMyBids, acceptBid, withdrawBid,
 } from '../controllers/job.controller';
 import { authenticate, optionalAuthenticate, requireRole } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
@@ -12,7 +12,8 @@ const router = Router();
 // ── Job routes ────────────────────────────────────────────────────────────────
 // NOTE: /my-jobs must be declared before /:id to prevent param capture
 
-router.get('/my-jobs', authenticate, requireRole('INVESTOR'), getMyJobs);
+router.get('/my-jobs', authenticate, requireRole('INVESTOR'),   getMyJobs);
+router.get('/my-bids', authenticate, requireRole('CONTRACTOR'), getMyBids);
 router.get('/',        listJobs);
 router.get('/:id',     optionalAuthenticate, getJobById);
 

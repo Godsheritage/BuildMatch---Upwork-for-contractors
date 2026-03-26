@@ -186,6 +186,22 @@ export async function getMyBid(jobId: string, contractorId: string) {
   return bid;
 }
 
+export async function getMyBids(contractorId: string) {
+  const bids = await prisma.bid.findMany({
+    where:   { contractorId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const jobIds = [...new Set(bids.map((b) => b.jobId))];
+  const jobs = await prisma.job.findMany({
+    where:   { id: { in: jobIds } },
+    include: { investor: { select: { firstName: true, lastName: true } } },
+  });
+  const jobMap = new Map(jobs.map((j) => [j.id, j]));
+
+  return bids.map((b) => ({ ...b, job: jobMap.get(b.jobId) ?? null }));
+}
+
 export async function acceptBid(jobId: string, bidId: string, investorId: string) {
   const job = await prisma.job.findUnique({ where: { id: jobId } });
   if (!job)                          throw new AppError('Job not found', 404);

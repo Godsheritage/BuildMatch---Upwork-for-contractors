@@ -1,32 +1,60 @@
-/* ── Stat card ───────────────────────────────────────── */
-.statCard {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-text-primary);
-  border-radius: 12px;
-  padding: 20px 24px;
+/* ── Page shell ──────────────────────────────────────────── */
+.page {
+  padding: 32px 32px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-.statLabel {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin-bottom: 10px;
+/* ── Greeting ─────────────────────────────────────────────── */
+.greetingBlock {
+  margin-bottom: 28px;
 }
 
-.statValue {
-  font-size: 32px;
-  font-weight: 600;
+.greeting {
+  font-size: 22px;
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 4px;
 }
 
-/* ── Empty section ───────────────────────────────────── */
+.greetingSub {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ── Investor single-column ───────────────────────────────── */
+.singleCol {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+
+/* ── Investor empty state ─────────────────────────────────── */
 .emptySection {
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 48px 32px;
   text-align: center;
   background: var(--color-bg);
@@ -42,4 +70,604 @@
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
+}
+
+.emptyTitle {
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 6px;
+}
+
+.emptyDesc {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 20px;
+  line-height: var(--leading-body);
+}
+
+/* ── Stat card (investor) ─────────────────────────────────── */
+.statCard {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+}
+
+.statLabel {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: 8px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+/* ── Contractor two-column layout ────────────────────────── */
+.contractorLayout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  align-items: start;
+}
+
+.mainCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.sideCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 24px;
+}
+
+/* ── Card ────────────────────────────────────────────────── */
+.card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+
+.cardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.cardLink:hover {
+  color: var(--color-text-primary);
+}
+
+.cardBody {
+  padding: 16px;
+}
+
+/* ── Empty card state ────────────────────────────────────── */
+.emptyCard {
+  padding: 28px 20px;
+  text-align: center;
+}
+
+.emptyCardIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.emptyCardTitle {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 5px;
+}
+
+.emptyCardDesc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: var(--leading-body);
+  margin: 0 0 16px;
+}
+
+/* ── Tab bar (messages) ──────────────────────────────────── */
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 4px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--color-text-primary);
+}
+
+.tabActive {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-text-primary);
+}
+
+.tabBadge {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  padding: 0 5px;
+  line-height: 16px;
+  color: var(--color-text-muted);
+}
+
+/* ── Empty messages ──────────────────────────────────────── */
+.emptyMessages {
+  padding: 28px 20px;
+  text-align: center;
+}
+
+.emptyMsgIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+/* ── Path to success ─────────────────────────────────────── */
+.pathSection {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pathTrack {
+  display: flex;
+  align-items: center;
+}
+
+.pathStepWrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.pathStepWrap:last-child {
+  flex: 0;
+}
+
+.pathDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pathDotDone {
+  background: #0F6E56;
+  border-color: #0F6E56;
+  color: #fff;
+}
+
+.pathDotActive {
+  border-color: var(--color-text-primary);
+  background: var(--color-text-primary);
+}
+
+.pathLine {
+  flex: 1;
+  height: 2px;
+  background: var(--color-border);
+  transition: background 0.15s;
+}
+
+.pathLineDone {
+  background: #0F6E56;
+}
+
+/* ── Path next task ──────────────────────────────────────── */
+.pathTask {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.pathTaskLabel {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.pathTaskRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pathTaskIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.pathTaskTitle {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 3px;
+}
+
+.pathTaskDesc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.pathTaskAction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-text-primary);
+  color: #fff;
+  text-decoration: none;
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: opacity 0.15s;
+}
+
+.pathTaskAction:hover {
+  opacity: 0.8;
+}
+
+/* ── Profile strength ────────────────────────────────────── */
+.strengthScore {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.strengthCaption {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.strengthTrack {
+  height: 5px;
+  background: var(--color-border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.strengthFill {
+  height: 100%;
+  background: #0F6E56;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.strengthList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.strengthItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: background 0.12s;
+}
+
+.strengthItem:hover {
+  background: var(--color-surface);
+}
+
+.strengthItemDone {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-border);
+}
+
+/* ── Performance card ────────────────────────────────────── */
+.earnedBlock {
+  padding: 12px 14px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+}
+
+.earnedLabel {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin: 0 0 4px;
+}
+
+.earnedValue {
+  font-size: 26px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+
+.perfGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.perfCell {
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+
+.perfLabel {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 0 0 4px;
+}
+
+.perfValue {
+  font-size: 17px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* ── Feedback card ───────────────────────────────────────── */
+.feedbackPrompt {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.feedbackInput {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  line-height: 1.5;
+  transition: border-color 0.15s;
+}
+
+.feedbackInput::placeholder {
+  color: var(--color-text-muted);
+}
+
+.feedbackInput:focus {
+  border-color: var(--color-text-primary);
+}
+
+.feedbackThanks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 4px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+/* ── Dark mode ───────────────────────────────────────────── */
+:global([data-theme="dark"]) .card {
+  background: #16181F;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .cardHeader {
+  border-bottom-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .statCard {
+  background: #16181F;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .emptySection {
+  background: #16181F;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .tabBadge {
+  background: #1E2130;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .tab:hover,
+:global([data-theme="dark"]) .tabActive {
+  color: #EDEDEB;
+}
+
+:global([data-theme="dark"]) .tabActive {
+  border-bottom-color: #EDEDEB;
+}
+
+:global([data-theme="dark"]) .pathDot {
+  background: #16181F;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .pathDotDone {
+  background: #0F6E56;
+  border-color: #0F6E56;
+}
+
+:global([data-theme="dark"]) .pathDotActive {
+  background: #EDEDEB;
+  border-color: #EDEDEB;
+}
+
+:global([data-theme="dark"]) .pathLine {
+  background: #2E3241;
+}
+
+:global([data-theme="dark"]) .pathTask {
+  background: #1E2130;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .pathTaskIcon {
+  background: #16181F;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .pathTaskAction {
+  background: #EDEDEB;
+  color: #111318;
+}
+
+:global([data-theme="dark"]) .emptyCardIcon,
+:global([data-theme="dark"]) .emptyMsgIcon,
+:global([data-theme="dark"]) .emptyIconWrap {
+  background: #1E2130;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .strengthTrack {
+  background: #2E3241;
+}
+
+:global([data-theme="dark"]) .strengthItem:hover {
+  background: #1E2130;
+}
+
+:global([data-theme="dark"]) .earnedBlock,
+:global([data-theme="dark"]) .perfCell {
+  background: #1E2130;
+}
+
+:global([data-theme="dark"]) .feedbackInput {
+  background: #1E2130;
+  border-color: #2E3241;
+  color: #EDEDEB;
+}
+
+:global([data-theme="dark"]) .feedbackInput:focus {
+  border-color: #EDEDEB;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .contractorLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .sideCol {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 16px 40px;
+  }
+
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .perfGrid {
+    grid-template-columns: 1fr;
+  }
 }

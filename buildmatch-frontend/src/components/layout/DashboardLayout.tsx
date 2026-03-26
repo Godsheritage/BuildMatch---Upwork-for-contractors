@@ -35,9 +35,9 @@ export function DashboardLayout() {
 
   const contractorNav = [
     { to: '/dashboard',  icon: Home,     label: t.nav.dashboard   },
-    { to: '/profile',    icon: User,     label: t.nav.myProfile   },
-    { to: '/jobs',       icon: Search,   label: t.nav.browseJobs  },
-    { to: '/my-bids',    icon: FileText, label: t.nav.myBids      },
+    { to: '/dashboard/profile', icon: User, label: t.nav.myProfile },
+    { to: '/dashboard/browse-jobs', icon: Search, label: t.nav.browseJobs },
+    { to: '/dashboard/my-bids', icon: FileText, label: t.nav.myBids },
   ];
 
   const navItems = user?.role === 'CONTRACTOR' ? contractorNav : investorNav;

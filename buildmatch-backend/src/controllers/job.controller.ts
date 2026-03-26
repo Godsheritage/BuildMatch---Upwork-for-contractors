@@ -107,6 +107,15 @@ export async function getMyBid(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function getMyBids(req: Request, res: Response): Promise<void> {
+  try {
+    const bids = await jobService.getMyBids(req.user!.userId);
+    sendSuccess(res, bids);
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
 export async function acceptBid(req: Request, res: Response): Promise<void> {
   try {
     const bid = await jobService.acceptBid(req.params.jobId, req.params.bidId, req.user!.userId);

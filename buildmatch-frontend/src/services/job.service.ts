@@ -52,6 +52,15 @@ export async function getMyBid(jobId: string): Promise<Bid> {
   return res.data;
 }
 
+export interface BidWithJob extends Bid {
+  job: (JobPost & { investor: { firstName: string; lastName: string } }) | null;
+}
+
+export async function getMyBids(): Promise<BidWithJob[]> {
+  const { data: res } = await api.get<ApiResponse<BidWithJob[]>>('/jobs/my-bids');
+  return res.data;
+}
+
 export async function acceptBid(jobId: string, bidId: string): Promise<Bid> {
   const { data: res } = await api.put<ApiResponse<Bid>>(`/jobs/${jobId}/bids/${bidId}/accept`);
   return res.data;

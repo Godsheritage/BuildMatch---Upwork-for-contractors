@@ -24,6 +24,8 @@ import { PaymentsPage } from './pages/PaymentsPage';
 import { OnboardCompletePage } from './pages/OnboardCompletePage';
 import { OnboardRefreshPage } from './pages/OnboardRefreshPage';
 import { FundJobPage } from './pages/FundJobPage';
+import { MyBidsPage } from './pages/MyBidsPage';
+import { BrowseJobsPage } from './pages/BrowseJobsPage';
 
 const queryClient = new QueryClient();
 
@@ -56,6 +58,22 @@ export default function App() {
               >
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/profile" element={<UserProfilePage />} />
+                <Route
+                  path="/dashboard/my-bids"
+                  element={
+                    <ProtectedRoute roles={['CONTRACTOR']}>
+                      <MyBidsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/browse-jobs"
+                  element={
+                    <ProtectedRoute roles={['CONTRACTOR']}>
+                      <BrowseJobsPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/contractors" element={<ContractorsPage />} />
                 <Route
                   path="/dashboard/jobs"
