@@ -19,6 +19,7 @@ import { InvestorJobsPage } from './pages/InvestorJobsPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { ProfileSetupPage } from './pages/ProfileSetupPage';
 import { UserProfilePage } from './pages/UserProfilePage';
+import { TermsPage } from './pages/TermsPage';
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/terms" element={<TermsPage />} />
               <Route path="/contractors/:id" element={<ContractorProfilePage />} />
               <Route path="/jobs" element={<JobsPage />} />
               <Route path="/jobs/:id" element={<JobDetailPage />} />
