@@ -7,6 +7,7 @@ function handleError(res: Response, err: unknown): void {
   if (err instanceof AppError) {
     sendError(res, err.message, err.statusCode);
   } else {
+    console.error('[auth controller]', err);
     sendError(res, 'Something went wrong', 500);
   }
 }

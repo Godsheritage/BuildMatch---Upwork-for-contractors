@@ -44,6 +44,7 @@ function handleError(res, err) {
         (0, response_utils_1.sendError)(res, err.message, err.statusCode);
     }
     else {
+        console.error('[auth controller]', err);
         (0, response_utils_1.sendError)(res, 'Something went wrong', 500);
     }
 }
