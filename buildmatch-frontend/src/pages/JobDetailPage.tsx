@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Calendar, DollarSign, Briefcase,
-  Users, AlertTriangle, CheckCircle2, Star,
+  Users, AlertTriangle, CheckCircle2, Star, Camera,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
@@ -16,8 +16,10 @@ import { polishReply, summarizeThread } from '../services/ai.service';
 import { ReviewModal } from '../components/review/ReviewModal';
 import { StarRating } from '../components/ui/StarRating';
 import { Button } from '../components/ui/Button';
+import { Lightbox } from '../components/ui/Lightbox';
 import type { BidWithContractor, JobPost, Message } from '../types/job.types';
 import styles from './JobDetailPage.module.css';
+import { getOptimizedUrl, JOB_PHOTO_FALLBACK } from '../utils/media';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -106,6 +108,117 @@ function BidAvatar({ name, size = 40 }: { name: string; size?: number }) {
     >
       {getInitials(name)}
     </div>
+  );
+}
+
+// ── Photo gallery ──────────────────────────────────────────────────────────────
+
+// ── GalleryImg — isolates per-image error state ────────────────────────────────
+
+function GalleryImg({
+  url, alt, className, width, onClick,
+}: {
+  url: string; alt: string; className: string; width: number; onClick: () => void;
+}) {
+  const [error, setError] = useState(false);
+  return (
+    <img
+      src={error ? JOB_PHOTO_FALLBACK : getOptimizedUrl(url, width)}
+      alt={alt}
+      className={className}
+      loading="lazy"
+      onError={() => setError(true)}
+      onClick={onClick}
+    />
+  );
+}
+
+function PhotoGallery({ photos }: { photos: string[] }) {
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const MAX_VISIBLE = 5;
+
+  const handleClick = useCallback((idx: number) => setLightboxIdx(idx), []);
+  const handleClose = useCallback(() => setLightboxIdx(null), []);
+
+  const galleryContent = () => {
+    if (photos.length === 1) {
+      return (
+        <div className={styles.gallery1}>
+          <GalleryImg
+            url={photos[0]}
+            alt="Project photo 1"
+            className={styles.galleryImg}
+            width={1200}
+            onClick={() => handleClick(0)}
+          />
+        </div>
+      );
+    }
+
+    if (photos.length <= 3) {
+      return (
+        <div className={styles.gallery2col}>
+          {photos.map((url, i) => (
+            <GalleryImg
+              key={url}
+              url={url}
+              alt={`Project photo ${i + 1}`}
+              className={styles.galleryImg}
+              width={600}
+              onClick={() => handleClick(i)}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // 4+ photos: mosaic
+    const visible = photos.slice(0, MAX_VISIBLE);
+    const overflow = photos.length - MAX_VISIBLE;
+    return (
+      <div className={styles.mosaic}>
+        <GalleryImg
+          url={photos[0]}
+          alt="Project photo 1"
+          className={`${styles.galleryImg} ${styles.mosaicMain}`}
+          width={1200}
+          onClick={() => handleClick(0)}
+        />
+        <div className={styles.mosaicGrid}>
+          {visible.slice(1).map((url, i) => {
+            const realIdx = i + 1;
+            const isLast = i === visible.length - 2 && overflow > 0;
+            return (
+              <div key={url} style={{ position: 'relative' }}>
+                <GalleryImg
+                  url={url}
+                  alt={`Project photo ${realIdx + 1}`}
+                  className={`${styles.galleryImg} ${styles.mosaicThumb}`}
+                  width={400}
+                  onClick={() => handleClick(realIdx)}
+                />
+                {isLast && overflow > 0 && (
+                  <div className={styles.moreOverlay} onClick={() => handleClick(realIdx)}>
+                    <Camera size={16} strokeWidth={2} />
+                    <span>+{overflow} more</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <section className={styles.section}>
+      <h2 className={styles.sectionTitle}>Project Photos</h2>
+      {galleryContent()}
+      {lightboxIdx !== null && (
+        <Lightbox images={photos} initialIndex={lightboxIdx} onClose={handleClose} />
+      )}
+    </section>
   );
 }
 
@@ -897,6 +1010,11 @@ export function JobDetailPage() {
               <h2 className={styles.sectionTitle}>Project Description</h2>
               <p className={styles.description}>{job.description}</p>
             </section>
+
+            {/* Photos */}
+            {job.photos.length > 0 && (
+              <PhotoGallery photos={job.photos} />
+            )}
 
             {/* Details grid */}
             <section className={styles.section}>

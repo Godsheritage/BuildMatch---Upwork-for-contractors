@@ -1,7 +1,7 @@
 import { Prisma, TradeType } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { AppError } from '../utils/app-error';
-import type { CreateJobInput, UpdateJobInput, CreateBidInput } from '../schemas/job.schemas';
+import type { CreateJobInput, UpdateJobInput, AddPhotosInput, RemovePhotoInput, CreateBidInput } from '../schemas/job.schemas';
 import { classifyJob } from './ai.service';
 
 // ── Selects ──────────────────────────────────────────────────────────────────
@@ -34,8 +34,9 @@ export async function createJob(investorId: string, input: CreateJobInput) {
     // Non-critical — continue without suggestion
   }
 
+  const { photoUrls, ...rest } = input;
   return prisma.job.create({
-    data:    { ...input, investorId, status: 'OPEN', aiSuggestedTradeType },
+    data:    { ...rest, investorId, status: 'OPEN', aiSuggestedTradeType, photos: photoUrls ?? [] },
     include: { investor: INVESTOR_SELECT },
   });
 }
@@ -114,9 +115,40 @@ export async function updateJob(id: string, investorId: string, input: UpdateJob
   const newMax = input.budgetMax ?? job.budgetMax;
   if (newMin >= newMax) throw new AppError('budgetMin must be less than budgetMax', 400);
 
+  const { photoUrls, ...rest } = input;
   return prisma.job.update({
     where:   { id },
-    data:    input,
+    data:    { ...rest, ...(photoUrls !== undefined && { photos: photoUrls }) },
+    include: { investor: INVESTOR_SELECT },
+  });
+}
+
+const MAX_PHOTOS = 20;
+
+export async function addJobPhotos(jobId: string, investorId: string, input: AddPhotosInput) {
+  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  if (!job)                          throw new AppError('Job not found', 404);
+  if (job.investorId !== investorId) throw new AppError('Forbidden', 403);
+
+  if (job.photos.length + input.photoUrls.length > MAX_PHOTOS) {
+    throw new AppError('Maximum 20 photos per job', 400);
+  }
+
+  return prisma.job.update({
+    where:   { id: jobId },
+    data:    { photos: { push: input.photoUrls } },
+    include: { investor: INVESTOR_SELECT },
+  });
+}
+
+export async function removeJobPhoto(jobId: string, investorId: string, input: RemovePhotoInput) {
+  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  if (!job)                          throw new AppError('Job not found', 404);
+  if (job.investorId !== investorId) throw new AppError('Forbidden', 403);
+
+  return prisma.job.update({
+    where:   { id: jobId },
+    data:    { photos: job.photos.filter((p) => p !== input.photoUrl) },
     include: { investor: INVESTOR_SELECT },
   });
 }

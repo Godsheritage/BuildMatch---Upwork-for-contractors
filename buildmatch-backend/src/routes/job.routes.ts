@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import {
   listJobs, getJobById, createJob, updateJob, cancelJob, getMyJobs,
+  addJobPhotos, removeJobPhoto,
   createBid, getJobBids, getMyBid, getMyBids, acceptBid, withdrawBid,
 } from '../controllers/job.controller';
 import { createMessage, getJobMessages } from '../controllers/message.controller';
 import { authenticate, optionalAuthenticate, requireRole } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
-import { createJobSchema, updateJobSchema, createBidSchema } from '../schemas/job.schemas';
+import { createJobSchema, updateJobSchema, addPhotosSchema, removePhotoSchema, createBidSchema } from '../schemas/job.schemas';
 import { createMessageSchema } from '../schemas/ai.schemas';
 
 const router = Router();
@@ -22,6 +23,11 @@ router.get('/:id',     optionalAuthenticate, getJobById);
 router.post('/',      authenticate, requireRole('INVESTOR'), validate(createJobSchema), createJob);
 router.put('/:id',    authenticate, requireRole('INVESTOR'), validate(updateJobSchema), updateJob);
 router.delete('/:id', authenticate, requireRole('INVESTOR'), cancelJob);
+
+// ── Photo routes ──────────────────────────────────────────────────────────────
+
+router.post('/:jobId/photos',   authenticate, requireRole('INVESTOR'), validate(addPhotosSchema),   addJobPhotos);
+router.delete('/:jobId/photos', authenticate, requireRole('INVESTOR'), validate(removePhotoSchema), removeJobPhoto);
 
 // ── Bid routes ────────────────────────────────────────────────────────────────
 // NOTE: /my-bid must be declared before /:bidId/... to prevent param capture

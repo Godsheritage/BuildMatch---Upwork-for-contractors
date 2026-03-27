@@ -22,10 +22,16 @@ const app = express();
 // Security headers
 app.use(helmet());
 
-// CORS — only allow configured frontend origin
+// CORS — allow configured frontend origin (and any localhost port in dev)
+const allowedOrigin = process.env.FRONTEND_URL ?? 'http://localhost:5173';
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow non-browser requests (curl, Postman)
+      const isLocalhost = /^http:\/\/localhost(:\d+)?$/.test(origin);
+      if (origin === allowedOrigin || isLocalhost) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
   })
 );

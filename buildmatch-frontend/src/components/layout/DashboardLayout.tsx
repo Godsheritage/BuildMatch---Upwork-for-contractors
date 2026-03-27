@@ -109,7 +109,7 @@ export function DashboardLayout() {
               <span className={styles.notifBadge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
             )}
           </button>
-          <Link to="/dashboard/profile" onClick={closeSidebar} className={styles.utilityBtn} aria-label="Settings" title="Settings">
+          <Link to="/dashboard/settings" onClick={closeSidebar} className={styles.utilityBtn} aria-label="Settings" title="Settings">
             <Settings size={17} strokeWidth={1.75} />
           </Link>
         </div>
@@ -142,7 +142,7 @@ export function DashboardLayout() {
             onClick={() => setProfileOpen((v) => !v)}
             aria-label="Open profile menu"
           >
-            <Avatar name={`${user.firstName} ${user.lastName}`} size="sm" />
+            <Avatar name={`${user.firstName} ${user.lastName}`} size="sm" src={user.avatarUrl ?? undefined} />
             <div className={styles.userInfo}>
               <p className={styles.userName}>{user.firstName} {user.lastName}</p>
               <p className={styles.userRole}>{user.role.charAt(0) + user.role.slice(1).toLowerCase()}</p>

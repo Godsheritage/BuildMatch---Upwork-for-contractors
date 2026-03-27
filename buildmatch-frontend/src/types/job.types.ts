@@ -86,7 +86,7 @@ export interface CreateJobPayload {
   city: string;
   state: string;
   zipCode: string;
-  photos?: string[];
+  photoUrls?: string[];
 }
 
 export interface JobListResult {

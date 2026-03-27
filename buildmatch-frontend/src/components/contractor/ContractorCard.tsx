@@ -51,7 +51,7 @@ export function ContractorCard({ contractor }: ContractorCardProps) {
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-          <Avatar name={fullName} size="md" />
+          <Avatar name={fullName} size="md" src={contractor.avatarUrl ?? undefined} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <p

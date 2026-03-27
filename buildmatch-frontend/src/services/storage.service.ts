@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { getSupabaseClient } from '../lib/supabase';
 
 /**
  * Upload an avatar for a user.
@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
  * Uses upsert:true so re-uploads overwrite the existing file.
  */
 export async function uploadAvatar(file: File, userId: string): Promise<string> {
+  const supabase = getSupabaseClient();
   const ext  = file.name.split('.').pop() ?? 'jpg';
   const path = `${userId}/avatar.${ext}`;
 
@@ -24,6 +25,7 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
  * Path: job-photos/{userId}/{timestamp}-{random}.{ext}
  */
 export async function uploadJobPhoto(file: File, userId: string): Promise<string> {
+  const supabase = getSupabaseClient();
   const ext  = file.name.split('.').pop() ?? 'jpg';
   const rand = Math.random().toString(36).slice(2, 8);
   const path = `${userId}/${Date.now()}-${rand}.${ext}`;

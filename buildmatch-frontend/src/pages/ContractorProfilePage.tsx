@@ -10,6 +10,7 @@ import { StarRating } from '../components/ui/StarRating';
 import type { ContractorProfile } from '../types/contractor.types';
 import type { Review, ReviewBreakdown } from '../types/review.types';
 import styles from './ContractorProfilePage.module.css';
+import { getOptimizedUrl, JOB_PHOTO_FALLBACK } from '../utils/media';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -44,21 +45,35 @@ function getInitials(name: string) {
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
 }
 
-// ── Large avatar (72px — beyond what the Avatar ui component supports) ─────
+// ── Large avatar (96px — beyond what the Avatar ui component supports) ─────
 
-function LargeAvatar({ name }: { name: string }) {
+function LargeAvatar({ name, src }: { name: string; src?: string }) {
+  const [imgError, setImgError] = useState(false);
   const color = getAvatarColor(name);
+  const showImg = src && !imgError;
   return (
     <div
       style={{
-        width: 72, height: 72, borderRadius: '50%',
-        background: color.bg, color: color.text,
+        width: 96, height: 96, borderRadius: '50%',
+        background: showImg ? 'transparent' : color.bg,
+        color: color.text,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 24, fontWeight: 600,
+        fontSize: 28, fontWeight: 600,
         flexShrink: 0, userSelect: 'none',
+        overflow: 'hidden',
       }}
     >
-      {getInitials(name)}
+      {showImg ? (
+        <img
+          src={getOptimizedUrl(src!, 192)}
+          alt={name}
+          loading="lazy"
+          onError={() => setImgError(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : (
+        getInitials(name)
+      )}
     </div>
   );
 }
@@ -131,7 +146,7 @@ function ProfileSidebar({ contractor }: { contractor: ContractorProfile }) {
     <div className={styles.sidebarCard}>
       {/* Avatar + name */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 20 }}>
-        <LargeAvatar name={fullName} />
+        <LargeAvatar name={fullName} src={contractor.avatarUrl ?? undefined} />
         <h1
           style={{
             fontSize: 20, fontWeight: 600,
@@ -295,6 +310,19 @@ function ReviewCard({ review }: { review: Review }) {
       <p className={styles.reviewTitle}>{review.title}</p>
       <p className={styles.reviewBody}>{review.body}</p>
     </div>
+  );
+}
+
+function PortfolioImg({ url, idx }: { url: string; idx: number }) {
+  const [error, setError] = useState(false);
+  return (
+    <img
+      src={error ? JOB_PHOTO_FALLBACK : getOptimizedUrl(url, 400)}
+      alt={`Portfolio ${idx + 1}`}
+      className={styles.portfolioImg}
+      loading="lazy"
+      onError={() => setError(true)}
+    />
   );
 }
 
@@ -581,6 +609,20 @@ export function ContractorProfilePage() {
                   </div>
                 )}
               </div>
+            </section>
+
+            {/* Portfolio */}
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Portfolio</h2>
+              {contractor.portfolioImages.length > 0 ? (
+                <div className={styles.portfolioGrid}>
+                  {contractor.portfolioImages.map((url, i) => (
+                    <PortfolioImg key={url} url={url} idx={i} />
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.emptyState}>No portfolio photos yet.</p>
+              )}
             </section>
 
             {/* Reviews */}

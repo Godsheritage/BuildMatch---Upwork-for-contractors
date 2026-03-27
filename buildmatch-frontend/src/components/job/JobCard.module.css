@@ -4,9 +4,42 @@
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  padding: 20px 24px;
+  overflow: hidden;
   text-decoration: none;
   transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+/* ── Hero image ─────────────────────────────────────── */
+.heroWrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.heroImg {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.photoBadge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+/* ── Card body (padded area) ────────────────────────── */
+.cardBody {
+  padding: 20px 24px;
 }
 
 .card:hover {

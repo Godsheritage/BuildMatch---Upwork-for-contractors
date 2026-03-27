@@ -1,0 +1,415 @@
+/* ── Section ──────────────────────────────────────────────────────────────── */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.label {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 2px 0;
+}
+
+.sublabel {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: var(--leading-body);
+  margin: 0;
+}
+
+/* ── Drop zone ───────────────────────────────────────────────────────────── */
+
+.dropZone {
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #E5E3DE;
+  border-radius: 12px;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  user-select: none;
+}
+
+.dropZone:hover:not(.dropZoneDisabled) {
+  border-color: var(--color-primary);
+  background: #EEF2F7;
+}
+
+.dropZoneDragging {
+  border-color: var(--color-primary) !important;
+  border-style: solid !important;
+  background: #EEF2F7 !important;
+}
+
+.dropZoneDisabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.dropZoneContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.dropZoneText {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.dropZoneHint {
+  font-size: 12px;
+  color: #9b9b97;
+  margin: 0;
+}
+
+/* ── Photo grid ──────────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Photo cell ──────────────────────────────────────────────────────────── */
+
+.cell {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.cellImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cellOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cell:hover .cellOverlay {
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.cellDeleteBtn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.85);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.cellDeleteBtn:hover {
+  background: rgba(185, 28, 28, 0.95);
+}
+
+.cellExpandBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.cellExpandBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.cell:hover .cellDeleteBtn,
+.cell:hover .cellExpandBtn {
+  opacity: 1;
+}
+
+/* ── Skeleton ────────────────────────────────────────────────────────────── */
+
+.skeleton {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  background: #EFEFED;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+[data-theme="dark"] .skeleton {
+  background: #2a2d3a;
+}
+
+.skeletonSpinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Count indicator ─────────────────────────────────────────────────────── */
+
+.countIndicator {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.countIndicatorFull {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── Error ───────────────────────────────────────────────────────────────── */
+
+.error {
+  font-size: 12px;
+  color: var(--color-danger);
+  margin: 0;
+}
+
+/* ── Hidden file input ───────────────────────────────────────────────────── */
+
+.fileInput {
+  display: none;
+}
+
+/* ── Mobile camera / library buttons (touch devices only) ───────────────── */
+
+.mobileActions {
+  display: none;
+  gap: var(--space-2);
+}
+
+@media (pointer: coarse) {
+  .mobileActions {
+    display: flex;
+  }
+}
+
+.mobileBtn {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.mobileBtn:hover {
+  background: var(--color-surface);
+}
+
+/* ── Confirm dialog ──────────────────────────────────────────────────────── */
+
+.confirmBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.confirmDialog {
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  max-width: 320px;
+  width: 100%;
+  box-shadow: var(--shadow-card);
+}
+
+.confirmText {
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-4) 0;
+  line-height: var(--leading-body);
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.confirmRemoveBtn {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: white;
+  background: var(--color-danger);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.confirmRemoveBtn:hover:not(:disabled) { opacity: 0.85; }
+.confirmRemoveBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.confirmCancelBtn {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.confirmCancelBtn:hover:not(:disabled) { background: var(--color-surface); }
+.confirmCancelBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ── Lightbox ────────────────────────────────────────────────────────────── */
+
+.lightboxBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightboxImgWrap {
+  position: relative;
+  max-width: calc(100vw - 120px);
+  max-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightboxImg {
+  max-width: 100%;
+  max-height: calc(100vh - 80px);
+  object-fit: contain;
+  border-radius: 4px;
+  display: block;
+}
+
+.lightboxClose {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+
+.lightboxClose:hover { background: rgba(255, 255, 255, 0.25); }
+
+.lightboxArrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.lightboxArrow:hover:not(:disabled) { background: rgba(255, 255, 255, 0.25); }
+.lightboxArrow:disabled { opacity: 0.25; cursor: default; }
+
+.lightboxArrowLeft  { left: 16px; }
+.lightboxArrowRight { right: 16px; }
+
+.lightboxCounter {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 12px;
+  border-radius: 20px;
+}

@@ -1,0 +1,361 @@
+/* ── Wrapper ──────────────────────────────────────────────────────────────── */
+
+.wrapper {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Size variants — set the CSS custom property used by child elements */
+.sm  { --avatar-size: 40px;  --font-size: 13px; --icon-size: 14px; }
+.md  { --avatar-size: 80px;  --font-size: 22px; --icon-size: 18px; }
+.lg  { --avatar-size: 120px; --font-size: 32px; --icon-size: 22px; }
+
+/* ── Circle (the avatar itself) ──────────────────────────────────────────── */
+
+.circle {
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.initials {
+  font-size: var(--font-size);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  user-select: none;
+}
+
+/* ── SVG progress ring ───────────────────────────────────────────────────── */
+
+.ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ── Upload overlay (camera button) ──────────────────────────────────────── */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0);
+  border: none;
+  cursor: pointer;
+  transition: background 0.18s ease;
+  padding: 0;
+}
+
+.overlay:hover {
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.overlay:hover .overlayIcon {
+  opacity: 1;
+}
+
+.overlayIcon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  color: white;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  flex-shrink: 0;
+}
+
+/* ── Delete button (top-right pip) ──────────────────────────────────────── */
+
+.deleteBtn {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  color: white;
+  border: 2px solid var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+
+.deleteBtn:hover {
+  background: #b91c1c;
+}
+
+.deleteBtnIcon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+
+/* ── Hidden file input ───────────────────────────────────────────────────── */
+
+.fileInput {
+  display: none;
+}
+
+/* ── Mobile camera / library buttons (touch devices only) ───────────────── */
+
+.mobileActions {
+  display: none; /* hidden by default (pointer:fine / desktop) */
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+@media (pointer: coarse) {
+  .mobileActions {
+    display: flex;
+  }
+}
+
+.mobileBtn {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.mobileBtn:hover {
+  background: var(--color-surface);
+}
+
+/* ── Inline delete confirm ────────────────────────────────────────────────── */
+
+.deleteConfirm {
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  min-width: 160px;
+}
+
+.deleteConfirmText {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-2) 0;
+  font-weight: var(--font-weight-medium);
+}
+
+.deleteConfirmActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.deleteConfirmYes {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: white;
+  background: var(--color-danger);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.deleteConfirmYes:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.deleteConfirmYes:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.deleteConfirmNo {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.deleteConfirmNo:hover:not(:disabled) {
+  background: var(--color-surface);
+}
+
+.deleteConfirmNo:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Modal backdrop ──────────────────────────────────────────────────────── */
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* ── Modal card ──────────────────────────────────────────────────────────── */
+
+.modal {
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* ── Modal header ─────────────────────────────────────────────────────────── */
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modalTitle {
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.modalClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.modalClose:hover {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+/* ── Modal preview area ───────────────────────────────────────────────────── */
+
+.modalPreviewWrap {
+  position: relative;
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  max-height: 300px;
+}
+
+.modalPreviewImg {
+  display: block;
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* Crosshair overlay — shows the centre-square crop boundary */
+.modalCropOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Vignette: darken the four side strips, leaving the centre lit */
+  background:
+    linear-gradient(to right, rgba(0,0,0,0.30) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.30) 100%),
+    linear-gradient(to bottom, rgba(0,0,0,0.30) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.30) 100%);
+}
+
+/* ── Modal hint text ─────────────────────────────────────────────────────── */
+
+.modalHint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0;
+  padding: var(--space-3) var(--space-5) 0;
+}
+
+/* ── Modal actions ───────────────────────────────────────────────────────── */
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+}
+
+.modalCancel {
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.modalCancel:hover {
+  background: var(--color-surface);
+}
+
+.modalConfirm {
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  color: white;
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-5);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.modalConfirm:hover {
+  opacity: 0.88;
+}

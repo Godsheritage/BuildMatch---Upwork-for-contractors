@@ -7,6 +7,7 @@ export interface User {
   firstName: string;
   lastName: string;
   phone: string | null;
+  avatarUrl: string | null;
   isVerified: boolean;
   isActive: boolean;
   createdAt: string;

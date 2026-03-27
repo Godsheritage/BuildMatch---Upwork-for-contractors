@@ -3,17 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import {
   Zap, Droplets, Wind, Home as HomeIcon, Layers, Paintbrush,
   Trees, Hammer, Wrench, Building2, ChevronDown,
-  MapPin, Info, Lightbulb, DollarSign, ImagePlus, X,
+  MapPin, Info, Lightbulb, DollarSign, Camera,
 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { createJob } from '../services/job.service';
 import { classifyPreview } from '../services/ai.service';
-import { uploadJobPhoto } from '../services/storage.service';
-import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { useLang } from '../context/LanguageContext';
+import JobMediaUploader from '../components/job/JobMediaUploader';
 import type { TradeType, CreateJobPayload } from '../types/job.types';
 import styles from './PostJobPage.module.css';
 
@@ -222,7 +221,7 @@ function MoneyInput({
   );
 }
 
-function JobPreviewCard({ form }: { form: FormValues }) {
+function JobPreviewCard({ form, photoUrls }: { form: FormValues; photoUrls: string[] }) {
   const { t } = useLang();
   const trade    = TRADE_OPTIONS.find((o) => o.value === form.tradeType);
   const tradeLabel = trade
@@ -234,9 +233,32 @@ function JobPreviewCard({ form }: { form: FormValues }) {
   const hasBudget = !isNaN(min) && !isNaN(max) && min > 0 && max > 0;
   const hasTitle  = form.title.length >= 3;
   const hasDesc   = form.description.length >= 10;
+  const heroPhoto = photoUrls[0];
 
   return (
     <div className={styles.previewCard}>
+      {heroPhoto && (
+        <div style={{ position: 'relative', margin: '-20px -20px 16px', overflow: 'hidden', borderRadius: '11px 11px 0 0' }}>
+          <img
+            src={heroPhoto}
+            alt="Job preview"
+            loading="lazy"
+            style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }}
+          />
+          {photoUrls.length > 1 && (
+            <span style={{
+              position: 'absolute', bottom: 8, right: 8,
+              display: 'flex', alignItems: 'center', gap: 4,
+              fontSize: 11, fontWeight: 500,
+              background: 'rgba(0,0,0,0.55)', color: '#fff',
+              padding: '3px 8px', borderRadius: 'var(--radius-pill)',
+            }}>
+              <Camera size={11} strokeWidth={2} />
+              {photoUrls.length}
+            </span>
+          )}
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
@@ -316,14 +338,12 @@ export function PostJobPage() {
   const navigate   = useNavigate();
   const { toast }  = useToast();
   const { t }      = useLang();
-  const { user }   = useAuth();
   const [form, setForm]     = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
   const [aiHint, setAiHint] = useState<string | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const classifyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
-  const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (classifyTimer.current) clearTimeout(classifyTimer.current);
@@ -397,24 +417,17 @@ export function PostJobPage() {
     }
     setErrors({});
 
-    const uploadAndSubmit = async () => {
-      let photos: string[] = [];
-      if (photoFiles.length > 0 && user) {
-        photos = await Promise.all(photoFiles.map((f) => uploadJobPhoto(f, user.id)));
-      }
-      mutation.mutate({
-        title:       form.title,
-        description: form.description,
-        tradeType:   form.tradeType as TradeType,
-        budgetMin:   parseFloat(form.budgetMin),
-        budgetMax:   parseFloat(form.budgetMax),
-        city:        form.city.trim(),
-        state:       form.state,
-        zipCode:     form.zipCode.trim(),
-        photos,
-      });
-    };
-    uploadAndSubmit().catch(() => toast('Failed to upload photos', 'error'));
+    mutation.mutate({
+      title:       form.title,
+      description: form.description,
+      tradeType:   form.tradeType as TradeType,
+      budgetMin:   parseFloat(form.budgetMin),
+      budgetMax:   parseFloat(form.budgetMax),
+      city:        form.city.trim(),
+      state:       form.state,
+      zipCode:     form.zipCode.trim(),
+      photoUrls:   photoUrls.length > 0 ? photoUrls : undefined,
+    });
   }
 
   const tradeMeta    = TRADE_OPTIONS.find((o) => o.value === form.tradeType);
@@ -501,56 +514,6 @@ export function PostJobPage() {
               </div>
             </div>
 
-            {/* Section: Photos */}
-            <div className={styles.section}>
-              <p className={styles.sectionTitle}>Job Photos <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 11, color: 'var(--color-text-muted)' }}>(optional, up to 5)</span></p>
-
-              <div className={styles.photoGrid}>
-                {photoFiles.map((file, i) => {
-                  const src = URL.createObjectURL(file);
-                  return (
-                    <div key={i} className={styles.photoThumb}>
-                      <img src={src} alt={`Photo ${i + 1}`} className={styles.photoImg} />
-                      <button
-                        type="button"
-                        className={styles.photoRemove}
-                        onClick={() => setPhotoFiles((prev) => prev.filter((_, j) => j !== i))}
-                        aria-label="Remove photo"
-                      >
-                        <X size={12} strokeWidth={2.5} />
-                      </button>
-                    </div>
-                  );
-                })}
-                {photoFiles.length < 5 && (
-                  <button
-                    type="button"
-                    className={styles.photoAdd}
-                    onClick={() => photoInputRef.current?.click()}
-                  >
-                    <ImagePlus size={20} strokeWidth={1.5} color="var(--color-text-muted)" />
-                    <span>Add photo</span>
-                  </button>
-                )}
-              </div>
-
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const files = Array.from(e.target.files ?? []);
-                  setPhotoFiles((prev) => {
-                    const combined = [...prev, ...files.filter((f) => f.size <= 5 * 1024 * 1024)];
-                    return combined.slice(0, 5);
-                  });
-                  e.target.value = '';
-                }}
-              />
-            </div>
-
             {/* Section 2: Budget */}
             <div className={styles.section}>
               <p className={styles.sectionTitle}>{t.postJob.sections.budget}</p>
@@ -594,7 +557,13 @@ export function PostJobPage() {
               )}
             </div>
 
-            {/* Section 3: Location */}
+            {/* Section 3: Photos & Videos */}
+            <div className={styles.section}>
+              <p className={styles.sectionTitle}>Photos &amp; Videos</p>
+              <JobMediaUploader onMediaChange={(photos) => setPhotoUrls(photos)} />
+            </div>
+
+            {/* Section 4: Location */}
             <div className={styles.section} style={{ borderBottom: 'none' }}>
               <p className={styles.sectionTitle}>{t.postJob.sections.location}</p>
 
@@ -674,7 +643,7 @@ export function PostJobPage() {
         {/* ── Live preview ── */}
         <div className={styles.previewSection}>
           <p className={styles.previewLabel}>{t.postJob.preview.heading}</p>
-          <JobPreviewCard form={form} />
+          <JobPreviewCard form={form} photoUrls={photoUrls} />
         </div>
 
       </div>

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import styles from './Avatar.module.css';
+import { getOptimizedUrl } from '../../utils/media';
 
 export interface AvatarProps {
   name: string;
@@ -29,15 +31,26 @@ function getAvatarColor(name: string): { bg: string; text: string } {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length] ?? AVATAR_COLORS[0];
 }
 
+const SIZE_PX: Record<string, number> = { sm: 64, md: 96, lg: 192 };
+
 export function Avatar({ name, src, size = 'md' }: AvatarProps) {
+  const [imgError, setImgError] = useState(false);
   const color = getAvatarColor(name);
+  const showImg = src && !imgError;
+  const optimizedSrc = src ? getOptimizedUrl(src, SIZE_PX[size] ?? 96) : undefined;
   return (
     <div
       className={[styles.avatar, styles[size]].join(' ')}
-      style={src ? undefined : { backgroundColor: color.bg, color: color.text }}
+      style={showImg ? undefined : { backgroundColor: color.bg, color: color.text }}
     >
-      {src ? (
-        <img src={src} alt={name} className={styles.img} />
+      {showImg ? (
+        <img
+          src={optimizedSrc}
+          alt={name}
+          className={styles.img}
+          loading="lazy"
+          onError={() => setImgError(true)}
+        />
       ) : (
         <span className={styles.initials}>{getInitials(name)}</span>
       )}

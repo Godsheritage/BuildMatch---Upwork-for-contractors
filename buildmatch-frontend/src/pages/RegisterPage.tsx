@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useLang } from '../context/LanguageContext';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { AvatarUpload } from '../components/ui/AvatarUpload';
 import type { UserRole } from '../types/user.types';
 
 type Role = Exclude<UserRole, 'ADMIN'>;
@@ -413,6 +414,67 @@ function FormStep({
   );
 }
 
+// ── Step 3: Optional avatar ───────────────────────────────────────────────────
+
+function AvatarStep({
+  name,
+  onComplete,
+}: {
+  name: string;
+  onComplete: () => void;
+}) {
+  const { user, updateUser } = useAuth();
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? null);
+
+  return (
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-[400px]">
+        <div className="text-center mb-8">
+          <Link to="/"><span className="text-2xl font-semibold text-primary" style={{ letterSpacing: '-0.02em' }}>BuildMatch</span></Link>
+        </div>
+
+        <div className="bg-white border border-border rounded-xl px-8 py-10 text-center" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+          <h1 className="text-[22px] font-semibold text-[#1A1A18] mb-2" style={{ letterSpacing: '-0.02em' }}>
+            Add a profile photo
+          </h1>
+          <p className="text-sm text-muted mb-8">Optional — you can always add one later.</p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
+            <AvatarUpload
+              name={name}
+              currentAvatarUrl={avatarUrl}
+              size="lg"
+              onUploadComplete={(url) => {
+                setAvatarUrl(url);
+                updateUser({ avatarUrl: url });
+              }}
+              onDelete={() => {
+                setAvatarUrl(null);
+                updateUser({ avatarUrl: null });
+              }}
+            />
+          </div>
+
+          <Button variant="primary" className="w-full justify-center mb-3" onClick={onComplete}>
+            Continue to dashboard
+          </Button>
+          <button
+            type="button"
+            onClick={onComplete}
+            style={{
+              fontSize: 13, color: 'var(--color-text-muted)', background: 'none',
+              border: 'none', cursor: 'pointer', textDecoration: 'underline',
+              textUnderlineOffset: 3,
+            }}
+          >
+            Skip for now
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function RegisterPage() {
@@ -420,7 +482,7 @@ export function RegisterPage() {
   const { t } = useLang();
   const navigate = useNavigate();
 
-  const [step, setStep]             = useState<1 | 2>(1);
+  const [step, setStep]             = useState<1 | 2 | 3>(1);
   const [role, setRole]             = useState<Role | ''>('');
   const [values, setValues]         = useState<FormValues>(INITIAL);
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
@@ -464,7 +526,7 @@ export function RegisterPage() {
         role: role as Role,
         ...(values.phone.trim() ? { phone: values.phone.trim() } : {}),
       });
-      navigate('/dashboard');
+      setStep(3);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {
         setServerError(err.response.data.message as string);
@@ -484,6 +546,15 @@ export function RegisterPage() {
         onContinue={() => {
           if (role) setStep(2);
         }}
+      />
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <AvatarStep
+        name={`${values.firstName.trim()} ${values.lastName.trim()}`}
+        onComplete={() => navigate('/dashboard')}
       />
     );
   }

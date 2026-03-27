@@ -60,6 +60,24 @@ export async function updateJob(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function addJobPhotos(req: Request, res: Response): Promise<void> {
+  try {
+    const job = await jobService.addJobPhotos(req.params.jobId, req.user!.userId, req.body);
+    sendSuccess(res, job);
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+export async function removeJobPhoto(req: Request, res: Response): Promise<void> {
+  try {
+    const job = await jobService.removeJobPhoto(req.params.jobId, req.user!.userId, req.body);
+    sendSuccess(res, job);
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
 export async function cancelJob(req: Request, res: Response): Promise<void> {
   try {
     const job = await jobService.cancelJob(req.params.id, req.user!.userId);

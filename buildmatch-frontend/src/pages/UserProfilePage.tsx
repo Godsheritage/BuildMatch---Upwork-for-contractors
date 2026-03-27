@@ -9,6 +9,8 @@ import { useAuth } from '../hooks/useAuth';
 import { getMyContractorProfile } from '../services/contractor.service';
 import type { ContractorProfile } from '../types/contractor.types';
 import styles from './UserProfilePage.module.css';
+import { getOptimizedUrl, JOB_PHOTO_FALLBACK } from '../utils/media';
+import { useState } from 'react';
 
 // ── Avatar helpers ────────────────────────────────────────────────────────────
 
@@ -70,6 +72,19 @@ function computeInvestorStrength(): StrengthItem[] {
 }
 
 // ── Skeleton loader ───────────────────────────────────────────────────────────
+
+function PortfolioThumb({ url, idx }: { url: string; idx: number }) {
+  const [error, setError] = useState(false);
+  return (
+    <img
+      src={error ? JOB_PHOTO_FALLBACK : getOptimizedUrl(url, 400)}
+      alt={`Portfolio ${idx + 1}`}
+      className={styles.portfolioImg}
+      loading="lazy"
+      onError={() => setError(true)}
+    />
+  );
+}
 
 function ProfileSkeleton() {
   const blk = (w: string | number, h: number) => (
@@ -282,7 +297,7 @@ export function UserProfilePage() {
               {profile?.portfolioImages && profile.portfolioImages.length > 0 ? (
                 <div className={styles.portfolioGrid}>
                   {profile.portfolioImages.map((url, i) => (
-                    <img key={i} src={url} alt={`Portfolio ${i + 1}`} className={styles.portfolioImg} />
+                    <PortfolioThumb key={url || i} url={url} idx={i} />
                   ))}
                 </div>
               ) : (

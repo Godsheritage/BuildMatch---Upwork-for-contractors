@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Users, User } from 'lucide-react';
+import { MapPin, Users, User, Camera } from 'lucide-react';
+import { useState } from 'react';
 import type { JobPost } from '../../types/job.types';
 import styles from './JobCard.module.css';
+import { getOptimizedUrl, JOB_PHOTO_FALLBACK } from '../../utils/media';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -52,12 +54,36 @@ interface JobCardProps {
 }
 
 export function JobCard({ job }: JobCardProps) {
+  const [heroError, setHeroError] = useState(false);
   const color    = TRADE_COLORS[job.tradeType] ?? TRADE_COLORS.OTHER;
   const label    = TRADE_LABELS[job.tradeType] ?? job.tradeType;
   const location = [job.city, job.state].filter(Boolean).join(', ');
 
+  const heroPhoto = job.photos?.[0];
+
   return (
     <Link to={`/jobs/${job.id}`} className={styles.card}>
+
+      {/* Hero image */}
+      {heroPhoto && (
+        <div className={styles.heroWrap}>
+          <img
+            src={heroError ? JOB_PHOTO_FALLBACK : getOptimizedUrl(heroPhoto, 1200, 85)}
+            alt={job.title}
+            className={styles.heroImg}
+            loading="lazy"
+            onError={() => setHeroError(true)}
+          />
+          {job.photos.length > 1 && (
+            <span className={styles.photoBadge}>
+              <Camera size={11} strokeWidth={2} />
+              {job.photos.length}
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className={styles.cardBody}>
 
       {/* Top row: trade badge + time */}
       <div className={styles.topRow}>
@@ -101,6 +127,7 @@ export function JobCard({ job }: JobCardProps) {
         <span className={styles.viewJobLink}>View Job →</span>
       </div>
 
+      </div>{/* /cardBody */}
     </Link>
   );
 }

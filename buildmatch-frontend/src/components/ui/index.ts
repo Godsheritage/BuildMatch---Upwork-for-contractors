@@ -18,3 +18,9 @@ export type { StarRatingProps } from './StarRating';
 
 export { Spinner } from './Spinner';
 export type { } from './Spinner';
+
+export { AvatarUpload } from './AvatarUpload';
+export type { AvatarUploadProps } from './AvatarUpload';
+
+export { Lightbox } from './Lightbox';
+export type { LightboxProps } from './Lightbox';
