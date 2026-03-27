@@ -3,6 +3,7 @@ import prisma from '../lib/prisma';
 import { AppError } from '../utils/app-error';
 import type { CreateJobInput, UpdateJobInput, AddPhotosInput, RemovePhotoInput, CreateBidInput } from '../schemas/job.schemas';
 import { classifyJob } from './ai.service';
+import { upsertConversation } from './message.service';
 
 // ── Selects ──────────────────────────────────────────────────────────────────
 
@@ -265,7 +266,17 @@ export async function acceptBid(jobId: string, bidId: string, investorId: string
     prisma.job.update({ where: { id: jobId }, data: { status: 'AWARDED' } }),
   ]);
 
-  return results[1]; // accepted Bid record
+  const acceptedBid = results[1];
+
+  // Auto-create a conversation between the investor and the contractor
+  // so both parties see each other in the Messages tab immediately.
+  try {
+    await upsertConversation(jobId, investorId, acceptedBid.contractorId);
+  } catch {
+    // Non-fatal — the conversation can be created manually if this fails.
+  }
+
+  return acceptedBid;
 }
 
 export async function withdrawBid(jobId: string, bidId: string, contractorId: string) {

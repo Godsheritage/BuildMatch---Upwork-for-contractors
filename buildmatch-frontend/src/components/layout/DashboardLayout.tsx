@@ -1,10 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   Home, Search, Briefcase, PlusCircle,
   User, FileText, Menu, X,
   HelpCircle, Bell, Settings, ChevronUp, MessageSquare,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { getConversations } from '../../services/message.service';
 import { useUnreadCount } from '../../hooks/useUnreadCount';
 import { useMessageNotifications } from '../../hooks/useMessageNotifications';
 import { useAuth } from '../../hooks/useAuth';
@@ -26,9 +28,19 @@ export function DashboardLayout() {
   const [notifOpen, setNotifOpen]       = useState(false);
   const [profileOpen, setProfileOpen]   = useState(false);
   const notifBtnRef = useRef<HTMLButtonElement>(null);
+  const queryClient = useQueryClient();
   const unreadCount = useNotificationCount();
   const { totalUnread } = useUnreadCount();
   useMessageNotifications();
+
+  // Prefetch conversations on layout mount so the Messages tab loads instantly
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ['conversations'],
+      queryFn:  getConversations,
+      staleTime: 60_000,
+    });
+  }, [queryClient]);
 
   const investorNav = [
     { to: '/dashboard',              icon: Home,           label: t.nav.dashboard,       badge: 0           },

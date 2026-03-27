@@ -105,7 +105,7 @@ function ConversationList({ activeId, onSelect, isHiddenOnMobile }: ConvListProp
   const { data: conversations = [], isLoading } = useQuery({
     queryKey: ['conversations'],
     queryFn:  getConversations,
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 
   const filtered = search.trim()
@@ -185,7 +185,7 @@ export function MessagesPage() {
   const { data: conversations = [] } = useQuery({
     queryKey: ['conversations'],
     queryFn:  getConversations,
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 
   // Sync activeConv from URL on load / navigation

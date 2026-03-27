@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { getServiceClient } from '../lib/supabase';
@@ -107,6 +108,24 @@ const CONV_SELECT = (userId: string) => Prisma.sql`
 
 // ── Conversation services ─────────────────────────────────────────────────────
 
+/**
+ * Lightweight upsert used internally (e.g. on bid acceptance).
+ * Skips participant-validation — caller is responsible for ensuring the ids are valid.
+ */
+export async function upsertConversation(
+  jobId:        string,
+  investorId:   string,
+  contractorId: string,
+): Promise<string> {
+  const conv = await prisma.conversation.upsert({
+    where:  { jobId_investorId_contractorId: { jobId, investorId, contractorId } },
+    create: { jobId, investorId, contractorId },
+    update: { updatedAt: new Date() },
+    select: { id: true },
+  });
+  return conv.id;
+}
+
 export async function createOrGetConversation(
   userId:      string,
   role:        string,
@@ -133,16 +152,15 @@ export async function createOrGetConversation(
     if (!bid) throw new AppError('You have not bid on this job', 403);
   }
 
-  // Upsert — DO UPDATE with a no-op so RETURNING always fires on conflict
-  const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
-    INSERT INTO conversations (job_id, investor_id, contractor_id)
-    VALUES (${jobId}, ${investorId}, ${contractorId})
-    ON CONFLICT (job_id, investor_id, contractor_id)
-    DO UPDATE SET updated_at = NOW()
-    RETURNING id
-  `);
+  // Upsert via Prisma so the CUID is generated client-side (no DB-level default needed)
+  const conv = await prisma.conversation.upsert({
+    where:  { jobId_investorId_contractorId: { jobId, investorId, contractorId } },
+    create: { jobId, investorId, contractorId },
+    update: { updatedAt: new Date() },
+    select: { id: true },
+  });
 
-  const conversationId = rows[0]?.id;
+  const conversationId = conv.id;
   if (!conversationId) throw new AppError('Failed to create conversation', 500);
 
   const item = await getConversationRow(conversationId, userId);
@@ -292,10 +310,11 @@ export async function sendConversationMessage(
   // Filter content — mandatory, never skip
   const { filteredContent, wasFiltered, filterReasons } = filterMessageContent(rawContent);
 
-  // Insert message
+  // Insert message — id must be supplied explicitly; @default(cuid()) is client-side only
   const { data: msgData, error: msgError } = await supabase
     .from('messages')
     .insert({
+      id:              randomUUID(),
       conversation_id: conversationId,
       sender_id:       senderId,
       content:         filteredContent,
