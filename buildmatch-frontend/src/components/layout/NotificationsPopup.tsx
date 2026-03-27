@@ -1,10 +1,25 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, MoreHorizontal, CheckCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getNotifications } from '../../services/notification.service';
 import type { Notification } from '../../services/notification.service';
 import styles from './NotificationsPopup.module.css';
+
+// ── Local read-state persistence ──────────────────────
+
+const READ_KEY = 'buildmatch_read_notifications';
+
+function loadReadIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(READ_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch { return new Set(); }
+}
+
+function persistReadIds(ids: Set<string>) {
+  try { localStorage.setItem(READ_KEY, JSON.stringify([...ids])); } catch {}
+}
 
 // ── Helpers ───────────────────────────────────────────
 
@@ -41,12 +56,35 @@ interface NotificationsPopupProps {
 export function NotificationsPopup({ open, onClose, anchorRef }: NotificationsPopupProps) {
   const popupRef = useRef<HTMLDivElement>(null);
 
+  const [readIds, setReadIds] = useState<Set<string>>(loadReadIds);
+
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn:  getNotifications,
     staleTime: 60_000,
     enabled:   open,
   });
+
+  const isRead = useCallback(
+    (n: Notification) => n.read || readIds.has(n.id),
+    [readIds],
+  );
+
+  const markOneRead = useCallback((id: string) => {
+    setReadIds((prev) => {
+      const next = new Set(prev).add(id);
+      persistReadIds(next);
+      return next;
+    });
+  }, []);
+
+  const markAllRead = useCallback(() => {
+    setReadIds((prev) => {
+      const next = new Set([...prev, ...notifications.map((n) => n.id)]);
+      persistReadIds(next);
+      return next;
+    });
+  }, [notifications]);
 
   // Close on outside click
   useEffect(() => {
@@ -65,22 +103,23 @@ export function NotificationsPopup({ open, onClose, anchorRef }: NotificationsPo
 
   if (!open) return null;
 
-  const unread = notifications.filter((n) => !n.read);
+  const unread = notifications.filter((n) => !isRead(n));
 
   return (
     <div ref={popupRef} className={styles.popup}>
       {/* Header */}
       <div className={styles.header}>
         <span className={styles.title}>Notifications</span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {unread.length > 0 && (
-            <button className={styles.headerBtn} style={{ background: 'var(--color-primary)', color: '#fff', borderColor: 'transparent' }}>
-              <CheckCheck size={12} strokeWidth={2.5} />
-              Mark {unread.length} as read
-            </button>
-          )}
-          <button className={styles.headerBtn}>View preferences</button>
-        </div>
+        {unread.length > 0 && (
+          <button
+            className={styles.markReadBtn}
+            onClick={markAllRead}
+            aria-label={`Mark ${unread.length} as read`}
+          >
+            <CheckCheck size={12} strokeWidth={2.5} />
+            <span className={styles.markReadLabel}>Mark {unread.length} as read</span>
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -110,32 +149,35 @@ export function NotificationsPopup({ open, onClose, anchorRef }: NotificationsPo
             <span>Activity from jobs and bids will appear here</span>
           </div>
         ) : (
-          notifications.map((n) => (
-            <Link
-              key={n.id}
-              to={`/jobs/${n.jobId}`}
-              className={styles.item}
-              onClick={onClose}
-            >
-              <div
-                className={styles.dot}
-                style={{ background: n.read ? 'transparent' : TYPE_DOT[n.type] ?? '#5B6CF8' }}
-              />
-              <div className={styles.itemBody}>
-                <p className={`${styles.itemText} ${n.read ? styles.itemTextRead : ''}`}>
-                  {n.message}
-                </p>
-                <p className={styles.itemDate}>{timeAgo(n.createdAt)}</p>
-              </div>
-              <button
-                className={styles.moreBtn}
-                onClick={(e) => e.preventDefault()}
-                aria-label="More options"
+          notifications.map((n) => {
+            const read = isRead(n);
+            return (
+              <Link
+                key={n.id}
+                to={`/jobs/${n.jobId}`}
+                className={styles.item}
+                onClick={() => { markOneRead(n.id); onClose(); }}
               >
-                <MoreHorizontal size={15} strokeWidth={2} />
-              </button>
-            </Link>
-          ))
+                <div
+                  className={styles.dot}
+                  style={{ background: read ? 'transparent' : TYPE_DOT[n.type] ?? '#5B6CF8' }}
+                />
+                <div className={styles.itemBody}>
+                  <p className={`${styles.itemText} ${read ? styles.itemTextRead : ''}`}>
+                    {n.message}
+                  </p>
+                  <p className={styles.itemDate}>{timeAgo(n.createdAt)}</p>
+                </div>
+                <button
+                  className={styles.moreBtn}
+                  onClick={(e) => e.preventDefault()}
+                  aria-label="More options"
+                >
+                  <MoreHorizontal size={15} strokeWidth={2} />
+                </button>
+              </Link>
+            );
+          })
         )}
       </div>
 
@@ -153,10 +195,21 @@ export function NotificationsPopup({ open, onClose, anchorRef }: NotificationsPo
 // ── Unread badge helper ───────────────────────────────
 
 export function useNotificationCount() {
+  const [readIds, setReadIds] = useState<Set<string>>(loadReadIds);
+
+  // Keep in sync with localStorage changes from the popup
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === READ_KEY) setReadIds(loadReadIds());
+    }
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications'],
     queryFn:  getNotifications,
     staleTime: 60_000,
   });
-  return notifications.filter((n) => !n.read).length;
+  return notifications.filter((n) => !n.read && !readIds.has(n.id)).length;
 }
