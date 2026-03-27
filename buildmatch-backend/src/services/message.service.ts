@@ -22,7 +22,7 @@ export interface ConversationListItem {
     role: string;
   };
   lastMessage: {
-    preview: string;
+    content: string;
     createdAt: Date;
     senderId: string;
   } | null;
@@ -64,7 +64,7 @@ function toListItem(row: RawConversationRow): ConversationListItem {
     },
     lastMessage: row.last_message_content
       ? {
-          preview:   row.last_message_content.slice(0, 60),
+          content:   row.last_message_content.slice(0, 60),
           createdAt: row.last_message_created_at!,
           senderId:  row.last_message_sender_id!,
         }

@@ -36,18 +36,24 @@ export default function useAvatarUpload() {
     const progressTimer = setTimeout(() => setUploadProgress(70), 500);
 
     try {
-      const supabase = getSupabaseClient();
+      // Get signed upload URL from backend (bypasses RLS)
+      const { data } = await api.post<{ data: { signedUrl: string; token: string; path: string } }>(
+        '/upload/presign',
+        { bucket: 'avatars', path },
+      );
+      const { token } = data.data;
 
+      const supabase = getSupabaseClient();
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { upsert: true, contentType: file.type });
+        .uploadToSignedUrl(path, token, file, { upsert: true, contentType: file.type });
 
       if (uploadError) throw new Error(uploadError.message);
 
       setUploadProgress(100);
 
-      const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-      return data.publicUrl;
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+      return urlData.publicUrl;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
       setError(msg);
@@ -61,17 +67,11 @@ export default function useAvatarUpload() {
   const deleteAvatar = useCallback(async (currentUrl: string): Promise<void> => {
     setError(null);
 
-    const supabase = getSupabaseClient();
     const base = `${import.meta.env.VITE_SUPABASE_URL as string}/storage/v1/object/public/avatars/`;
     const path = currentUrl.replace(base, '');
 
     try {
-      const { error: removeError } = await supabase.storage
-        .from('avatars')
-        .remove([path]);
-
-      if (removeError) throw new Error(removeError.message);
-
+      await api.delete('/upload', { data: { bucket: 'avatars', path } });
       await api.delete('/users/me/avatar');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to remove avatar';

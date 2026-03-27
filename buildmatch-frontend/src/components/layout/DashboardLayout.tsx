@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   Home, Search, Briefcase, PlusCircle,
-  User, FileText, Menu, X,
+  FileText, Menu, X,
   HelpCircle, Bell, Settings, ChevronUp, MessageSquare,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -53,7 +53,6 @@ export function DashboardLayout() {
   const contractorNav = [
     { to: '/dashboard',              icon: Home,           label: t.nav.dashboard,   badge: 0           },
     { to: '/dashboard/messages',     icon: MessageSquare,  label: 'Messages',        badge: totalUnread },
-    { to: '/dashboard/profile',      icon: User,           label: t.nav.myProfile,   badge: 0           },
     { to: '/dashboard/browse-jobs',  icon: Search,         label: t.nav.browseJobs,  badge: 0           },
     { to: '/dashboard/my-bids',      icon: FileText,       label: t.nav.myBids,      badge: 0           },
   ];

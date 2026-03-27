@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { getSupabaseClient } from '../lib/supabase';
 import { useAuth } from './useAuth';
+import api from '../services/api';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -22,6 +23,34 @@ function extractStoragePath(url: string, bucket: string): string {
 
 function getExt(file: File): string {
   return file.name.split('.').pop()?.toLowerCase() ?? 'bin';
+}
+
+async function presignAndUpload(
+  bucket: string,
+  path: string,
+  file: File,
+): Promise<string> {
+  // Get signed upload URL from backend (bypasses RLS)
+  const { data } = await api.post<{ data: { signedUrl: string; token: string; path: string } }>(
+    '/upload/presign',
+    { bucket, path },
+  );
+  const { signedUrl, token } = data.data;
+
+  // Upload directly to Supabase using the signed URL
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.storage
+    .from(bucket)
+    .uploadToSignedUrl(path, token, file, { contentType: file.type });
+
+  if (error) throw new Error(error.message);
+
+  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
+async function deleteViaBackend(bucket: string, path: string): Promise<void> {
+  await api.delete('/upload', { data: { bucket, path } });
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -72,23 +101,14 @@ export default function useJobMediaUpload() {
 
     setUploadingPhotos(true);
     try {
-      const supabase = getSupabaseClient();
-      const draftId  = jobDraftId.current;
-      const userId   = user!.id;
+      const draftId = jobDraftId.current;
+      const userId  = user!.id;
 
       const uploadedUrls = await Promise.all(
         fileArray.map(async (file, index) => {
           const ext  = getExt(file);
           const path = `${userId}/${draftId}/${Date.now()}-${index}.${ext}`;
-
-          const { error } = await supabase.storage
-            .from(PHOTO_BUCKET)
-            .upload(path, file, { upsert: false, contentType: file.type });
-
-          if (error) throw new Error(error.message);
-
-          const { data } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path);
-          return data.publicUrl;
+          return presignAndUpload(PHOTO_BUCKET, path, file);
         })
       );
 
@@ -107,10 +127,7 @@ export default function useJobMediaUpload() {
     const path = extractStoragePath(url, PHOTO_BUCKET);
 
     try {
-      const supabase = getSupabaseClient();
-      const { error } = await supabase.storage.from(PHOTO_BUCKET).remove([path]);
-      if (error) throw new Error(error.message);
-
+      await deleteViaBackend(PHOTO_BUCKET, path);
       setPendingPhotoUrls((prev) => prev.filter((u) => u !== url));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to remove photo';
@@ -146,18 +163,10 @@ export default function useJobMediaUpload() {
 
     setUploadingVideos(true);
     try {
-      const supabase = getSupabaseClient();
       const ext  = getExt(file);
       const path = `${user!.id}/${jobDraftId.current}/${Date.now()}.${ext}`;
-
-      const { error } = await supabase.storage
-        .from(VIDEO_BUCKET)
-        .upload(path, file, { upsert: false, contentType: file.type });
-
-      if (error) throw new Error(error.message);
-
-      const { data } = supabase.storage.from(VIDEO_BUCKET).getPublicUrl(path);
-      setPendingVideoUrls((prev) => [...prev, data.publicUrl]);
+      const publicUrl = await presignAndUpload(VIDEO_BUCKET, path, file);
+      setPendingVideoUrls((prev) => [...prev, publicUrl]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Video upload failed';
       setVideoUploadError(msg);
@@ -172,10 +181,7 @@ export default function useJobMediaUpload() {
     const path = extractStoragePath(url, VIDEO_BUCKET);
 
     try {
-      const supabase = getSupabaseClient();
-      const { error } = await supabase.storage.from(VIDEO_BUCKET).remove([path]);
-      if (error) throw new Error(error.message);
-
+      await deleteViaBackend(VIDEO_BUCKET, path);
       setPendingVideoUrls((prev) => prev.filter((u) => u !== url));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to remove video';
