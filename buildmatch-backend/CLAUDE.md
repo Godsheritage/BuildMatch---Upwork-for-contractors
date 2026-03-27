@@ -30,7 +30,7 @@ Entry: `src/server.ts` → imports `src/app.ts` → starts HTTP listener.
 2. `cors({ origin: FRONTEND_URL })` — never use `*`
 3. `rateLimit({ windowMs: 15min, max: 100 })` — per-IP throttle
 4. `express.json()` + `express.urlencoded({ extended: true })`
-5. Routes: `/health`, `/api/auth`, `/api/users`, `/api/contractors`, `/api/jobs`
+5. Routes: `/health`, `/api/auth`, `/api/users`, `/api/contractors`, `/api/jobs`, `/api/messages`
 6. `errorHandler` — **must be last**
 
 Prisma singleton lives at `src/lib/prisma.ts` (lazy proxy pattern). Import it everywhere rather than instantiating `PrismaClient` directly.
@@ -91,6 +91,18 @@ src/
 | PUT | `/api/jobs/:jobId/bids/:bidId/withdraw` | `authenticate` + `requireRole('CONTRACTOR')` | Withdraw PENDING bid |
 
 **Route ordering:** `/my-bid` declared before `/:bidId/*` to prevent param capture.
+
+### Messages — `/api/messages`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/messages/conversations` | `authenticate` | Get-or-create a conversation for `{ jobId, recipientId }` |
+| GET | `/api/messages/conversations` | `authenticate` | List all conversations for the current user, with last message + unread count |
+| GET | `/api/messages/conversations/unread-count` | `authenticate` | Returns `{ total: number }` — sum of unread messages across all conversations |
+| GET | `/api/messages/conversations/:id` | `authenticate` | Fetch conversation detail; **marks all unread messages as read** |
+| GET | `/api/messages/conversations/:id/messages` | `authenticate` | Paginated message history (query: `before` cursor, `limit` default 30) |
+| POST | `/api/messages/conversations/:id/messages` | `authenticate` | Send a message; content is **always** run through `filterMessageContent()` before save |
+
+**Route ordering:** `/unread-count` declared before `/:id` to prevent param capture.
 
 ### Health
 | Method | Path | Auth | Description |
@@ -167,6 +179,30 @@ model Bid {
   message      String
   status       BidStatus @default(PENDING)
 }
+
+model Conversation {
+  id                    String   @id @default(cuid())
+  jobId                 String
+  investorId            String
+  contractorId          String
+  investorUnreadCount   Int      @default(0)
+  contractorUnreadCount Int      @default(0)
+  lastMessageAt         DateTime?
+  messages              Message[]
+  // unique constraint: (jobId, investorId, contractorId)
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation
+  senderId       String
+  content        String
+  isFiltered     Boolean      @default(false)
+  filterReason   String?
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+}
 ```
 
 **Bid ↔ ContractorProfile relationship:** There is no schema-level `@relation` between `Bid` and `ContractorProfile`. The `getJobBids` service enriches bids manually: fetch bids → collect unique `contractorId` values → query `contractorProfile WHERE userId IN [...]` → merge via `Map`. This avoids a migration while still populating contractor data.
@@ -230,3 +266,16 @@ Returns `results[1]` (the accepted Bid record).
 Static segments must be declared before dynamic params in every router:
 - `/my-jobs` before `/:id`
 - `/:jobId/bids/my-bid` before `/:jobId/bids/:bidId/...`
+- `/unread-count` before `/:id` (messages router)
+
+### Message content filtering
+`src/utils/message-filter.ts` exports `filterMessageContent(content: string)` which returns `{ filtered: string; wasFiltered: boolean; reason?: string }`.
+
+It matches five pattern groups and replaces matches with `[removed]`:
+1. **Phone numbers** — US formats, international `+` prefixes
+2. **Email addresses** — `*@*.*`
+3. **Payment app clauses** — Venmo, Zelle, Cash App, PayPal, Apple Pay, etc.
+4. **Social handles** — `@handle` patterns
+5. **External URLs** — http/https links and bare `domain.com` patterns
+
+**Enforcement rule: `filterMessageContent()` MUST be called before every `Message` save.** Never bypass it — it is the only protection against out-of-band contact exchange. The raw user input is discarded; only the filtered content is stored. `isFiltered` and `filterReason` are set on the Message record when content is modified.

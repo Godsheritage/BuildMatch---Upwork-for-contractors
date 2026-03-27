@@ -1,0 +1,21 @@
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+// Service-role client — bypasses RLS, for trusted server-side writes only.
+// Never expose this key to the browser.
+let _client: SupabaseClient | null = null;
+
+export function getServiceClient(): SupabaseClient {
+  if (!_client) {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+      throw new Error(
+        'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables',
+      );
+    }
+    _client = createClient(url, key, {
+      auth: { persistSession: false },
+    });
+  }
+  return _client;
+}

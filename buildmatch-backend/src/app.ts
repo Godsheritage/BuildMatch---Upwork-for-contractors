@@ -13,6 +13,7 @@ import notificationRoutes from './routes/notification.routes';
 import stripeRoutes from './routes/stripe.routes';
 import escrowRoutes from './routes/escrow.routes';
 import reviewRoutes from './routes/review.routes';
+import messageRoutes from './routes/message.routes';
 import { errorHandler } from './middleware/error.middleware';
 
 dotenv.config();
@@ -67,6 +68,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/escrow', escrowRoutes);
 app.use('/api', reviewRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Global error handler — must be last
 app.use(errorHandler);
