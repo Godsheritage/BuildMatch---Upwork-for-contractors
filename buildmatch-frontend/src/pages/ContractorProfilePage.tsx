@@ -1,10 +1,14 @@
 import { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, CheckCircle2, Briefcase, Clock, Shield, ChevronDown } from 'lucide-react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, MapPin, CheckCircle2, Briefcase, Clock, Shield, ChevronDown, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getContractorById } from '../services/contractor.service';
 import { getContractorReviews } from '../services/review.service';
 import type { ReviewSort } from '../services/review.service';
+import { getMyJobs } from '../services/job.service';
+import { getOrCreateConversation } from '../services/message.service';
+import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../context/ToastContext';
 import { Button } from '../components/ui/Button';
 import { StarRating } from '../components/ui/StarRating';
 import type { ContractorProfile } from '../types/contractor.types';
@@ -134,9 +138,133 @@ function NotFound() {
   );
 }
 
+// ── Contact modal (investor job picker) ────────────────────────────────────
+
+function ContactModal({
+  open,
+  onClose,
+  contractorUserId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  contractorUserId: string;
+}) {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [selectedJobId, setSelectedJobId] = useState('');
+  const [isStarting, setIsStarting]       = useState(false);
+
+  const { data: myJobs = [], isLoading } = useQuery({
+    queryKey: ['jobs', 'my-jobs'],
+    queryFn:  getMyJobs,
+    enabled:  open,
+    staleTime: 30_000,
+  });
+
+  const openJobs = myJobs.filter((j) => j.status === 'OPEN');
+
+  async function handleStart() {
+    if (!selectedJobId || isStarting) return;
+    setIsStarting(true);
+    try {
+      const conv = await getOrCreateConversation(selectedJobId, contractorUserId);
+      navigate(`/dashboard/messages/${conv.id}`);
+      onClose();
+    } catch {
+      toast('Could not open conversation. Please try again.', 'error');
+    } finally {
+      setIsStarting(false);
+    }
+  }
+
+  if (!open) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#fff', borderRadius: 'var(--radius-md)',
+          padding: 24, width: '100%', maxWidth: 420,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
+          position: 'relative',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute', top: 14, right: 14,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--color-text-muted)', padding: 4, lineHeight: 0,
+          }}
+          aria-label="Close"
+        >
+          <X size={16} strokeWidth={2} />
+        </button>
+
+        <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+          Message Contractor
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: '0 0 20px' }}>
+          Select one of your open jobs to start a conversation.
+        </p>
+
+        {isLoading ? (
+          <div style={{ height: 40, background: '#EFEFED', borderRadius: 8, animation: 'pulse 1.6s ease-in-out infinite' }} />
+        ) : openJobs.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 16 }}>
+              You need an open job to message a contractor.
+            </p>
+            <Link to="/dashboard/post-job" onClick={onClose}>
+              <Button variant="primary" size="sm">Post a Job</Button>
+            </Link>
+          </div>
+        ) : (
+          <>
+            <select
+              value={selectedJobId}
+              onChange={(e) => setSelectedJobId(e.target.value)}
+              style={{
+                width: '100%', height: 40, padding: '0 12px',
+                border: '1.5px solid var(--color-border)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 14, color: 'var(--color-text-primary)',
+                background: '#fff', fontFamily: 'var(--font-family)',
+                marginBottom: 16, outline: 'none', cursor: 'pointer',
+              }}
+            >
+              <option value="">Choose a job…</option>
+              {openJobs.map((job) => (
+                <option key={job.id} value={job.id}>{job.title}</option>
+              ))}
+            </select>
+            <Button
+              variant="primary"
+              className="w-full justify-center"
+              disabled={!selectedJobId || isStarting}
+              onClick={handleStart}
+            >
+              {isStarting ? 'Opening…' : 'Start Conversation'}
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Profile sidebar ────────────────────────────────────────────────────────
 
-function ProfileSidebar({ contractor }: { contractor: ContractorProfile }) {
+function ProfileSidebar({ contractor, onContactClick }: { contractor: ContractorProfile; onContactClick: () => void }) {
   const fullName = `${contractor.user.firstName} ${contractor.user.lastName}`;
   const location = [contractor.city, contractor.state].filter(Boolean).join(', ');
   const hasRate = contractor.hourlyRateMin != null || contractor.hourlyRateMax != null;
@@ -210,9 +338,9 @@ function ProfileSidebar({ contractor }: { contractor: ContractorProfile }) {
         <Button
           variant="primary"
           className="w-full justify-center"
-          onClick={() => {/* Phase 2 — contact flow */}}
+          onClick={onContactClick}
         >
-          Contact Contractor
+          Message Contractor
         </Button>
         <Button
           variant="secondary"
@@ -452,6 +580,8 @@ function ReviewsSection({ contractorUserId, totalReviews }: { contractorUserId: 
 
 export function ContractorProfilePage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const [contactModalOpen, setContactModalOpen] = useState(false);
 
   const { data: contractor, isLoading, isError } = useQuery({
     queryKey: ['contractors', id],
@@ -474,11 +604,22 @@ export function ContractorProfilePage() {
       {isLoading && <PageSkeleton />}
       {(isError || (!isLoading && !contractor)) && <NotFound />}
 
+      {contractor && user?.role === 'INVESTOR' && (
+        <ContactModal
+          open={contactModalOpen}
+          onClose={() => setContactModalOpen(false)}
+          contractorUserId={contractor.userId}
+        />
+      )}
+
       {contractor && (
         <div className={styles.wrap}>
           {/* Left sidebar */}
           <aside className={styles.sidebar}>
-            <ProfileSidebar contractor={contractor} />
+            <ProfileSidebar
+              contractor={contractor}
+              onContactClick={() => setContactModalOpen(true)}
+            />
           </aside>
 
           {/* Right content */}

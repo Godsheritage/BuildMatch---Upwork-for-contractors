@@ -1,0 +1,590 @@
+/* ── Thread shell ──────────────────────────────────────────────────────────── */
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+/* ── Header (sticky, 56px) ────────────────────────────────────────────────── */
+
+.header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  border-bottom: 1px solid #E5E3DE;
+  background: #fff;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.backBtn {
+  display: none; /* revealed via media query on mobile */
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  line-height: 0;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.backBtn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.headerName {
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.headerJob {
+  flex: 1;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.viewJobBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.viewJobBtn:hover {
+  background: var(--color-highlight);
+  border-color: var(--color-primary);
+}
+
+/* Job Info button — only shown on mobile (hidden by default) */
+.jobInfoBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.jobInfoBtn:hover {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-color: var(--color-text-muted);
+}
+
+/* ── Messages scroll area ────────────────────────────────────────────────────  */
+
+.messagesArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── Date separator ──────────────────────────────────────────────────────────  */
+
+.dateSeparator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0 8px;
+}
+
+.dateSeparatorLabel {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  letter-spacing: 0.02em;
+}
+
+/* ── Bubble rows ─────────────────────────────────────────────────────────────  */
+
+.bubbleRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.bubbleRowOwn {
+  flex-direction: row-reverse;
+}
+
+.bubbleRowOther {
+  flex-direction: row;
+}
+
+/* Fixed-width slot keeps alignment consistent whether avatar is shown or not */
+.avatarSlot {
+  width: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bubbleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 70%;
+  min-width: 0;
+}
+
+.bubbleGroupOwn {
+  align-items: flex-end;
+}
+
+/* Sender name (other user, first of group) */
+.senderName {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  padding-left: 2px;
+  margin-bottom: 1px;
+}
+
+/* The bubble */
+.bubble {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.bubbleOwn {
+  background: #1B3A5C;
+  color: #fff;
+  border-radius: 16px 16px 4px 16px;
+}
+
+.bubbleOther {
+  background: #F0F0EE;
+  color: #1A1A18;
+  border-radius: 16px 16px 16px 4px;
+}
+
+.bubbleSending {
+  opacity: 0.6;
+}
+
+/* Spinning loader icon inside/after bubble */
+.spinner {
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Filter warning ABOVE bubble */
+.filterBanner {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: #FEF3C7;
+  border-left: 3px solid #F59E0B;
+  border-radius: 0 4px 4px 0;
+  font-size: 12px;
+  color: #92400E;
+  margin-bottom: 2px;
+}
+
+.filterBannerIcon {
+  flex-shrink: 0;
+  color: #F59E0B;
+}
+
+/* Filter warning text below bubble (from backend) */
+.filterWarningText {
+  font-size: 12px;
+  color: var(--color-warning);
+  font-style: italic;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Timestamp + read receipt */
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.metaRowOwn {
+  justify-content: flex-end;
+}
+
+.bubbleTime {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.readReceipt {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.readReceiptRead {
+  color: #0F6E56; /* teal */
+}
+
+/* ── Load more ────────────────────────────────────────────────────────────── */
+
+.loadMoreWrap {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 16px;
+}
+
+.loadMoreBtn {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 5px 16px;
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.loadMoreBtn:hover {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+}
+
+/* ── Skeleton ────────────────────────────────────────────────────────────── */
+
+.skeletonStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.skeleton {
+  background: #EFEFED;
+  border-radius: 16px;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.skOther {
+  height: 44px;
+  width: 52%;
+  align-self: flex-start;
+}
+
+.skOwn {
+  height: 36px;
+  width: 38%;
+  align-self: flex-end;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+
+.emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 40px 24px;
+}
+
+.emptyIcon {
+  color: var(--color-border);
+  margin-bottom: 4px;
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.emptyDesc {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: var(--leading-body);
+  margin: 0;
+  max-width: 280px;
+}
+
+/* ── Input area ───────────────────────────────────────────────────────────── */
+
+.inputWrap {
+  flex-shrink: 0;
+  background: #fff;
+  border-top: 1px solid #E5E3DE;
+  padding: 12px 16px 10px;
+}
+
+/* Contact info reminder */
+.reminder {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.reminderText {
+  flex: 1;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.reminderDismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 0;
+  line-height: 0;
+  margin-top: 1px;
+  transition: color 0.15s;
+}
+
+.reminderDismiss:hover {
+  color: var(--color-text-primary);
+}
+
+/* Textarea + send */
+.inputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.textarea {
+  flex: 1;
+  resize: none;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1.5px solid #E5E3DE;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  outline: none;
+  line-height: 1.5;
+  overflow-y: auto;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+.textarea:focus {
+  border-color: var(--color-primary);
+  background: #fff;
+}
+
+.textarea:disabled {
+  opacity: 0.6;
+}
+
+.sendBtn {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.sendBtn:hover:not(:disabled) {
+  opacity: 0.88;
+  transform: scale(1.04);
+}
+
+.sendBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+}
+
+/* Character count */
+.charCount {
+  font-size: 11px;
+  text-align: right;
+  margin: 5px 0 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+/* ── No conversation selected ────────────────────────────────────────────── */
+
+.noConvWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  text-align: center;
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 639px) {
+  .backBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .headerJob {
+    display: none; /* too crowded on small screens */
+  }
+
+  /* Replace "View Job" link with the Job Info icon button */
+  .viewJobBtn {
+    display: none;
+  }
+
+  .jobInfoBtn {
+    display: flex;
+  }
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+
+:global([data-theme="dark"]) .thread {
+  background: #12141C;
+}
+
+:global([data-theme="dark"]) .header {
+  background: #12141C;
+  border-bottom-color: #2A2D3A;
+}
+
+:global([data-theme="dark"]) .dateSeparatorLabel {
+  background: #1A1D26;
+  border-color: #2A2D3A;
+  color: #888;
+}
+
+:global([data-theme="dark"]) .bubbleOther {
+  background: #1E2130;
+  color: #EDEDEB;
+}
+
+:global([data-theme="dark"]) .inputWrap {
+  background: #12141C;
+  border-top-color: #2A2D3A;
+}
+
+:global([data-theme="dark"]) .textarea {
+  background: #1A1D26;
+  border-color: #2A2D3A;
+  color: #EDEDEB;
+}
+
+:global([data-theme="dark"]) .textarea:focus {
+  background: #1A1D26;
+}
+
+:global([data-theme="dark"]) .reminder {
+  background: #1A1D26;
+  border-color: #2A2D3A;
+}
+
+:global([data-theme="dark"]) .skeleton {
+  background: #2A2D3A;
+}
+
+:global([data-theme="dark"]) .viewJobBtn {
+  border-color: #2A2D3A;
+}
+
+:global([data-theme="dark"]) .viewJobBtn:hover {
+  background: #1A2744;
+}
+
+:global([data-theme="dark"]) .jobInfoBtn {
+  border-color: #2A2D3A;
+  color: #9090A0;
+}
+
+:global([data-theme="dark"]) .jobInfoBtn:hover {
+  background: #1E2130;
+  color: #EDEDEB;
+  border-color: #3A3D4A;
+}

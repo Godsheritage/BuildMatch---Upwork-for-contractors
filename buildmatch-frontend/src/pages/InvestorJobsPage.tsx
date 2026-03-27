@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MoreVertical, AlertTriangle, X } from 'lucide-react';
+import { MoreVertical, AlertTriangle, X, MessageSquare } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../context/ToastContext';
 import { useLang } from '../context/LanguageContext';
-import { getMyJobs, cancelJob } from '../services/job.service';
+import { getMyJobs, cancelJob, getJobBids } from '../services/job.service';
+import { getOrCreateConversation } from '../services/message.service';
 import { Button } from '../components/ui/Button';
 import type { JobPost, JobStatus } from '../types/job.types';
 import styles from './InvestorJobsPage.module.css';
@@ -186,7 +187,14 @@ function SkeletonRows() {
 
 // ── Mobile job card ───────────────────────────────────────────────────────────
 
-function MobileJobCard({ job, onCancel }: { job: JobPost; onCancel: (job: JobPost) => void }) {
+function MobileJobCard({
+  job, onCancel, onMessage, isMessaging,
+}: {
+  job: JobPost;
+  onCancel: (job: JobPost) => void;
+  onMessage: (jobId: string) => void;
+  isMessaging: boolean;
+}) {
   const { t } = useLang();
   const navigate = useNavigate();
   return (
@@ -211,6 +219,15 @@ function MobileJobCard({ job, onCancel }: { job: JobPost; onCancel: (job: JobPos
         <Link to={`/jobs/${job.id}`} className={styles.mobileActionBtn}>
           {job.status === 'OPEN' ? t.investorJobs.actions.viewBids : t.investorJobs.actions.view}
         </Link>
+        {(job.status === 'AWARDED' || job.status === 'IN_PROGRESS') && (
+          <button
+            className={styles.mobileActionBtn}
+            disabled={isMessaging}
+            onClick={() => onMessage(job.id)}
+          >
+            {isMessaging ? '…' : 'Message'}
+          </button>
+        )}
         {job.status === 'OPEN' && (
           <button
             className={`${styles.mobileActionBtn} ${styles.mobileActionDanger}`}
@@ -233,6 +250,7 @@ export function InvestorJobsPage() {
   const { t }     = useLang();
   const [activeTab,    setActiveTab]    = useState<TabKey>('ALL');
   const [cancelTarget, setCancelTarget] = useState<JobPost | null>(null);
+  const [messagingJobId, setMessagingJobId] = useState<string | null>(null);
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs', 'my-jobs'],
@@ -253,6 +271,24 @@ export function InvestorJobsPage() {
   });
 
   const handleCancel = useCallback((job: JobPost) => setCancelTarget(job), []);
+
+  const handleMessageContractor = useCallback(async (jobId: string) => {
+    setMessagingJobId(jobId);
+    try {
+      const bids = await getJobBids(jobId);
+      const accepted = bids.find((b) => b.status === 'ACCEPTED');
+      if (!accepted?.contractor?.userId) {
+        navigate(`/jobs/${jobId}`);
+        return;
+      }
+      const conv = await getOrCreateConversation(jobId, accepted.contractor.userId);
+      navigate(`/dashboard/messages/${conv.id}`);
+    } catch {
+      toast('Could not open conversation. Please try again.', 'error');
+    } finally {
+      setMessagingJobId(null);
+    }
+  }, [navigate, toast]);
 
   const counts = TAB_KEYS.reduce<Record<string, number>>((acc, key) => {
     acc[key] = key === 'ALL'
@@ -364,6 +400,17 @@ export function InvestorJobsPage() {
                       <Link to={`/jobs/${job.id}`} className={styles.viewBtn}>
                         {job.status === 'OPEN' ? t.investorJobs.actions.viewBids : t.investorJobs.actions.view}
                       </Link>
+                      {(job.status === 'AWARDED' || job.status === 'IN_PROGRESS') && (
+                        <button
+                          className={styles.viewBtn}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer', background: 'none', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', padding: '4px 10px', fontSize: 12 }}
+                          disabled={messagingJobId === job.id}
+                          onClick={() => handleMessageContractor(job.id)}
+                        >
+                          <MessageSquare size={12} strokeWidth={2} />
+                          {messagingJobId === job.id ? '…' : 'Message'}
+                        </button>
+                      )}
                       {job.status === 'OPEN' && (
                         <KebabMenu job={job} onCancel={handleCancel} />
                       )}
@@ -388,7 +435,13 @@ export function InvestorJobsPage() {
           <EmptyState filtered={activeTab !== 'ALL'} />
         ) : (
           filtered.map((job) => (
-            <MobileJobCard key={job.id} job={job} onCancel={handleCancel} />
+            <MobileJobCard
+              key={job.id}
+              job={job}
+              onCancel={handleCancel}
+              onMessage={handleMessageContractor}
+              isMessaging={messagingJobId === job.id}
+            />
           ))
         )}
       </div>

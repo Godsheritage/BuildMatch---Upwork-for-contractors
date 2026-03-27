@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Calendar, DollarSign, Briefcase,
-  Users, AlertTriangle, CheckCircle2, Star, Camera,
+  Users, AlertTriangle, CheckCircle2, Star, Camera, MessageSquare,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
@@ -14,6 +14,7 @@ import {
 } from '../services/job.service';
 import { polishReply, summarizeThread } from '../services/ai.service';
 import { ReviewModal } from '../components/review/ReviewModal';
+import { getOrCreateConversation } from '../services/message.service';
 import { StarRating } from '../components/ui/StarRating';
 import { Button } from '../components/ui/Button';
 import { Lightbox } from '../components/ui/Lightbox';
@@ -358,10 +359,12 @@ function BidFormCard({ job, onSuccess }: { job: JobPost; onSuccess: () => void }
 
 // ── Sidebar: My bid (contractor, already bid) ──────────────────────────────────
 
-function MyBidCard({ jobId }: { jobId: string }) {
+function MyBidCard({ jobId, investorId }: { jobId: string; investorId: string }) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
+  const [messaging, setMessaging] = useState(false);
 
   const { data: bid, isLoading } = useQuery({
     queryKey: ['jobs', jobId, 'my-bid'],
@@ -411,6 +414,28 @@ function MyBidCard({ jobId }: { jobId: string }) {
         <p className={styles.bidMessage}>{bid.message}</p>
         <p className={styles.bidMeta}>Submitted {timeAgo(bid.createdAt)}</p>
       </div>
+
+      {bid.status === 'ACCEPTED' && (
+        <button
+          className={styles.viewBidsBtn}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}
+          disabled={messaging}
+          onClick={async () => {
+            setMessaging(true);
+            try {
+              const conv = await getOrCreateConversation(jobId, investorId);
+              navigate(`/dashboard/messages/${conv.id}`);
+            } catch {
+              toast('Could not open conversation. Please try again.', 'error');
+            } finally {
+              setMessaging(false);
+            }
+          }}
+        >
+          <MessageSquare size={14} strokeWidth={2} />
+          {messaging ? 'Opening…' : 'Message Investor'}
+        </button>
+      )}
 
       {bid.status === 'PENDING' && (
         confirming ? (
@@ -787,6 +812,8 @@ function MessagesSection({
 function BidsList({ jobId }: { jobId: string }) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [messagingBidId, setMessagingBidId] = useState<string | null>(null);
 
   const { data: bids, isLoading } = useQuery({
     queryKey: ['jobs', jobId, 'bids'],
@@ -864,7 +891,27 @@ function BidsList({ jobId }: { jobId: string }) {
             </div>
             <p className={styles.bidRowMessage}>{bid.message}</p>
             {bid.status === 'PENDING' && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
+                <button
+                  className={styles.viewBidsBtn}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+                  disabled={messagingBidId === bid.id}
+                  onClick={async () => {
+                    if (!bid.contractor?.userId) return;
+                    setMessagingBidId(bid.id);
+                    try {
+                      const conv = await getOrCreateConversation(jobId, bid.contractor.userId);
+                      navigate(`/dashboard/messages/${conv.id}`);
+                    } catch {
+                      toast('Could not open conversation. Please try again.', 'error');
+                    } finally {
+                      setMessagingBidId(null);
+                    }
+                  }}
+                >
+                  <MessageSquare size={13} strokeWidth={2} />
+                  {messagingBidId === bid.id ? 'Opening…' : 'Message'}
+                </button>
                 <button
                   className={styles.acceptBtn}
                   onClick={() => accept.mutate(bid.id)}
@@ -875,9 +922,31 @@ function BidsList({ jobId }: { jobId: string }) {
               </div>
             )}
             {bid.status === 'ACCEPTED' && (
-              <div className={styles.acceptedBanner}>
-                <CheckCircle2 size={13} strokeWidth={2.5} />
-                Accepted
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                <div className={styles.acceptedBanner}>
+                  <CheckCircle2 size={13} strokeWidth={2.5} />
+                  Accepted
+                </div>
+                <button
+                  className={styles.viewBidsBtn}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+                  disabled={messagingBidId === bid.id}
+                  onClick={async () => {
+                    if (!bid.contractor?.userId) return;
+                    setMessagingBidId(bid.id);
+                    try {
+                      const conv = await getOrCreateConversation(jobId, bid.contractor.userId);
+                      navigate(`/dashboard/messages/${conv.id}`);
+                    } catch {
+                      toast('Could not open conversation. Please try again.', 'error');
+                    } finally {
+                      setMessagingBidId(null);
+                    }
+                  }}
+                >
+                  <MessageSquare size={13} strokeWidth={2} />
+                  {messagingBidId === bid.id ? 'Opening…' : 'Message'}
+                </button>
               </div>
             )}
           </div>
@@ -1151,7 +1220,7 @@ export function JobDetailPage() {
                 </p>
               </div>
             )}
-            {sidebarVariant === 'my-bid' && <MyBidCard jobId={job.id} />}
+            {sidebarVariant === 'my-bid' && <MyBidCard jobId={job.id} investorId={job.investorId} />}
             {sidebarVariant === 'investor' && (
               <InvestorCard job={job} bidsRef={bidsRef} />
             )}

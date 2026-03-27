@@ -1,0 +1,110 @@
+/* ── Backdrop ────────────────────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 80;
+  transition: opacity 0.32s ease;
+}
+
+/* ── Sheet ───────────────────────────────────────────────────────────────── */
+
+.sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 82vh;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  will-change: transform;
+}
+
+/* ── Drag handle ─────────────────────────────────────────────────────────── */
+
+.handle {
+  width: 40px;
+  height: 4px;
+  background: #D1D5DB;
+  border-radius: 2px;
+  margin: 10px auto 6px;
+  flex-shrink: 0;
+}
+
+/* ── Sheet header ────────────────────────────────────────────────────────── */
+
+.sheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 10px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.sheetTitle {
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  letter-spacing: var(--tracking-tight);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  line-height: 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.closeBtn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+}
+
+/* ── Scrollable body ─────────────────────────────────────────────────────── */
+
+.body {
+  flex: 1;
+  overflow: hidden; /* let JobContextPanel's inner .body scroll */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── JobContextPanel override when rendered inside the drawer ────────────── */
+/*
+ * JobContextPanel returns <div className={className ?? styles.panel}>.
+ * .panel has `display: none` at ≤1023px, so we provide a replacement class
+ * here that keeps the panel fully visible.
+ */
+.panelInner {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+  border-left: none;
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+
+:global([data-theme="dark"]) .sheet {
+  background: #16181F;
+}
+
+:global([data-theme="dark"]) .handle {
+  background: #2E3241;
+}
+
+:global([data-theme="dark"]) .sheetHeader {
+  border-bottom-color: #2E3241;
+}

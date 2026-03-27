@@ -39,11 +39,12 @@ src/
     auth/        # ProtectedRoute
     contractor/  # ContractorCard, ContractorList
     job/         # JobCard, JobList
+    messaging/   # MessageThread, JobContextPanel, JobInfoDrawer, ConversationList
   pages/         # One file per route
-  hooks/         # useAuth, useContractors, useJobs
-  services/      # api.ts (Axios), auth.service.ts, contractor.service.ts, job.service.ts
+  hooks/         # useAuth, useContractors, useJobs, useMessaging, useUnreadCount, useMessageNotifications
+  services/      # api.ts (Axios), auth.service.ts, contractor.service.ts, job.service.ts, message.service.ts
   context/       # AuthContext.tsx, ToastContext.tsx
-  types/         # user.types.ts, contractor.types.ts, job.types.ts
+  types/         # user.types.ts, contractor.types.ts, job.types.ts, message.types.ts
   styles/        # design-tokens.css, globals.css
 ```
 
@@ -63,6 +64,8 @@ src/
 | `InvestorJobsPage.tsx` | `/dashboard/jobs` | INVESTOR | Job management table with tabs + kebab actions |
 | `PostJobPage.tsx` | `/dashboard/post-job` | INVESTOR | Create job form with live preview |
 | `ProfileSetupPage.tsx` | `/dashboard/profile/setup` | CONTRACTOR | 4-step profile wizard |
+| `MessagesPage.tsx` | `/dashboard/messages` | auth | Full inbox: conversation list + message thread + job context panel |
+| `MessagesPage.tsx` | `/dashboard/messages/:conversationId` | auth | Same page — URL param activates the conversation thread |
 
 All `/dashboard/*` routes render inside `DashboardLayout` (which provides the sidebar shell via `<Outlet />`).
 
@@ -115,6 +118,18 @@ Each component has a co-located `*.module.css`. New UI components must follow th
 
 Renders a 240px sticky sidebar + main `<Outlet>`. Sidebar nav links are role-aware: investors see "My Jobs" + "Post a Job"; contractors see "Browse Jobs" + "My Bids". Includes mobile hamburger + slide-in drawer.
 
+Calls `useMessageNotifications()` so the global Supabase Realtime subscription for new message toasts is alive for the entire authenticated session.
+
+### Messaging Components (`src/components/messaging/`)
+
+| Component | File | Description |
+|-----------|------|-------------|
+| `MessageThread` | `MessageThread.tsx` | Chat view: header, scrollable bubbles, input bar. Accepts a `Conversation` prop. |
+| `JobContextPanel` | `JobContextPanel.tsx` | Right-side panel showing job details + other user card. Hidden on tablet/mobile via its own CSS; use `className` prop to override. Supports `showHeader` prop. |
+| `JobInfoDrawer` | `JobInfoDrawer.tsx` | Mobile bottom-sheet (82 vh, drag-to-close) that renders `JobContextPanel` inside it. Triggered by the "Job Info" icon button in the thread header (visible at ≤639px). |
+
+**Three-panel layout** (`MessagesPage`): left list (280px) | center thread (flex 1) | right context panel (280px, hidden at ≤1023px). On mobile (≤639px), list and thread swap visibility based on whether `conversationId` URL param is present; back button in the thread header returns to `/dashboard/messages`.
+
 ## Auth Flow
 
 1. On app mount, `AuthProvider` checks `localStorage['buildmatch_token']`.
@@ -137,12 +152,17 @@ Renders a 240px sticky sidebar + main `<Outlet>`. Sidebar nav links are role-awa
 | `['jobs', id, 'bids']` | `GET /jobs/:id/bids` | JobDetailPage (investor, bids list) |
 | `['jobs', id, 'my-bid']` | `GET /jobs/:id/bids/my-bid` | JobDetailPage (contractor, existing bid) |
 | `['jobs', 'my-jobs']` | `GET /jobs/my-jobs` | InvestorJobsPage |
+| `['conversations']` | `GET /messages/conversations` | MessagesPage, ConversationList |
+| `['conversations', id]` | `GET /messages/conversations/:id` | MessagesPage (marks read, invalidates unread) |
+| `['unreadCount']` | `GET /messages/conversations/unread-count` | useUnreadCount (badge in sidebar) |
 
 **Invalidation rules:**
 - Submitting a bid → invalidate `['jobs', jobId]`
 - Accepting a bid → invalidate `['jobs', jobId]` + `['jobs', jobId, 'bids']`
 - Withdrawing a bid → invalidate `['jobs', jobId]` + `['jobs', jobId, 'my-bid']`
 - Cancelling a job → invalidate `['jobs', 'my-jobs']`
+- Opening a conversation → invalidate `['conversations']` + `['unreadCount']`
+- New Realtime message → invalidate `['conversations']` + `['unreadCount']`
 
 **staleTime:** 30–60 seconds on all queries. Never use `refetchOnWindowFocus` defaults — data is not real-time.
 
@@ -168,6 +188,36 @@ getMyBid(jobId)                        // GET  /jobs/:jobId/bids/my-bid
 acceptBid(jobId, bidId)                // PUT  /jobs/:jobId/bids/:bidId/accept
 withdrawBid(jobId, bidId)              // PUT  /jobs/:jobId/bids/:bidId/withdraw
 ```
+
+### `src/services/message.service.ts`
+```ts
+getConversations()                                // GET  /messages/conversations
+getOrCreateConversation(jobId, recipientId)       // POST /messages/conversations
+getConversation(conversationId)                   // GET  /messages/conversations/:id  (also marks read)
+getMessages(conversationId, before?)              // GET  /messages/conversations/:id/messages
+sendMessage(conversationId, content)              // POST /messages/conversations/:id/messages
+getTotalUnreadCount()                             // GET  /messages/conversations/unread-count
+```
+
+`getOrCreateConversation` is used across multiple pages (JobDetailPage, ContractorProfilePage, InvestorJobsPage, MyBidsPage) to start/navigate to a conversation.
+
+### Messaging Hooks
+
+| Hook | File | Description |
+|------|------|-------------|
+| `useMessaging(conversationId)` | `hooks/useMessaging.ts` | Fetches messages with pagination (`loadMore`), exposes `sendMessage`, subscribes to per-conversation Realtime INSERT events. |
+| `useUnreadCount()` | `hooks/useUnreadCount.ts` | Polls every 30s + Realtime `conversations` UPDATE. Returns `{ totalUnread: number }`. |
+| `useMessageNotifications()` | `hooks/useMessageNotifications.ts` | Global Realtime `messages` INSERT subscription. Shows an 'info' toast with "View" action button when a message arrives for a conversation the user is NOT currently viewing. Mount once in `DashboardLayout`. |
+
+### Supabase Realtime Channels
+
+| Channel name | Table | Event | Used by |
+|---|---|---|---|
+| `conversation-{id}` | `messages` | INSERT | `useMessaging` — live chat updates |
+| `conversations-unread` | `conversations` | UPDATE | `useUnreadCount` — sidebar badge |
+| `global-messages-notifications` | `messages` | INSERT | `useMessageNotifications` — toast alerts |
+
+**Important:** `useMessageNotifications` must **not** be mounted multiple times — it is called exactly once in `DashboardLayout`.
 
 ## Design System
 

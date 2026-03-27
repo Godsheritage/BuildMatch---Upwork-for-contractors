@@ -90,6 +90,28 @@
   color: #fff;
 }
 
+.navBadge {
+  margin-left: auto;
+  background: #1B3A5C;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.navItemActive .navBadge {
+  background: #fff;
+  color: #1B3A5C;
+}
+
 /* ── Sidebar footer ──────────────────────────────────── */
 .sidebarFooter {
   padding: 10px 14px;
@@ -330,6 +352,36 @@
   background: #F5F5F5;
 }
 
+.mobileMsgBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.mobileMsgBtn:hover {
+  background: #F5F5F5;
+}
+
+.mobileUnreadDot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background: #1B3A5C;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  pointer-events: none;
+}
+
 /* ── Backdrop ────────────────────────────────────────── */
 .backdrop {
   display: none;
@@ -439,6 +491,18 @@
 :global([data-theme="dark"]) .mobileHeader {
   background: #16181F;
   border-bottom-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .mobileMsgBtn {
+  color: #EDEDEB;
+}
+
+:global([data-theme="dark"]) .mobileMsgBtn:hover {
+  background: #1E2130;
+}
+
+:global([data-theme="dark"]) .mobileUnreadDot {
+  border-color: #16181F;
 }
 
 :global([data-theme="dark"]) .backdrop {

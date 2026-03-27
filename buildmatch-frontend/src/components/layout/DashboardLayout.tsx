@@ -2,9 +2,11 @@ import { useState, useRef } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   Home, Search, Briefcase, PlusCircle,
-  User, FileText, Menu, X, Moon, Sun,
-  HelpCircle, Bell, Settings, ChevronUp,
+  User, FileText, Menu, X,
+  HelpCircle, Bell, Settings, ChevronUp, MessageSquare,
 } from 'lucide-react';
+import { useUnreadCount } from '../../hooks/useUnreadCount';
+import { useMessageNotifications } from '../../hooks/useMessageNotifications';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../context/ThemeContext';
 import { useLang } from '../../context/LanguageContext';
@@ -17,7 +19,7 @@ import styles from './DashboardLayout.module.css';
 
 export function DashboardLayout() {
   const { user }                       = useAuth();
-  const { theme, toggle: toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const { lang, setLang, t }           = useLang();
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [helpOpen, setHelpOpen]         = useState(false);
@@ -25,19 +27,23 @@ export function DashboardLayout() {
   const [profileOpen, setProfileOpen]   = useState(false);
   const notifBtnRef = useRef<HTMLButtonElement>(null);
   const unreadCount = useNotificationCount();
+  const { totalUnread } = useUnreadCount();
+  useMessageNotifications();
 
   const investorNav = [
-    { to: '/dashboard',          icon: Home,       label: t.nav.dashboard       },
-    { to: '/contractors',        icon: Search,     label: t.nav.findContractors  },
-    { to: '/dashboard/jobs',     icon: Briefcase,  label: t.nav.myJobs          },
-    { to: '/dashboard/post-job', icon: PlusCircle, label: t.nav.postJob         },
+    { to: '/dashboard',              icon: Home,           label: t.nav.dashboard,       badge: 0           },
+    { to: '/dashboard/messages',     icon: MessageSquare,  label: 'Messages',            badge: totalUnread },
+    { to: '/contractors',            icon: Search,         label: t.nav.findContractors, badge: 0           },
+    { to: '/dashboard/jobs',         icon: Briefcase,      label: t.nav.myJobs,          badge: 0           },
+    { to: '/dashboard/post-job',     icon: PlusCircle,     label: t.nav.postJob,         badge: 0           },
   ];
 
   const contractorNav = [
-    { to: '/dashboard',  icon: Home,     label: t.nav.dashboard   },
-    { to: '/dashboard/profile', icon: User, label: t.nav.myProfile },
-    { to: '/dashboard/browse-jobs', icon: Search, label: t.nav.browseJobs },
-    { to: '/dashboard/my-bids', icon: FileText, label: t.nav.myBids },
+    { to: '/dashboard',              icon: Home,           label: t.nav.dashboard,   badge: 0           },
+    { to: '/dashboard/messages',     icon: MessageSquare,  label: 'Messages',        badge: totalUnread },
+    { to: '/dashboard/profile',      icon: User,           label: t.nav.myProfile,   badge: 0           },
+    { to: '/dashboard/browse-jobs',  icon: Search,         label: t.nav.browseJobs,  badge: 0           },
+    { to: '/dashboard/my-bids',      icon: FileText,       label: t.nav.myBids,      badge: 0           },
   ];
 
   const navItems = user?.role === 'CONTRACTOR' ? contractorNav : investorNav;
@@ -55,7 +61,15 @@ export function DashboardLayout() {
           <Menu size={22} strokeWidth={2} />
         </button>
         <span className={styles.wordmark} style={{ fontSize: '15px' }}>BuildMatch</span>
-        <div style={{ width: 34 }} />
+        <Link
+          to="/dashboard/messages"
+          className={styles.mobileMsgBtn}
+          onClick={closeSidebar}
+          aria-label="Messages"
+        >
+          <MessageSquare size={20} strokeWidth={2} />
+          {totalUnread > 0 && <span className={styles.mobileUnreadDot} />}
+        </Link>
       </header>
 
       {/* Backdrop */}
@@ -71,7 +85,7 @@ export function DashboardLayout() {
         </div>
 
         <nav className={styles.nav}>
-          {navItems.map(({ to, icon: Icon, label }) => (
+          {navItems.map(({ to, icon: Icon, label, badge }) => (
             <NavLink
               key={to}
               to={to}
@@ -83,6 +97,9 @@ export function DashboardLayout() {
             >
               <Icon size={17} strokeWidth={1.75} />
               {label}
+              {badge > 0 && (
+                <span className={styles.navBadge}>{badge > 99 ? '99+' : badge}</span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -130,12 +147,6 @@ export function DashboardLayout() {
             <span className={`${styles.langOption} ${lang === 'es' ? styles.langOptionActive : ''}`}>ES</span>
           </div>
         </div>
-
-        {/* Theme toggle */}
-        <button className={styles.themeToggleBtn} onClick={toggleTheme} aria-label="Toggle dark mode">
-          {theme === 'dark' ? <Sun size={17} strokeWidth={1.75} /> : <Moon size={17} strokeWidth={1.75} />}
-          {theme === 'dark' ? t.sidebar.lightMode : t.sidebar.darkMode}
-        </button>
 
         {user && (
           <button

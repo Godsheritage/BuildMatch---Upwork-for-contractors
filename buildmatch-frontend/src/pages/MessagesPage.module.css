@@ -1,0 +1,286 @@
+/* ── Page shell (full-height, no outer scroll) ────────────────────────────── */
+
+.page {
+  height: calc(100vh - 60px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.panels {
+  display: flex;
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Shared panel header ──────────────────────────────────────────────────── */
+
+.panelHeader {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid #E5E3DE;
+  background: #fff;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.panelTitle {
+  font-size: 16px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+
+/* ── LEFT PANEL: Conversation list ───────────────────────────────────────── */
+
+.leftPanel {
+  width: 300px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-right: 1px solid #E5E3DE;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Search bar */
+.searchWrap {
+  padding: 12px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 34px;
+  padding: 0 12px 0 34px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  outline: none;
+  font-family: var(--font-family);
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.searchInput::placeholder { color: var(--color-text-muted); }
+.searchInput:focus         { border-color: var(--color-primary); }
+
+/* Conversation list scroll area */
+.convList {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Conversation item ────────────────────────────────────────────────────── */
+
+.convItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 72px;
+  padding: 0 16px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+  transition: background 0.12s;
+  box-sizing: border-box;
+}
+
+.convItem:hover    { background: #F0F0EE; }
+
+.convItemActive        { border-left-color: var(--color-primary); background: #EFF6FF; }
+.convItemActive:hover  { background: #EFF6FF; }
+
+.convBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.convTop {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+  min-width: 0;
+}
+
+.convName {
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  max-width: 90px;
+}
+
+.convDot {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.convJob {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.convPreview {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.convMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.convTime {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.unreadBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  border-radius: 99px;
+  box-sizing: border-box;
+}
+
+/* ── MIDDLE PANEL: thread container (content comes from MessageThread) ─────── */
+
+.threadPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ── Empty state (left panel) ─────────────────────────────────────────────── */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 8px;
+}
+
+.emptyIcon  { color: var(--color-border); margin-bottom: 4px; }
+
+.emptyTitle {
+  font-size: 15px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.emptyDesc {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: var(--leading-body);
+  margin: 0;
+  max-width: 240px;
+}
+
+/* ── Skeleton ─────────────────────────────────────────────────────────────── */
+
+.skeleton {
+  background: #EFEFED;
+  border-radius: 6px;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.skeletonAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeletonLine { height: 13px; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* ── Mobile: single panel at a time ──────────────────────────────────────── */
+
+@media (max-width: 639px) {
+  .leftPanel   { width: 100%; }
+  .threadPanel { width: 100%; }
+
+  .hiddenMobile { display: none; }
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────────── */
+
+:global([data-theme="dark"]) .leftPanel {
+  background: #1A1D26;
+  border-right-color: #2A2D3A;
+}
+
+:global([data-theme="dark"]) .panelHeader {
+  background: #12141C;
+  border-bottom-color: #2A2D3A;
+}
+
+:global([data-theme="dark"]) .searchInput {
+  background: #1A1D26;
+  border-color: #2A2D3A;
+  color: #EDEDEB;
+}
+
+:global([data-theme="dark"]) .convItem:hover    { background: #22263A; }
+:global([data-theme="dark"]) .convItemActive    { background: #1A2744; }
+
+:global([data-theme="dark"]) .skeleton { background: #2A2D3A; }

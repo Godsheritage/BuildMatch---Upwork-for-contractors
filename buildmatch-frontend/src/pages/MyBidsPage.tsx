@@ -1,8 +1,12 @@
-import { Link } from 'react-router-dom';
-import { FileText, ChevronRight, MapPin, DollarSign } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { FileText, ChevronRight, MapPin, DollarSign, MessageSquare } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getMyBids } from '../services/job.service';
+import { getOrCreateConversation } from '../services/message.service';
+import { useToast } from '../context/ToastContext';
 import type { BidStatus } from '../types/job.types';
+import type { BidWithJob } from '../services/job.service';
 import styles from './MyBidsPage.module.css';
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -24,6 +28,65 @@ function StatusBadge({ status }: { status: BidStatus }) {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
+
+function BidRow({ bid }: { bid: BidWithJob }) {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [messaging, setMessaging] = useState(false);
+
+  async function handleMessage(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!bid.job?.investorId || messaging) return;
+    setMessaging(true);
+    try {
+      const conv = await getOrCreateConversation(bid.jobId, bid.job.investorId);
+      navigate(`/dashboard/messages/${conv.id}`);
+    } catch {
+      toast('Could not open conversation. Please try again.', 'error');
+    } finally {
+      setMessaging(false);
+    }
+  }
+
+  return (
+    <Link key={bid.id} to={`/jobs/${bid.jobId}`} className={styles.row}>
+      <div className={styles.rowMain}>
+        <p className={styles.jobTitle}>{bid.job?.title ?? 'Job removed'}</p>
+        <div className={styles.meta}>
+          {bid.job?.city && (
+            <span className={styles.metaItem}>
+              <MapPin size={12} strokeWidth={1.75} />
+              {bid.job.city}, {bid.job.state}
+            </span>
+          )}
+          <span className={styles.metaItem}>
+            <DollarSign size={12} strokeWidth={1.75} />
+            Your bid: ${bid.amount.toLocaleString()}
+          </span>
+          <span className={styles.metaItem}>
+            {new Date(bid.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+        </div>
+      </div>
+      <div className={styles.rowRight}>
+        {bid.status === 'ACCEPTED' && (
+          <button
+            className={styles.msgBtn}
+            disabled={messaging}
+            onClick={handleMessage}
+            title="Message Investor"
+          >
+            <MessageSquare size={13} strokeWidth={2} />
+            {messaging ? '…' : 'Message'}
+          </button>
+        )}
+        <StatusBadge status={bid.status} />
+        <ChevronRight size={15} strokeWidth={1.75} color="var(--color-text-muted)" />
+      </div>
+    </Link>
+  );
+}
 
 export function MyBidsPage() {
   const { data: bids, isLoading } = useQuery({
@@ -54,30 +117,7 @@ export function MyBidsPage() {
       ) : (
         <div className={styles.list}>
           {bids.map((bid) => (
-            <Link key={bid.id} to={`/jobs/${bid.jobId}`} className={styles.row}>
-              <div className={styles.rowMain}>
-                <p className={styles.jobTitle}>{bid.job?.title ?? 'Job removed'}</p>
-                <div className={styles.meta}>
-                  {bid.job?.city && (
-                    <span className={styles.metaItem}>
-                      <MapPin size={12} strokeWidth={1.75} />
-                      {bid.job.city}, {bid.job.state}
-                    </span>
-                  )}
-                  <span className={styles.metaItem}>
-                    <DollarSign size={12} strokeWidth={1.75} />
-                    Your bid: ${bid.amount.toLocaleString()}
-                  </span>
-                  <span className={styles.metaItem}>
-                    {new Date(bid.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </span>
-                </div>
-              </div>
-              <div className={styles.rowRight}>
-                <StatusBadge status={bid.status} />
-                <ChevronRight size={15} strokeWidth={1.75} color="var(--color-text-muted)" />
-              </div>
-            </Link>
+            <BidRow key={bid.id} bid={bid} />
           ))}
         </div>
       )}

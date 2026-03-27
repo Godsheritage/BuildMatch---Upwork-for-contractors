@@ -27,6 +27,7 @@ import { FundJobPage } from './pages/FundJobPage';
 import { MyBidsPage } from './pages/MyBidsPage';
 import { BrowseJobsPage } from './pages/BrowseJobsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { MessagesPage } from './pages/MessagesPage';
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,8 @@ export default function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/profile" element={<UserProfilePage />} />
                 <Route path="/dashboard/settings" element={<SettingsPage />} />
+                <Route path="/dashboard/messages" element={<MessagesPage />} />
+                <Route path="/dashboard/messages/:conversationId" element={<MessagesPage />} />
                 <Route
                   path="/dashboard/my-bids"
                   element={
