@@ -47,6 +47,7 @@ export function DashboardLayout() {
   const pillLeft = lang === 'en' ? '3px' : 'calc(50% + 1px)';
 
   return (
+    <div data-theme={theme}>
     <div className={styles.layout}>
       {/* Mobile top bar */}
       <header className={styles.mobileHeader}>
@@ -170,6 +171,7 @@ export function DashboardLayout() {
       <main className={styles.main}>
         <Outlet />
       </main>
+    </div>
     </div>
   );
 }

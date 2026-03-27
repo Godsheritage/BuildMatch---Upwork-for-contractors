@@ -15,7 +15,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    // Only persist the preference — do NOT set it on <html>.
+    // Dark mode is scoped to the DashboardLayout element, so public
+    // pages are never affected by the theme setting.
     localStorage.setItem('bm_theme', theme);
   }, [theme]);
 

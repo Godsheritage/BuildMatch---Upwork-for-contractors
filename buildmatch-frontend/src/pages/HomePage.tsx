@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import {
   Zap, Droplets, Wind, Home, Layers, Paintbrush,
   Trees, Hammer, Wrench, Building2,
@@ -150,6 +151,7 @@ function HeroPreviewCard() {
 // ── Main page ──────────────────────────────────────────────────────────────
 
 export function HomePage() {
+  const { user } = useAuth();
   return (
     <div className={styles.page}>
 
@@ -162,8 +164,14 @@ export function HomePage() {
           <Link to="/register"    className={styles.navLink}>How It Works</Link>
         </div>
         <div className={styles.navActions}>
-          <Link to="/login"    className={styles.navSignIn}>Sign in</Link>
-          <Link to="/register" className={styles.navCta}>Get started</Link>
+          {user ? (
+            <Link to="/dashboard" className={styles.navCta}>Dashboard</Link>
+          ) : (
+            <>
+              <Link to="/login"    className={styles.navSignIn}>Sign in</Link>
+              <Link to="/register" className={styles.navCta}>Get started</Link>
+            </>
+          )}
         </div>
       </nav>
 

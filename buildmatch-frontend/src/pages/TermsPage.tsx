@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 const LAST_UPDATED = 'March 26, 2026';
 
@@ -27,6 +28,7 @@ function Section({ num, title, children }: SectionProps) {
 }
 
 export function TermsPage() {
+  const { user } = useAuth();
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
 
@@ -41,17 +43,32 @@ export function TermsPage() {
           BuildMatch
         </Link>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <Link to="/login" style={{ fontSize: 13, color: 'var(--color-text-muted)', textDecoration: 'none' }}>Sign in</Link>
-          <Link
-            to="/register"
-            style={{
-              fontSize: 13, fontWeight: 500, color: '#fff',
-              background: 'var(--color-primary)', textDecoration: 'none',
-              padding: '7px 16px', borderRadius: 8,
-            }}
-          >
-            Create account
-          </Link>
+          {user ? (
+            <Link
+              to="/dashboard"
+              style={{
+                fontSize: 13, fontWeight: 500, color: '#fff',
+                background: 'var(--color-primary)', textDecoration: 'none',
+                padding: '7px 16px', borderRadius: 8,
+              }}
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" style={{ fontSize: 13, color: 'var(--color-text-muted)', textDecoration: 'none' }}>Sign in</Link>
+              <Link
+                to="/register"
+                style={{
+                  fontSize: 13, fontWeight: 500, color: '#fff',
+                  background: 'var(--color-primary)', textDecoration: 'none',
+                  padding: '7px 16px', borderRadius: 8,
+                }}
+              >
+                Create account
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -217,12 +234,20 @@ export function TermsPage() {
           paddingTop: 32, borderTop: '1px solid var(--color-border)',
           display: 'flex', gap: 24, flexWrap: 'wrap',
         }}>
-          <Link to="/register" style={{ fontSize: 13, color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>
-            Create an account
-          </Link>
-          <Link to="/login" style={{ fontSize: 13, color: 'var(--color-text-muted)', textDecoration: 'none' }}>
-            Sign in
-          </Link>
+          {user ? (
+            <Link to="/dashboard" style={{ fontSize: 13, color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>
+              Go to dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/register" style={{ fontSize: 13, color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 500 }}>
+                Create an account
+              </Link>
+              <Link to="/login" style={{ fontSize: 13, color: 'var(--color-text-muted)', textDecoration: 'none' }}>
+                Sign in
+              </Link>
+            </>
+          )}
           <Link to="/" style={{ fontSize: 13, color: 'var(--color-text-muted)', textDecoration: 'none' }}>
             ← Back to home
           </Link>

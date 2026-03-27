@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { Search, SlidersHorizontal, X, Check, Briefcase } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getJobs } from '../services/job.service';
@@ -363,6 +364,7 @@ function FilterPanel({ filters, onChange, onClear }: FilterPanelProps) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function JobsPage() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [filters, setFilters]     = useState<Filters>(() => filtersFromParams(searchParams));
@@ -459,18 +461,34 @@ export function JobsPage() {
         <div className={styles.navLinks}>
           <Link to="/contractors" className={styles.navLink}>Find Contractors</Link>
           <Link to="/jobs" className={`${styles.navLink} ${styles.navLinkActive}`}>Browse Jobs</Link>
-          <Link to="/login"  className={styles.navLink}>Sign in</Link>
-          <Link
-            to="/register"
-            style={{
-              fontSize: 14, fontWeight: 500, color: '#fff',
-              background: 'var(--color-primary)',
-              padding: '7px 16px', borderRadius: 'var(--radius-sm)',
-              textDecoration: 'none',
-            }}
-          >
-            Get started
-          </Link>
+          {user ? (
+            <Link
+              to="/dashboard"
+              style={{
+                fontSize: 14, fontWeight: 500, color: '#fff',
+                background: 'var(--color-primary)',
+                padding: '7px 16px', borderRadius: 'var(--radius-sm)',
+                textDecoration: 'none',
+              }}
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/login"  className={styles.navLink}>Sign in</Link>
+              <Link
+                to="/register"
+                style={{
+                  fontSize: 14, fontWeight: 500, color: '#fff',
+                  background: 'var(--color-primary)',
+                  padding: '7px 16px', borderRadius: 'var(--radius-sm)',
+                  textDecoration: 'none',
+                }}
+              >
+                Get started
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
