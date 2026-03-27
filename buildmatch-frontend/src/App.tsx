@@ -26,6 +26,8 @@ import { FundJobPage } from './pages/FundJobPage';
 import { MyBidsPage } from './pages/MyBidsPage';
 import { BrowseJobsPage } from './pages/BrowseJobsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ProfileEditPage } from './pages/ProfileEditPage';
+import { AboutPage } from './pages/AboutPage';
 import { MessagesPage } from './pages/MessagesPage';
 
 const queryClient = new QueryClient();
@@ -45,6 +47,7 @@ export default function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/terms" element={<TermsPage />} />
+              <Route path="/about" element={<AboutPage />} />
               <Route path="/contractors/:id" element={<ContractorProfilePage />} />
               <Route path="/jobs/:id" element={<JobDetailPage />} />
 
@@ -58,6 +61,7 @@ export default function App() {
               >
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/profile" element={<UserProfilePage />} />
+                <Route path="/dashboard/profile/edit" element={<ProfileEditPage />} />
                 <Route path="/dashboard/settings" element={<SettingsPage />} />
                 <Route path="/dashboard/messages" element={<MessagesPage />} />
                 <Route path="/dashboard/messages/:conversationId" element={<MessagesPage />} />

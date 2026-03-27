@@ -75,17 +75,26 @@ model User {
   lastName    String
   phone       String?
   avatarUrl   String?
+  bio         String?
+  city        String?
+  state       String?
+  company     String?
+  title       String?
+  website     String?
   isVerified  Boolean   @default(false)
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  contractor       ContractorProfile?
-  postedJobs       Job[]                    @relation("InvestorJobs")
-  stripeAccount    ContractorStripeAccount?
-  reviewsGiven     Review[]                 @relation("ReviewsGiven")
-  reviewsReceived  Review[]                 @relation("ReviewsReceived")
-  messagesSent     Message[]
+  contractor              ContractorProfile?
+  postedJobs              Job[]                    @relation("InvestorJobs")
+  stripeAccount           ContractorStripeAccount?
+  reviewsGiven            Review[]                 @relation("ReviewsGiven")
+  reviewsReceived         Review[]                 @relation("ReviewsReceived")
+  messagesSent            Message[]
+  investorConversations   Conversation[]           @relation("InvestorConversations")
+  contractorConversations Conversation[]           @relation("ContractorConversations")
+  convMessagesSent        ConversationMessage[]    @relation("ConvMessageSender")
 }
 
 model ContractorProfile {
@@ -135,6 +144,7 @@ model Job {
   escrowPayment          EscrowPayment?
   reviews                Review[]
   messages               Message[]
+  conversations          Conversation[]
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
 }
@@ -222,4 +232,40 @@ model Review {
   updatedAt    DateTime @updatedAt
 
   @@unique([jobId, reviewerId])
+}
+
+model Conversation {
+  id                    String               @id @default(cuid())
+  jobId                 String               @map("job_id")
+  investorId            String               @map("investor_id")
+  contractorId          String               @map("contractor_id")
+  investorUnreadCount   Int                  @default(0) @map("investor_unread_count")
+  contractorUnreadCount Int                  @default(0) @map("contractor_unread_count")
+  lastMessageAt         DateTime?            @map("last_message_at")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @default(now()) @updatedAt @map("updated_at")
+
+  job          Job                  @relation(fields: [jobId],         references: [id], onDelete: Cascade)
+  investor     User                 @relation("InvestorConversations",   fields: [investorId],    references: [id], onDelete: Cascade)
+  contractor   User                 @relation("ContractorConversations", fields: [contractorId],  references: [id], onDelete: Cascade)
+  convMessages ConversationMessage[]
+
+  @@unique([jobId, investorId, contractorId])
+  @@map("conversations")
+}
+
+model ConversationMessage {
+  id             String       @id @default(cuid())
+  conversationId String       @map("conversation_id")
+  senderId       String       @map("sender_id")
+  content        String
+  isFiltered     Boolean      @default(false) @map("is_filtered")
+  filterReason   String?      @map("filter_reason")
+  readAt         DateTime?    @map("read_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("ConvMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
 }

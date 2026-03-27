@@ -7,17 +7,23 @@ import type { RegisterInput, LoginInput } from '../schemas/auth.schemas';
 
 // Fields returned on every user response — never includes password
 const USER_SELECT = {
-  id: true,
-  email: true,
-  role: true,
+  id:        true,
+  email:     true,
+  role:      true,
   firstName: true,
-  lastName: true,
-  phone: true,
+  lastName:  true,
+  phone:     true,
   avatarUrl: true,
+  bio:       true,
+  city:      true,
+  state:     true,
+  company:   true,
+  title:     true,
+  website:   true,
   isVerified: true,
-  isActive: true,
-  createdAt: true,
-  updatedAt: true,
+  isActive:   true,
+  createdAt:  true,
+  updatedAt:  true,
 } as const;
 
 export async function register(input: RegisterInput) {

@@ -131,7 +131,9 @@ export function UserProfilePage() {
   const fullName    = `${user.firstName} ${user.lastName}`;
   const initials    = getInitials(fullName);
   const color       = getAvatarColor(fullName);
-  const location    = profile ? [profile.city, profile.state].filter(Boolean).join(', ') : null;
+  const location    = isContractor
+    ? (profile ? [profile.city, profile.state].filter(Boolean).join(', ') : null)
+    : [user.city, user.state].filter(Boolean).join(', ') || null;
   const hasRate     = profile && (profile.hourlyRateMin != null || profile.hourlyRateMax != null);
   const rateLabel   = hasRate
     ? `$${profile?.hourlyRateMin ?? '?'}–$${profile?.hourlyRateMax ?? '?'}/hr`
@@ -166,21 +168,27 @@ export function UserProfilePage() {
               <div className={styles.headerMeta}>
                 <div className={styles.nameRow}>
                   <span className={styles.name}>{fullName}</span>
-                  <Link to="/dashboard/profile/setup" className={styles.editBtn} title="Edit profile">
+                  <Link
+                    to={isContractor ? '/dashboard/profile/setup' : '/dashboard/profile/edit'}
+                    className={styles.editBtn}
+                    title="Edit profile"
+                  >
                     <Pencil size={14} strokeWidth={2} />
                   </Link>
                 </div>
 
                 <div className={styles.tagline}>
                   <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', fontSize: 13 }}>
-                    {profile?.bio
-                      ? profile.bio.split('.')[0] + '.'
-                      : isContractor
-                        ? 'Add your professional tagline…'
-                        : 'Real estate investor on BuildMatch'
+                    {isContractor
+                      ? (profile?.bio ? profile.bio.split('.')[0] + '.' : 'Add your professional tagline…')
+                      : (user.title ?? (user.bio ? user.bio.split('.')[0] + '.' : 'Real estate investor on BuildMatch'))
                     }
                   </span>
-                  <Link to="/dashboard/profile/setup" className={styles.editBtn} title="Edit">
+                  <Link
+                    to={isContractor ? '/dashboard/profile/setup' : '/dashboard/profile/edit'}
+                    className={styles.editBtn}
+                    title="Edit"
+                  >
                     <Pencil size={12} strokeWidth={2} />
                   </Link>
                 </div>
@@ -267,8 +275,8 @@ export function UserProfilePage() {
           {/* About */}
           <div className={styles.card}>
             <p className={styles.sectionTitle}>About</p>
-            {profile?.bio ? (
-              <p className={styles.bio}>{profile.bio}</p>
+            {(isContractor ? profile?.bio : user.bio) ? (
+              <p className={styles.bio}>{isContractor ? profile!.bio : user.bio}</p>
             ) : (
               <div className={styles.emptySection}>
                 <div className={styles.emptySectionText}>
@@ -278,7 +286,10 @@ export function UserProfilePage() {
                   <p className={styles.emptySectionDesc}>
                     A strong bio helps you stand out and attract better opportunities.
                   </p>
-                  <Link to="/dashboard/profile/setup" className={styles.ctaBtn}>
+                  <Link
+                    to={isContractor ? '/dashboard/profile/setup' : '/dashboard/profile/edit'}
+                    className={styles.ctaBtn}
+                  >
                     <Plus size={13} strokeWidth={2} />
                     Add a bio
                   </Link>
@@ -395,24 +406,53 @@ export function UserProfilePage() {
             </div>
           )}
 
-          {/* Work experience (investor role or placeholder) */}
+          {/* Professional identity (investor) */}
           {!isContractor && (
             <div className={styles.card}>
-              <div className={styles.emptySection}>
-                <div className={styles.emptySectionText}>
-                  <p className={styles.emptySectionTitle}>Work experience</p>
-                  <p className={styles.emptySectionDesc}>
-                    Add your job history and achievements to give contractors insight into your projects.
-                  </p>
-                  <button className={styles.ctaBtn}>
-                    <Plus size={13} strokeWidth={2} />
-                    Add work experience
-                  </button>
-                </div>
-                <div className={styles.emptySectionIllustration}>
-                  <Briefcase size={24} color="var(--color-border)" strokeWidth={1.5} />
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <p className={styles.sectionTitle} style={{ marginBottom: 0 }}>Professional Details</p>
+                <Link to="/dashboard/profile/edit" className={styles.editBtn}>
+                  <Pencil size={14} strokeWidth={2} />
+                </Link>
               </div>
+              {(user.title || user.company || user.website) ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {user.title && (
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Title</span>
+                      <p style={{ fontSize: 14, color: 'var(--color-text-primary)', margin: '3px 0 0' }}>{user.title}</p>
+                    </div>
+                  )}
+                  {user.company && (
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Company</span>
+                      <p style={{ fontSize: 14, color: 'var(--color-text-primary)', margin: '3px 0 0' }}>{user.company}</p>
+                    </div>
+                  )}
+                  {user.website && (
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Website</span>
+                      <a href={user.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, color: 'var(--color-primary)', margin: '3px 0 0', display: 'block', textDecoration: 'underline', textUnderlineOffset: 2 }}>{user.website}</a>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className={styles.emptySection}>
+                  <div className={styles.emptySectionText}>
+                    <p className={styles.emptySectionTitle}>Professional details</p>
+                    <p className={styles.emptySectionDesc}>
+                      Add your title, company, and website to give contractors insight into who you are.
+                    </p>
+                    <Link to="/dashboard/profile/edit" className={styles.ctaBtn}>
+                      <Plus size={13} strokeWidth={2} />
+                      Add details
+                    </Link>
+                  </div>
+                  <div className={styles.emptySectionIllustration}>
+                    <Briefcase size={24} color="var(--color-border)" strokeWidth={1.5} />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -479,6 +519,10 @@ export function UserProfilePage() {
               </>
             ) : (
               <>
+                <Link to="/dashboard/profile/edit" className={styles.quickLink}>
+                  <Pencil size={14} strokeWidth={1.75} color="var(--color-text-muted)" />
+                  Edit profile
+                </Link>
                 <Link to="/dashboard/post-job" className={styles.quickLink}>
                   <Plus size={14} strokeWidth={1.75} color="var(--color-text-muted)" />
                   Post a job

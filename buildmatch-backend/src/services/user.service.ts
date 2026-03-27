@@ -1,7 +1,7 @@
 import prisma from '../lib/prisma';
 
 // Fields returned on every user response — never include password
-const USER_SELECT = {
+export const USER_SELECT = {
   id:        true,
   email:     true,
   role:      true,
@@ -9,6 +9,12 @@ const USER_SELECT = {
   lastName:  true,
   phone:     true,
   avatarUrl: true,
+  bio:       true,
+  city:      true,
+  state:     true,
+  company:   true,
+  title:     true,
+  website:   true,
   isVerified: true,
   isActive:   true,
   createdAt:  true,
@@ -27,6 +33,26 @@ export async function clearAvatarUrl(userId: string) {
   return prisma.user.update({
     where:  { id: userId },
     data:   { avatarUrl: null },
+    select: USER_SELECT,
+  });
+}
+
+export interface UpdateProfileInput {
+  firstName?: string;
+  lastName?:  string;
+  phone?:     string | null;
+  bio?:       string | null;
+  city?:      string | null;
+  state?:     string | null;
+  company?:   string | null;
+  title?:     string | null;
+  website?:   string | null;
+}
+
+export async function updateUserProfile(userId: string, data: UpdateProfileInput) {
+  return prisma.user.update({
+    where:  { id: userId },
+    data,
     select: USER_SELECT,
   });
 }

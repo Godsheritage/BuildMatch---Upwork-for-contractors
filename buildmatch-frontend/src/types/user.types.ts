@@ -8,6 +8,12 @@ export interface User {
   lastName: string;
   phone: string | null;
   avatarUrl: string | null;
+  bio: string | null;
+  city: string | null;
+  state: string | null;
+  company: string | null;
+  title: string | null;
+  website: string | null;
   isVerified: boolean;
   isActive: boolean;
   createdAt: string;

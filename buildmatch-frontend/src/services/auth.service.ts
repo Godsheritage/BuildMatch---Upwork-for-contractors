@@ -44,3 +44,20 @@ export async function getMe(): Promise<User> {
 export async function forgotPassword(email: string): Promise<void> {
   await api.post('/auth/forgot-password', { email });
 }
+
+export interface UpdateProfilePayload {
+  firstName?: string;
+  lastName?:  string;
+  phone?:     string | null;
+  bio?:       string | null;
+  city?:      string | null;
+  state?:     string | null;
+  company?:   string | null;
+  title?:     string | null;
+  website?:   string | null;
+}
+
+export async function updateUserProfile(payload: UpdateProfilePayload): Promise<User> {
+  const { data: res } = await api.put<ApiResponse<User>>('/users/me', payload);
+  return res.data;
+}

@@ -140,9 +140,14 @@ export default function JobMediaUploader({ onMediaChange, initialPhotos = [] }: 
   const onMediaChangeRef = useRef(onMediaChange);
   useEffect(() => { onMediaChangeRef.current = onMediaChange; }, [onMediaChange]);
 
+  // Capture initialPhotos once at mount — it's an initial value, not reactive state.
+  // Using it directly in the dep array causes an infinite loop when the parent passes
+  // a new array literal (e.g. initialPhotos={[]}) on every render.
+  const initialPhotosRef = useRef(initialPhotos);
+
   useEffect(() => {
-    onMediaChangeRef.current([...initialPhotos, ...pendingPhotoUrls]);
-  }, [pendingPhotoUrls, initialPhotos]);
+    onMediaChangeRef.current([...initialPhotosRef.current, ...pendingPhotoUrls]);
+  }, [pendingPhotoUrls]);
 
   // ── File handling ───────────────────────────────────────────────────────────
 

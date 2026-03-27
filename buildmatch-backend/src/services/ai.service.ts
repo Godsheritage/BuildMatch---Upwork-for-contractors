@@ -5,7 +5,7 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── AI foundation ──────────────────────────────────────────────────────────
 
-const MODEL  = 'claude-sonnet-4-20250514';
+const MODEL  = 'claude-haiku-4-5-20251001';
 const TOKENS = 1024;
 
 const VALID_TRADE_TYPES = new Set<string>(Object.values(TradeType));
@@ -149,13 +149,18 @@ export async function chat(messages: ChatMessage[], userContext?: { firstName: s
     ? `${SYSTEM_PROMPT}\n\nCurrent user: ${userContext.firstName} (${userContext.role.toLowerCase()})`
     : SYSTEM_PROMPT;
 
-  const response = await client.messages.create({
-    model:      'claude-haiku-4-5-20251001',
-    max_tokens: 512,
-    system:     systemWithContext,
-    messages:   messages.map((m) => ({ role: m.role, content: m.content })),
-  });
+  try {
+    const response = await client.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 512,
+      system:     systemWithContext,
+      messages:   messages.map((m) => ({ role: m.role, content: m.content })),
+    });
 
-  const block = response.content[0];
-  return block.type === 'text' ? block.text : '';
+    const block = response.content[0];
+    return block.type === 'text' ? block.text : '';
+  } catch (err) {
+    console.error('[ai.service] chat error:', err);
+    throw err;
+  }
 }
