@@ -398,7 +398,7 @@ export function PostJobPage() {
     mutationFn: (payload: CreateJobPayload) => createJob(payload),
     onSuccess: (job) => {
       toast(t.postJob.toast.success);
-      navigate(`/dashboard/jobs/${job.id}`);
+      navigate('/dashboard/jobs');
     },
     onError: () => {
       toast(t.postJob.toast.error, 'error');

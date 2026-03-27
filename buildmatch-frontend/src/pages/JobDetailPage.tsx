@@ -1009,14 +1009,14 @@ export function JobDetailPage() {
       <div className={styles.page}>
         <nav className={styles.nav}>
           <Link to="/" className={styles.navWordmark}>BuildMatch</Link>
-          <Link to="/jobs" className={styles.navBack}>
+          <Link to="/dashboard/browse-jobs" className={styles.navBack}>
             <ArrowLeft size={14} strokeWidth={2} /> All jobs
           </Link>
         </nav>
         <div className={styles.errorState}>
           <p className={styles.errorTitle}>Job not found</p>
           <p className={styles.errorSub}>This job may have been removed or the link is incorrect.</p>
-          <Link to="/jobs"><Button variant="secondary" size="sm">← Back to jobs</Button></Link>
+          <Link to="/dashboard/browse-jobs"><Button variant="secondary" size="sm">← Back to jobs</Button></Link>
         </div>
       </div>
     );
@@ -1027,7 +1027,7 @@ export function JobDetailPage() {
       {/* Navbar */}
       <nav className={styles.nav}>
         <Link to="/" className={styles.navWordmark}>BuildMatch</Link>
-        <Link to="/jobs" className={styles.navBack}>
+        <Link to="/dashboard/browse-jobs" className={styles.navBack}>
           <ArrowLeft size={14} strokeWidth={2} /> All jobs
         </Link>
       </nav>

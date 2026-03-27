@@ -112,7 +112,7 @@ export function MyBidsPage() {
           </div>
           <p className={styles.emptyTitle}>No bids yet</p>
           <p className={styles.emptyDesc}>Browse open jobs and submit your first bid to get started.</p>
-          <Link to="/jobs" className={styles.emptyLink}>Browse jobs</Link>
+          <Link to="/dashboard/browse-jobs" className={styles.emptyLink}>Browse jobs</Link>
         </div>
       ) : (
         <div className={styles.list}>

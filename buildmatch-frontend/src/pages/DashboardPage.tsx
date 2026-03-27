@@ -146,7 +146,7 @@ function ContractorDashboard({ greeting, t }: { greeting: string; t: ReturnType<
               <h2 className={styles.cardTitle}>
                 <Briefcase size={15} strokeWidth={1.75} /> Active Bids
               </h2>
-              <Link to="/jobs" className={styles.cardLink}>Browse jobs <ChevronRight size={13} strokeWidth={2} /></Link>
+              <Link to="/dashboard/browse-jobs" className={styles.cardLink}>Browse jobs <ChevronRight size={13} strokeWidth={2} /></Link>
             </div>
             <div className={styles.emptyCard}>
               <div className={styles.emptyCardIcon}>
@@ -156,7 +156,7 @@ function ContractorDashboard({ greeting, t }: { greeting: string; t: ReturnType<
               <p className={styles.emptyCardDesc}>
                 Jobs you've bid on will appear here once your bid is accepted.
               </p>
-              <Link to="/jobs">
+              <Link to="/dashboard/browse-jobs">
                 <Button variant="secondary" size="sm">Find jobs to bid on</Button>
               </Link>
             </div>

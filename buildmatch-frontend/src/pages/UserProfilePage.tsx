@@ -472,7 +472,7 @@ export function UserProfilePage() {
                   <Eye size={14} strokeWidth={1.75} color="var(--color-text-muted)" />
                   View public listing
                 </Link>
-                <Link to="/jobs" className={styles.quickLink}>
+                <Link to="/dashboard/browse-jobs" className={styles.quickLink}>
                   <Briefcase size={14} strokeWidth={1.75} color="var(--color-text-muted)" />
                   Browse jobs
                 </Link>
