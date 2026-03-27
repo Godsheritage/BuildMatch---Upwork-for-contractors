@@ -549,6 +549,105 @@
   text-align: center;
 }
 
+/* ── Recent jobs list (investor dashboard) ───────────────── */
+
+.skeletonStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeletonRow {
+  height: 56px;
+  border-radius: var(--radius-sm);
+  background: #EFEFED;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+.jobList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.jobRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.13s;
+}
+
+.jobRow:last-of-type {
+  border-bottom: none;
+}
+
+.jobRow:hover {
+  background: var(--color-surface);
+}
+
+.jobRowMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.jobRowTitle {
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jobRowMeta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jobRowBadge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.viewAllLink {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  text-decoration: none;
+  background: #fff;
+  transition: background 0.13s;
+}
+
+.viewAllLink:hover {
+  background: var(--color-surface);
+}
+
 /* ── Dark mode ───────────────────────────────────────────── */
 :global([data-theme="dark"]) .card {
   background: #16181F;
@@ -567,6 +666,31 @@
 :global([data-theme="dark"]) .emptySection {
   background: #16181F;
   border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .jobList {
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .jobRow {
+  background: #16181F;
+  border-bottom-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .jobRow:hover {
+  background: #1E2130;
+}
+
+:global([data-theme="dark"]) .viewAllLink {
+  background: #16181F;
+}
+
+:global([data-theme="dark"]) .viewAllLink:hover {
+  background: #1E2130;
+}
+
+:global([data-theme="dark"]) .skeletonRow {
+  background: #2A2D3A;
 }
 
 :global([data-theme="dark"]) .tabBadge {

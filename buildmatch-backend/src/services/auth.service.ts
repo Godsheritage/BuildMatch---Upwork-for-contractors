@@ -13,6 +13,7 @@ const USER_SELECT = {
   firstName: true,
   lastName: true,
   phone: true,
+  avatarUrl: true,
   isVerified: true,
   isActive: true,
   createdAt: true,

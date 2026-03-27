@@ -124,7 +124,9 @@ interface BubbleProps {
 
 function MessageBubble({ prepared, senderAvatar }: BubbleProps) {
   const { msg, isOwn, showSenderName, showAvatar } = prepared;
-  const senderName = `${msg.sender.firstName} ${msg.sender.lastName}`.trim() || 'User';
+  const senderName = msg.sender
+    ? `${msg.sender.firstName} ${msg.sender.lastName}`.trim() || 'User'
+    : 'User';
 
   return (
     <div className={`${styles.bubbleRow} ${isOwn ? styles.bubbleRowOwn : styles.bubbleRowOther}`}>

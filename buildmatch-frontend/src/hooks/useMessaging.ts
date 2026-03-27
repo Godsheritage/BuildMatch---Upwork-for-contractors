@@ -136,9 +136,16 @@ export function useMessaging(conversationId: string | null): UseMessagingResult 
 
       try {
         const real = await messageService.sendMessage(conversationId, content);
-        // Replace temp with real
+        // Replace temp with real. Also filter out any duplicate that the Realtime
+        // subscription may have added before the API response arrived.
         setLocalMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? { ...real } : m)),
+          prev
+            .filter((m) => m.id !== real.id)
+            .map((m) =>
+              m.id === tempId
+                ? { ...real, sender: m.sender ?? { firstName: '', lastName: '', avatarUrl: null } }
+                : m,
+            ),
         );
       } catch {
         // Remove temp on failure

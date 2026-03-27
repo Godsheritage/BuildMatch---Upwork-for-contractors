@@ -10,7 +10,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { useLang } from '../context/LanguageContext';
 import { getMyContractorProfile } from '../services/contractor.service';
+import { getMyJobs } from '../services/job.service';
 import type { ContractorProfile } from '../types/contractor.types';
+import type { JobPost } from '../types/job.types';
 import { Button } from '../components/ui/Button';
 import styles from './DashboardPage.module.css';
 
@@ -73,7 +75,24 @@ export function DashboardPage() {
 // INVESTOR dashboard (unchanged structure, minor polish)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  OPEN:        { bg: '#DCFCE7', color: '#166534' },
+  AWARDED:     { bg: '#DBEAFE', color: '#1E40AF' },
+  IN_PROGRESS: { bg: '#FEF9C3', color: '#854D0E' },
+  COMPLETED:   { bg: '#F3F4F6', color: '#374151' },
+  CANCELLED:   { bg: '#FEE2E2', color: '#991B1B' },
+};
+
 function InvestorDashboard({ greeting, t }: { greeting: string; t: ReturnType<typeof useLang>['t'] }) {
+  const { data: jobs = [], isLoading } = useQuery<JobPost[]>({
+    queryKey: ['jobs', 'my-jobs'],
+    queryFn:  getMyJobs,
+    staleTime: 30_000,
+  });
+
+  const activeJobs   = jobs.filter((j) => j.status === 'OPEN' || j.status === 'IN_PROGRESS' || j.status === 'AWARDED');
+  const recentJobs   = jobs.slice(0, 5);
+
   return (
     <div className={styles.page}>
       <div className={styles.singleCol}>
@@ -83,9 +102,9 @@ function InvestorDashboard({ greeting, t }: { greeting: string; t: ReturnType<ty
         </div>
 
         <div className={styles.statsRow}>
-          <StatCard label={t.dashboard.stats.activeJobs}        value="0" />
-          <StatCard label={t.dashboard.stats.contractorsHired}  value="0" />
-          <StatCard label={t.dashboard.stats.totalSpent}        value="$0" />
+          <StatCard label={t.dashboard.stats.activeJobs}       value={String(activeJobs.length)} />
+          <StatCard label={t.dashboard.stats.contractorsHired} value="0" />
+          <StatCard label={t.dashboard.stats.totalSpent}       value="$0" />
         </div>
 
         <div className={styles.sectionHeader}>
@@ -95,16 +114,49 @@ function InvestorDashboard({ greeting, t }: { greeting: string; t: ReturnType<ty
           </Link>
         </div>
 
-        <div className={styles.emptySection}>
-          <div className={styles.emptyIconWrap}>
-            <Briefcase size={24} color="var(--color-text-muted)" strokeWidth={1.5} />
+        {isLoading ? (
+          <div className={styles.skeletonStack}>
+            {[1, 2, 3].map((n) => (
+              <div key={n} className={styles.skeletonRow} />
+            ))}
           </div>
-          <p className={styles.emptyTitle}>{t.dashboard.empty.investorTitle}</p>
-          <p className={styles.emptyDesc}>{t.dashboard.empty.investorDesc}</p>
-          <Link to="/dashboard/post-job">
-            <Button variant="primary" size="sm">{t.dashboard.empty.investorCta}</Button>
-          </Link>
-        </div>
+        ) : recentJobs.length === 0 ? (
+          <div className={styles.emptySection}>
+            <div className={styles.emptyIconWrap}>
+              <Briefcase size={24} color="var(--color-text-muted)" strokeWidth={1.5} />
+            </div>
+            <p className={styles.emptyTitle}>{t.dashboard.empty.investorTitle}</p>
+            <p className={styles.emptyDesc}>{t.dashboard.empty.investorDesc}</p>
+            <Link to="/dashboard/post-job">
+              <Button variant="primary" size="sm">{t.dashboard.empty.investorCta}</Button>
+            </Link>
+          </div>
+        ) : (
+          <div className={styles.jobList}>
+            {recentJobs.map((job) => {
+              const sc = STATUS_COLORS[job.status] ?? STATUS_COLORS.OPEN;
+              return (
+                <Link key={job.id} to={`/jobs/${job.id}`} className={styles.jobRow}>
+                  <div className={styles.jobRowMain}>
+                    <p className={styles.jobRowTitle}>{job.title}</p>
+                    <p className={styles.jobRowMeta}>
+                      {job.city}, {job.state} &middot; ${job.budgetMin.toLocaleString()}–${job.budgetMax.toLocaleString()}
+                      {job.bidCount > 0 && <> &middot; {job.bidCount} bid{job.bidCount !== 1 ? 's' : ''}</>}
+                    </p>
+                  </div>
+                  <span className={styles.jobRowBadge} style={{ background: sc.bg, color: sc.color }}>
+                    {job.status.replace('_', ' ')}
+                  </span>
+                </Link>
+              );
+            })}
+            {jobs.length > 5 && (
+              <Link to="/dashboard/jobs" className={styles.viewAllLink}>
+                View all {jobs.length} jobs <ChevronRight size={13} strokeWidth={2} />
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
