@@ -1,11 +1,14 @@
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   Zap, Droplets, Wind, Home, Layers, Paintbrush,
   Trees, Hammer, Wrench, Building2,
   ShieldCheck, DollarSign, Star, Clock, ArrowRight,
-  MapPin, CheckCircle2,
+  MapPin, CheckCircle2, Search,
 } from 'lucide-react';
+import { useContractorSearch } from '../hooks/useContractorSearch';
+import { ContractorSearchResults } from '../components/contractor/ContractorSearchResults';
 import styles from './HomePage.module.css';
 
 // ── Static data ────────────────────────────────────────────────────────────
@@ -152,6 +155,27 @@ function HeroPreviewCard() {
 
 export function HomePage() {
   const { user } = useAuth();
+  const { results, isPending, isError, search, reset } = useContractorSearch();
+  const [inputValue, setInputValue] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState('');
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  function handleSearch() {
+    const q = inputValue.trim();
+    if (q.length < 10) return;
+    setSubmittedQuery(q);
+    search(q);
+    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+
+  function handleClear() {
+    reset();
+    setInputValue('');
+    setSubmittedQuery('');
+  }
+
+  const showResults = isPending || isError || results !== null;
+
   return (
     <div className={styles.page}>
 
@@ -191,9 +215,28 @@ export function HomePage() {
               Connect with licensed, insured, and vetted contractors across every
               trade — from electrical and plumbing to roofing and renovations.
             </p>
+            <div className={styles.searchRow}>
+              <Search size={16} className={styles.searchIcon} />
+              <input
+                className={styles.searchInput}
+                type="text"
+                placeholder="Describe your project — e.g. rehab a kitchen in Austin"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+              />
+              <button
+                className={styles.searchBtn}
+                onClick={handleSearch}
+                disabled={isPending || inputValue.trim().length < 10}
+                type="button"
+              >
+                {isPending ? 'Searching…' : 'Find Contractors'}
+              </button>
+            </div>
             <div className={styles.heroCtaRow}>
               <Link to="/contractors" className={styles.heroCtaPrimary}>
-                Find Contractors <ArrowRight size={16} strokeWidth={2.5} />
+                Browse All <ArrowRight size={16} strokeWidth={2.5} />
               </Link>
               <Link to="/register?role=CONTRACTOR" className={styles.heroCtaSecondary}>
                 I'm a Contractor
@@ -208,6 +251,19 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── AI SEARCH RESULTS ──────────────────────────── */}
+      {showResults && (
+        <div ref={resultsRef}>
+          <ContractorSearchResults
+            query={submittedQuery}
+            results={results}
+            isPending={isPending}
+            isError={isError}
+            onClear={handleClear}
+          />
+        </div>
+      )}
 
       {/* ── TRUST BAR ──────────────────────────────────── */}
       <div className={styles.trustBar}>

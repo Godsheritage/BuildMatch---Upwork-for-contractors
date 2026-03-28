@@ -302,3 +302,12 @@ model MatchingCache {
 
   @@map("matching_cache")
 }
+
+model SearchCache {
+  queryHash   String   @id
+  query       String
+  results     Json
+  generatedAt DateTime @default(now())
+
+  @@map("search_cache")
+}
