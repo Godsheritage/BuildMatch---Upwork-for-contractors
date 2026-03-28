@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FileText, ChevronRight, MapPin, DollarSign, MessageSquare } from 'lucide-react';
+import {
+  FileText, MapPin, MessageSquare, ChevronRight, Calendar,
+  TrendingUp, CheckCircle2, Clock,
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getMyBids } from '../services/job.service';
 import { getOrCreateConversation } from '../services/message.service';
@@ -9,30 +12,43 @@ import type { BidStatus } from '../types/job.types';
 import type { BidWithJob } from '../services/job.service';
 import styles from './MyBidsPage.module.css';
 
-// ── Status badge ──────────────────────────────────────────────────────────────
+// ── Status config ─────────────────────────────────────────────────────────────
 
-const STATUS_STYLES: Record<BidStatus, { bg: string; color: string; label: string }> = {
-  PENDING:   { bg: '#FEF9C3', color: '#854D0E', label: 'Pending'   },
-  ACCEPTED:  { bg: '#DCFCE7', color: '#166534', label: 'Accepted'  },
-  REJECTED:  { bg: '#FEE2E2', color: '#991B1B', label: 'Rejected'  },
-  WITHDRAWN: { bg: '#F3F4F6', color: '#374151', label: 'Withdrawn' },
+const STATUS_CONFIG: Record<BidStatus, {
+  bg:     string;
+  color:  string;
+  label:  string;
+  accent: string;
+}> = {
+  PENDING:   { bg: '#FEF9C3', color: '#854D0E', label: 'Pending',   accent: '#F59E0B' },
+  ACCEPTED:  { bg: '#DCFCE7', color: '#166534', label: 'Accepted',  accent: '#22C55E' },
+  REJECTED:  { bg: '#FEE2E2', color: '#991B1B', label: 'Not selected', accent: '#EF4444' },
+  WITHDRAWN: { bg: '#F3F4F6', color: '#6B7280', label: 'Withdrawn', accent: '#D1D5DB' },
 };
 
 function StatusBadge({ status }: { status: BidStatus }) {
-  const s = STATUS_STYLES[status];
+  const s = STATUS_CONFIG[status];
   return (
-    <span style={{ background: s.bg, color: s.color }} className={styles.badge}>
+    <span className={styles.badge} style={{ background: s.bg, color: s.color }}>
       {s.label}
     </span>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Bid card ──────────────────────────────────────────────────────────────────
 
-function BidRow({ bid }: { bid: BidWithJob }) {
-  const navigate = useNavigate();
+function BidCard({ bid }: { bid: BidWithJob }) {
+  const navigate  = useNavigate();
   const { toast } = useToast();
   const [messaging, setMessaging] = useState(false);
+
+  const s          = STATUS_CONFIG[bid.status];
+  const isAccepted = bid.status === 'ACCEPTED';
+  const isPending  = bid.status === 'PENDING';
+
+  const submittedDate = new Date(bid.createdAt).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  });
 
   async function handleMessage(e: React.MouseEvent) {
     e.preventDefault();
@@ -50,43 +66,118 @@ function BidRow({ bid }: { bid: BidWithJob }) {
   }
 
   return (
-    <Link key={bid.id} to={`/jobs/${bid.jobId}`} className={styles.row}>
-      <div className={styles.rowMain}>
-        <p className={styles.jobTitle}>{bid.job?.title ?? 'Job removed'}</p>
-        <div className={styles.meta}>
-          {bid.job?.city && (
-            <span className={styles.metaItem}>
-              <MapPin size={12} strokeWidth={1.75} />
-              {bid.job.city}, {bid.job.state}
-            </span>
-          )}
-          <span className={styles.metaItem}>
-            <DollarSign size={12} strokeWidth={1.75} />
-            Your bid: ${bid.amount.toLocaleString()}
-          </span>
-          <span className={styles.metaItem}>
-            {new Date(bid.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-          </span>
-        </div>
-      </div>
-      <div className={styles.rowRight}>
-        {bid.status === 'ACCEPTED' && (
-          <button
-            className={styles.msgBtn}
-            disabled={messaging}
-            onClick={handleMessage}
-            title="Message Investor"
-          >
-            <MessageSquare size={13} strokeWidth={2} />
-            {messaging ? '…' : 'Message'}
-          </button>
+    <Link
+      to={`/jobs/${bid.jobId}`}
+      className={`${styles.card} ${isAccepted ? styles.cardAccepted : ''}`}
+    >
+      {/* Left accent bar */}
+      <div className={styles.accentBar} style={{ background: s.accent }} />
+
+      <div className={styles.cardBody}>
+        {/* Accepted banner */}
+        {isAccepted && (
+          <div className={styles.acceptedBanner}>
+            <CheckCircle2 size={13} strokeWidth={2.5} />
+            <span>Your bid was accepted — you got the job!</span>
+          </div>
         )}
-        <StatusBadge status={bid.status} />
-        <ChevronRight size={15} strokeWidth={1.75} color="var(--color-text-muted)" />
+
+        {/* Main row */}
+        <div className={styles.mainRow}>
+          <div className={styles.mainLeft}>
+            <p className={styles.jobTitle}>{bid.job?.title ?? 'Job removed'}</p>
+            <div className={styles.metaRow}>
+              {bid.job?.city && (
+                <span className={styles.metaItem}>
+                  <MapPin size={11} strokeWidth={1.75} />
+                  {bid.job.city}, {bid.job.state}
+                </span>
+              )}
+              <span className={styles.metaItem}>
+                <Calendar size={11} strokeWidth={1.75} />
+                {submittedDate}
+              </span>
+            </div>
+          </div>
+
+          <div className={styles.mainRight}>
+            <p className={styles.bidAmount}>${bid.amount.toLocaleString()}</p>
+            <p className={styles.bidAmountLabel}>your bid</p>
+          </div>
+        </div>
+
+        {/* Footer row */}
+        <div className={styles.footerRow}>
+          <div className={styles.footerLeft}>
+            <StatusBadge status={bid.status} />
+            {isPending && (
+              <span className={styles.pendingHint}>
+                <Clock size={11} strokeWidth={1.75} />
+                Awaiting investor decision
+              </span>
+            )}
+          </div>
+          <div className={styles.footerRight}>
+            {isAccepted && (
+              <button
+                className={styles.msgBtn}
+                disabled={messaging}
+                onClick={handleMessage}
+              >
+                <MessageSquare size={12} strokeWidth={2} />
+                {messaging ? 'Opening…' : 'Message Investor'}
+              </button>
+            )}
+            <span className={styles.viewLink}>
+              View job
+              <ChevronRight size={13} strokeWidth={2} />
+            </span>
+          </div>
+        </div>
       </div>
     </Link>
   );
 }
+
+// ── Skeleton card ─────────────────────────────────────────────────────────────
+
+function SkeletonCard() {
+  return (
+    <div className={styles.card} style={{ pointerEvents: 'none' }}>
+      <div className={styles.accentBar} style={{ background: 'var(--color-border)' }} />
+      <div className={styles.cardBody}>
+        <div className={styles.mainRow}>
+          <div className={styles.mainLeft}>
+            <div className={styles.skeletonTitle} />
+            <div className={styles.skeletonMeta} />
+          </div>
+          <div className={styles.skeletonAmount} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+function EmptyState() {
+  return (
+    <div className={styles.empty}>
+      <div className={styles.emptyIcon}>
+        <FileText size={24} strokeWidth={1.5} color="var(--color-text-muted)" />
+      </div>
+      <p className={styles.emptyTitle}>No bids yet</p>
+      <p className={styles.emptyDesc}>
+        Browse open jobs and submit your first bid to get started.
+      </p>
+      <Link to="/dashboard/browse-jobs" className={styles.emptyBtn}>
+        Browse jobs
+      </Link>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export function MyBidsPage() {
   const { data: bids, isLoading } = useQuery({
@@ -94,44 +185,59 @@ export function MyBidsPage() {
     queryFn:  getMyBids,
   });
 
+  const total    = bids?.length ?? 0;
+  const accepted = bids?.filter((b) => b.status === 'ACCEPTED').length ?? 0;
+  const pending  = bids?.filter((b) => b.status === 'PENDING').length  ?? 0;
+
   return (
     <div className={styles.page}>
+
+      {/* Header */}
       <div className={styles.header}>
-        <h1 className={styles.title}>My Bids</h1>
-        <p className={styles.subtitle}>Track all the jobs you've bid on.</p>
+        <div className={styles.headerIcon}>
+          <TrendingUp size={18} strokeWidth={1.75} color="var(--color-primary)" />
+        </div>
+        <div>
+          <h1 className={styles.title}>My Bids</h1>
+          <p className={styles.subtitle}>Track and manage all the jobs you've bid on.</p>
+        </div>
       </div>
 
+      {/* Stats bar — only when data is loaded and there are bids */}
+      {!isLoading && total > 0 && (
+        <div className={styles.statsBar}>
+          <div className={styles.stat}>
+            <span className={styles.statNum}>{total}</span>
+            <span className={styles.statLabel}>Total Bids</span>
+          </div>
+          <div className={styles.statDiv} />
+          <div className={styles.stat}>
+            <span className={styles.statNum} style={{ color: '#166534' }}>{accepted}</span>
+            <span className={styles.statLabel}>Accepted</span>
+          </div>
+          <div className={styles.statDiv} />
+          <div className={styles.stat}>
+            <span className={styles.statNum} style={{ color: '#854D0E' }}>{pending}</span>
+            <span className={styles.statLabel}>Pending</span>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
       {isLoading ? (
-        <div className={styles.list}>
-          {[1, 2, 3].map((i) => <SkeletonRow key={i} />)}
+        <div className={styles.cardList}>
+          {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
         </div>
       ) : !bids?.length ? (
-        <div className={styles.empty}>
-          <div className={styles.emptyIcon}>
-            <FileText size={24} strokeWidth={1.5} color="var(--color-text-muted)" />
-          </div>
-          <p className={styles.emptyTitle}>No bids yet</p>
-          <p className={styles.emptyDesc}>Browse open jobs and submit your first bid to get started.</p>
-          <Link to="/dashboard/browse-jobs" className={styles.emptyLink}>Browse jobs</Link>
-        </div>
+        <EmptyState />
       ) : (
-        <div className={styles.list}>
+        <div className={styles.cardList}>
           {bids.map((bid) => (
-            <BidRow key={bid.id} bid={bid} />
+            <BidCard key={bid.id} bid={bid} />
           ))}
         </div>
       )}
-    </div>
-  );
-}
 
-function SkeletonRow() {
-  return (
-    <div className={styles.row} style={{ pointerEvents: 'none' }}>
-      <div className={styles.rowMain}>
-        <div className={styles.skeletonTitle} />
-        <div className={styles.skeletonMeta} />
-      </div>
     </div>
   );
 }

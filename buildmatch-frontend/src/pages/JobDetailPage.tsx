@@ -303,6 +303,15 @@ function BidFormCard({ job, onSuccess }: { job: JobPost; onSuccess: () => void }
   return (
     <div className={styles.sidebarCard}>
       <h3 className={styles.cardTitle}>Submit Your Bid</h3>
+
+      {/* Budget context strip */}
+      <div className={styles.budgetCtx}>
+        <span className={styles.budgetCtxLabel}>Investor's budget</span>
+        <span className={styles.budgetCtxValue}>
+          ${job.budgetMin.toLocaleString()} – ${job.budgetMax.toLocaleString()}
+        </span>
+      </div>
+
       <form onSubmit={handleSubmit}>
         {/* Amount */}
         <div className={styles.fieldGroup}>
@@ -312,35 +321,35 @@ function BidFormCard({ job, onSuccess }: { job: JobPost; onSuccess: () => void }
             <input
               type="number"
               className={styles.moneyInput}
-              placeholder={`${job.budgetMin.toLocaleString()}–${job.budgetMax.toLocaleString()}`}
+              placeholder={job.budgetMin.toLocaleString()}
               value={amount}
               onChange={(e) => { setAmount(e.target.value); setErrors((p) => ({ ...p, amount: undefined })); }}
               min={1}
             />
           </div>
           {errors.amount && <p className={styles.fieldError}>{errors.amount}</p>}
-          <p className={styles.fieldHint}>
-            Suggested range: ${job.budgetMin.toLocaleString()}–${job.budgetMax.toLocaleString()}
-          </p>
         </div>
 
-        {/* Message */}
+        {/* Cover message */}
         <div className={styles.fieldGroup}>
           <label className={styles.fieldLabel}>Cover Message</label>
           <textarea
             className={styles.textarea}
             rows={5}
-            placeholder="Describe your approach, timeline, and why you are the right fit..."
+            placeholder="Describe your approach, relevant experience, and why you're the right fit…"
             value={message}
             onChange={(e) => { setMessage(e.target.value); setErrors((p) => ({ ...p, message: undefined })); }}
             maxLength={500}
           />
           <div className={styles.textareaFooter}>
-            {errors.message
-              ? <p className={styles.fieldError}>{errors.message}</p>
-              : <span />
-            }
-            <span className={`${styles.charCount} ${msgLen < 20 ? styles.charCountWarn : ''}`}>
+            {errors.message ? (
+              <p className={styles.fieldError}>{errors.message}</p>
+            ) : msgLen < 20 ? (
+              <span className={styles.charMin}>{20 - msgLen} more chars needed</span>
+            ) : (
+              <span />
+            )}
+            <span className={`${styles.charCount} ${msgLen > 450 ? styles.charCountWarn : ''}`}>
               {msgLen}/500
             </span>
           </div>
@@ -398,9 +407,18 @@ function MyBidCard({ jobId, investorId }: { jobId: string; investorId: string })
   if (!bid) return null;
 
   const statusColor = BID_STATUS_COLORS[bid.status] ?? BID_STATUS_COLORS.PENDING;
+  const isAccepted  = bid.status === 'ACCEPTED';
 
   return (
-    <div className={styles.sidebarCard}>
+    <div className={`${styles.sidebarCard} ${isAccepted ? styles.sidebarCardAccepted : ''}`}>
+      {/* Accepted banner */}
+      {isAccepted && (
+        <div className={styles.myBidAcceptedBanner}>
+          <CheckCircle2 size={14} strokeWidth={2.5} color="#166534" />
+          <span>Your bid was accepted — you got the job!</span>
+        </div>
+      )}
+
       <div className={styles.cardTitleRow}>
         <h3 className={styles.cardTitle}>Your Bid</h3>
         <span
@@ -901,12 +919,32 @@ function BidsList({ jobId }: { jobId: string }) {
         const hasRating    = rating > 0;
         const statusColor  = BID_STATUS_COLORS[bid.status] ?? BID_STATUS_COLORS.PENDING;
 
+        const isRowAccepted = bid.status === 'ACCEPTED';
+
         return (
-          <div key={bid.id} className={styles.bidRow}>
+          <div key={bid.id} className={`${styles.bidRow} ${isRowAccepted ? styles.bidRowAccepted : ''}`}>
+            {/* Accepted chip at top */}
+            {isRowAccepted && (
+              <div className={styles.bidRowAcceptedBanner}>
+                <CheckCircle2 size={12} strokeWidth={2.5} />
+                Selected contractor
+              </div>
+            )}
+
             <div className={styles.bidRowHeader}>
               <BidAvatar name={name} size={40} />
               <div className={styles.bidContractorInfo}>
-                <p className={styles.bidContractorName}>{name}</p>
+                {bid.contractor?.userId ? (
+                  <Link
+                    to={`/contractors/${bid.contractor.userId}`}
+                    className={styles.bidContractorLink}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {name}
+                  </Link>
+                ) : (
+                  <p className={styles.bidContractorName}>{name}</p>
+                )}
                 {hasRating ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <StarRating rating={rating} size={11} />
@@ -928,9 +966,11 @@ function BidsList({ jobId }: { jobId: string }) {
                 </span>
               </div>
             </div>
+
             <p className={styles.bidRowMessage}>{bid.message}</p>
+
             {bid.status === 'PENDING' && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
+              <div className={styles.bidRowActions}>
                 <button
                   className={styles.viewBidsBtn}
                   style={{ display: 'flex', alignItems: 'center', gap: 5 }}
@@ -960,12 +1000,9 @@ function BidsList({ jobId }: { jobId: string }) {
                 </button>
               </div>
             )}
-            {bid.status === 'ACCEPTED' && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                <div className={styles.acceptedBanner}>
-                  <CheckCircle2 size={13} strokeWidth={2.5} />
-                  Accepted
-                </div>
+
+            {isRowAccepted && (
+              <div className={styles.bidRowActions}>
                 <button
                   className={styles.viewBidsBtn}
                   style={{ display: 'flex', alignItems: 'center', gap: 5 }}

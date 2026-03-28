@@ -14,6 +14,24 @@ export interface Contractor {
   location: string;
 }
 
+export interface PortfolioProject {
+  id: string;
+  title: string;
+  description: string;
+  tradeType: string;
+  city: string;
+  state: string;
+  budgetMin: number;
+  budgetMax: number;
+  durationWeeks: number;
+  completedAt: string;
+  photos: string[];
+  clientName: string;
+  clientReview: string;
+  clientRating: number;
+  highlights: string[];
+}
+
 // Matches the buildmatch-backend API response shape
 export interface ContractorProfile {
   id: string;
@@ -29,6 +47,7 @@ export interface ContractorProfile {
   hourlyRateMax: number | null;
   avatarUrl: string | null;
   portfolioImages: string[];
+  portfolioProjects: PortfolioProject[] | null;
   city: string | null;
   state: string | null;
   zipCode: string | null;

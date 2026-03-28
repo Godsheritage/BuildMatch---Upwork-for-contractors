@@ -6,6 +6,7 @@ import type { UpdateContractorProfileInput } from '../schemas/contractor.schemas
 // Fields returned on list queries
 const LIST_SELECT = {
   id: true,
+  userId: true,
   bio: true,
   yearsExperience: true,
   specialties: true,
@@ -28,11 +29,13 @@ const LIST_SELECT = {
 // Full fields for single-contractor detail view
 const DETAIL_SELECT = {
   ...LIST_SELECT,
+  userId: true,
   licenseNumber: true,
   licenseState: true,
   insuranceExpiry: true,
   avatarUrl: true,
   portfolioImages: true,
+  portfolioProjects: true,
   updatedAt: true,
   user: { select: { firstName: true, lastName: true, email: true } },
 } satisfies Prisma.ContractorProfileSelect;

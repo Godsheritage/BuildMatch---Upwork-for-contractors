@@ -1,60 +1,63 @@
-import { useAuth } from '../hooks/useAuth';
-import { AvatarUpload } from '../components/ui/AvatarUpload';
+import { Link } from 'react-router-dom';
+import { User, UserCog, Lock, Bell, BadgeCheck, ChevronRight } from 'lucide-react';
+import styles from './SettingsPage.module.css';
+
+const CARDS = [
+  {
+    to:    '/dashboard/profile',
+    icon:  User,
+    title: 'My profile',
+    desc:  'View and manage your public profile, portfolio, and profile strength.',
+  },
+  {
+    to:    '/dashboard/settings/personal',
+    icon:  UserCog,
+    title: 'Profile settings',
+    desc:  'Update your visibility, experience level, specialties, and account status.',
+  },
+  {
+    to:    '/dashboard/settings/security',
+    icon:  Lock,
+    title: 'Account security',
+    desc:  'Update your password and manage additional security settings.',
+  },
+  {
+    to:    '/dashboard/settings/notifications',
+    icon:  Bell,
+    title: 'Notifications',
+    desc:  'Select the notifications you want—and how you\'d like to receive them.',
+  },
+  {
+    to:    '/dashboard/settings/verification',
+    icon:  BadgeCheck,
+    title: 'Identity verification',
+    desc:  'Help BuildMatch maintain a safe and trustworthy marketplace.',
+  },
+] as const;
 
 export function SettingsPage() {
-  const { user, updateUser } = useAuth();
-
-  if (!user) return null;
-
-  const name = `${user.firstName} ${user.lastName}`;
-
   return (
-    <div style={{ padding: '40px 24px', minHeight: '100%', boxSizing: 'border-box' }}>
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Account Settings</h1>
+        <p className={styles.subtitle}>
+          Manage your personal information, security, and account preferences.
+        </p>
+      </div>
 
-        <h1
-          style={{
-            fontSize: 22, fontWeight: 600,
-            color: 'var(--color-text-primary)',
-            letterSpacing: '-0.02em',
-            marginBottom: 32,
-          }}
-        >
-          Account Settings
-        </h1>
-
-        {/* Profile Photo section */}
-        <div
-          style={{
-            background: 'var(--color-bg)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
-            padding: '28px 32px',
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 15, fontWeight: 600,
-              color: 'var(--color-text-primary)',
-              letterSpacing: '-0.01em',
-              marginBottom: 4,
-            }}
-          >
-            Profile Photo
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 24 }}>
-            This photo appears on your profile and throughout the platform.
-          </p>
-
-          <AvatarUpload
-            name={name}
-            currentAvatarUrl={user.avatarUrl}
-            size="lg"
-            onUploadComplete={(url) => updateUser({ avatarUrl: url })}
-            onDelete={() => updateUser({ avatarUrl: null })}
-          />
-        </div>
-
+      <div className={styles.grid}>
+        {CARDS.map(({ to, icon: Icon, title, desc }) => (
+          <Link key={to} to={to} className={styles.card}>
+            <div className={styles.cardIcon}>
+              <Icon size={20} strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className={styles.cardTitle}>{title}</p>
+              <p className={styles.cardDesc}>{desc}</p>
+            </div>
+            <ChevronRight size={15} className={styles.cardChevron} strokeWidth={1.75} />
+          </Link>
+        ))}
       </div>
     </div>
   );

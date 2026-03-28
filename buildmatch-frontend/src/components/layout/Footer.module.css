@@ -1,0 +1,111 @@
+.footer {
+  background:  #0D1B2E;
+  color:       #A8B8CC;
+  font-family: var(--font-family);
+  margin-top:  auto;
+}
+
+/* ── Main grid ─────────────────────────────────────────── */
+
+.inner {
+  display:               grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap:                   var(--space-10);
+  max-width:             1180px;
+  margin:                0 auto;
+  padding:               var(--space-12) var(--space-8);
+}
+
+/* ── Brand column ──────────────────────────────────────── */
+
+.brand {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-4);
+}
+
+.wordmark {
+  font-size:      18px;
+  font-weight:    var(--font-weight-semibold);
+  color:          #FFFFFF;
+  letter-spacing: var(--tracking-tight);
+}
+
+.tagline {
+  font-size:   14px;
+  line-height: 1.65;
+  color:       #7A8FA8;
+  margin:      0;
+  max-width:   300px;
+}
+
+/* ── Link columns ──────────────────────────────────────── */
+
+.col {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-3);
+}
+
+.colHead {
+  font-size:      11px;
+  font-weight:    var(--font-weight-medium);
+  color:          #FFFFFF;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin:         0 0 var(--space-1);
+}
+
+.link {
+  font-size:       14px;
+  color:           #7A8FA8;
+  text-decoration: none;
+  transition:      color 0.15s;
+  width:           fit-content;
+}
+
+.link:hover {
+  color: #FFFFFF;
+}
+
+/* ── Bottom bar ────────────────────────────────────────── */
+
+.bottom {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  flex-wrap:       wrap;
+  gap:             var(--space-2);
+  max-width:       1180px;
+  margin:          0 auto;
+  padding:         var(--space-5) var(--space-8);
+  border-top:      1px solid rgba(255, 255, 255, 0.08);
+  font-size:       13px;
+  color:           #4E6278;
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .inner {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8) var(--space-6);
+  }
+
+  .brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .inner {
+    grid-template-columns: 1fr;
+    padding: var(--space-8) var(--space-5);
+  }
+
+  .bottom {
+    flex-direction: column;
+    align-items:    flex-start;
+    padding: var(--space-4) var(--space-5);
+  }
+}

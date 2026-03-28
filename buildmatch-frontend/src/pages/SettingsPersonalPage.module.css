@@ -1,0 +1,421 @@
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+
+.page {
+  max-width:      680px;
+  margin:         0 auto;
+  padding:        var(--space-8) var(--space-8) var(--space-14);
+  display:        flex;
+  flex-direction: column;
+  gap:            0;
+}
+
+/* ── Back link ────────────────────────────────────────────────────────────── */
+
+.back {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             var(--space-1);
+  font-size:       13px;
+  color:           var(--color-text-muted);
+  text-decoration: none;
+  font-weight:     var(--font-weight-medium);
+  transition:      color 0.15s;
+  margin-bottom:   var(--space-6);
+  width:           fit-content;
+}
+
+.back:hover { color: var(--color-text-primary); }
+
+/* ── Title row ────────────────────────────────────────────────────────────── */
+
+.titleRow {
+  display:         flex;
+  align-items:     baseline;
+  justify-content: space-between;
+  gap:             var(--space-4);
+  margin-bottom:   var(--space-7);
+  flex-wrap:       wrap;
+}
+
+.pageTitle {
+  font-size:      26px;
+  font-weight:    var(--font-weight-semibold);
+  color:          var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin:         0;
+}
+
+.viewProfileLink {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             5px;
+  font-size:       13px;
+  font-weight:     var(--font-weight-medium);
+  color:           var(--color-accent);
+  text-decoration: none;
+  flex-shrink:     0;
+  transition:      opacity 0.15s;
+}
+
+.viewProfileLink:hover { opacity: 0.75; }
+
+/* ── Section ──────────────────────────────────────────────────────────────── */
+
+.section {
+  padding: var(--space-6) 0;
+}
+
+.divider {
+  height:     1px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+/* ── Section header row ───────────────────────────────────────────────────── */
+
+.sectionHeader {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  margin-bottom:   var(--space-4);
+}
+
+.sectionHeading {
+  font-size:      20px;
+  font-weight:    var(--font-weight-semibold);
+  color:          var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin:         0;
+}
+
+.sectionDesc {
+  font-size:   13px;
+  color:       var(--color-text-muted);
+  margin:      0 0 var(--space-5);
+  line-height: 1.6;
+}
+
+.editIconBtn {
+  all:           unset;
+  cursor:        pointer;
+  width:         32px;
+  height:        32px;
+  border-radius: 50%;
+  border:        1px solid var(--color-border);
+  background:    var(--color-surface);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  color:         var(--color-text-muted);
+  transition:    background 0.12s, color 0.12s;
+  flex-shrink:   0;
+}
+
+.editIconBtn:hover {
+  background: var(--color-highlight);
+  color:      var(--color-accent);
+}
+
+/* ── Visibility cards ─────────────────────────────────────────────────────── */
+
+.visibilityCards {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-3);
+}
+
+.visCard {
+  all:           unset;
+  cursor:        pointer;
+  display:       flex;
+  align-items:   center;
+  gap:           var(--space-4);
+  padding:       var(--space-4) var(--space-5);
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background:    var(--color-bg);
+  transition:    border-color 0.15s, background 0.15s;
+}
+
+.visCard:hover:not(:disabled) {
+  border-color: var(--color-text-muted);
+}
+
+.visCardActive {
+  border-color: var(--color-accent);
+  background:   var(--color-highlight);
+}
+
+.visRadio {
+  width:         20px;
+  height:        20px;
+  border-radius: 50%;
+  border:        2px solid var(--color-border);
+  flex-shrink:   0;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  transition:    border-color 0.15s, background 0.15s;
+}
+
+.visRadioOn {
+  border-color: var(--color-accent);
+  background:   var(--color-accent);
+}
+
+.visCardText { flex: 1; text-align: left; }
+
+.visCardLabel {
+  font-size:   14px;
+  font-weight: var(--font-weight-medium);
+  color:       var(--color-text-primary);
+  margin:      0 0 2px;
+}
+
+.visCardDesc {
+  font-size: 12px;
+  color:     var(--color-text-muted);
+  margin:    0;
+}
+
+/* ── Experience level grid ────────────────────────────────────────────────── */
+
+.expGrid {
+  display:               grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:                   var(--space-3);
+}
+
+.expCard {
+  all:             unset;
+  cursor:          pointer;
+  position:        relative;
+  display:         flex;
+  flex-direction:  column;
+  gap:             var(--space-2);
+  padding:         var(--space-4) var(--space-4) var(--space-5);
+  border:          1px solid var(--color-border);
+  border-radius:   var(--radius-sm);
+  background:      var(--color-bg);
+  transition:      border-color 0.15s;
+  min-height:      110px;
+}
+
+.expCard:hover:not(:disabled) {
+  border-color: var(--color-text-muted);
+}
+
+.expCardActive {
+  border-color: var(--color-accent) !important;
+  border-width: 2px;
+}
+
+.expRadio {
+  position:      absolute;
+  top:           var(--space-3);
+  right:         var(--space-3);
+  width:         18px;
+  height:        18px;
+  border-radius: 50%;
+  border:        2px solid var(--color-border);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  transition:    border-color 0.15s;
+}
+
+.expRadioOn {
+  border-color: var(--color-accent);
+}
+
+.expRadioDot {
+  width:         8px;
+  height:        8px;
+  border-radius: 50%;
+  background:    var(--color-accent);
+}
+
+.expCardLabel {
+  font-size:   14px;
+  font-weight: var(--font-weight-medium);
+  color:       var(--color-text-primary);
+  margin:      0;
+  padding-right: var(--space-6);
+}
+
+.expCardDesc {
+  font-size:   13px;
+  color:       var(--color-text-muted);
+  margin:      0;
+  line-height: 1.4;
+}
+
+/* ── Specialties ──────────────────────────────────────────────────────────── */
+
+.tagList {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       var(--space-2);
+}
+
+.tag {
+  display:       inline-flex;
+  align-items:   center;
+  font-size:     13px;
+  font-weight:   var(--font-weight-medium);
+  color:         var(--color-text-primary);
+  background:    var(--color-surface);
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding:       4px 12px;
+}
+
+.specGrid {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.specChip {
+  all:           unset;
+  cursor:        pointer;
+  display:       inline-flex;
+  align-items:   center;
+  gap:           5px;
+  font-size:     13px;
+  color:         var(--color-text-muted);
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding:       5px 13px;
+  background:    var(--color-bg);
+  transition:    border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.specChip:hover {
+  border-color: var(--color-text-muted);
+  color:        var(--color-text-primary);
+}
+
+.specChipOn {
+  border-color: var(--color-accent);
+  background:   var(--color-highlight);
+  color:        var(--color-accent);
+}
+
+.specActions {
+  display: flex;
+  gap:     var(--space-2);
+}
+
+.emptyHint {
+  font-size: 13px;
+  color:     var(--color-text-muted);
+  margin:    0;
+}
+
+.emptyHintLink {
+  all:        unset;
+  cursor:     pointer;
+  color:      var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  font-size:  13px;
+  transition: opacity 0.15s;
+}
+
+.emptyHintLink:hover { opacity: 0.75; }
+
+/* ── Linked accounts ──────────────────────────────────────────────────────── */
+
+.linkedRow {
+  display: flex;
+  gap:     var(--space-3);
+  flex-wrap: wrap;
+}
+
+.linkedBtn {
+  all:           unset;
+  cursor:        pointer;
+  display:       inline-flex;
+  align-items:   center;
+  gap:           var(--space-2);
+  padding:       8px 18px;
+  border:        1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background:    var(--color-bg);
+  font-size:     13px;
+  font-weight:   var(--font-weight-medium);
+  color:         var(--color-text-primary);
+  font-family:   var(--font-family);
+  transition:    border-color 0.12s, background 0.12s;
+  min-width:     140px;
+  justify-content: center;
+  position:      relative;
+}
+
+.linkedBtn:hover {
+  border-color: var(--color-primary);
+}
+
+.linkedBtnOn {
+  border-color: var(--color-accent);
+  background:   var(--color-highlight);
+  color:        var(--color-accent);
+}
+
+.linkedRemove {
+  margin-left: auto;
+  opacity: 0.6;
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────────── */
+
+:global([data-theme="dark"]) .visCard,
+:global([data-theme="dark"]) .expCard,
+:global([data-theme="dark"]) .linkedBtn {
+  background:   #16181F;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .visCardActive,
+:global([data-theme="dark"]) .expCardActive {
+  background: rgba(15, 110, 86, 0.1);
+}
+
+:global([data-theme="dark"]) .specChip {
+  background:   #16181F;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .specChipOn {
+  background: rgba(15, 110, 86, 0.12);
+}
+
+:global([data-theme="dark"]) .tag {
+  background:   #1E2130;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .divider { background: #2E3241; }
+
+:global([data-theme="dark"]) .editIconBtn {
+  background:   #1E2130;
+  border-color: #2E3241;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .page {
+    padding: var(--space-5) var(--space-4) var(--space-10);
+  }
+
+  .expGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .titleRow {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+}

@@ -1,0 +1,394 @@
+/* ── Shared layout for all settings sub-pages ────────────────────────────── */
+
+.page {
+  max-width:      640px;
+  margin:         0 auto;
+  padding:        var(--space-8) var(--space-8) var(--space-12);
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-6);
+}
+
+/* ── Back link ────────────────────────────────────────────────────────────── */
+
+.back {
+  display:     inline-flex;
+  align-items: center;
+  gap:         var(--space-2);
+  font-size:   13px;
+  color:       var(--color-text-muted);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  transition:  color 0.15s;
+  width:       fit-content;
+}
+
+.back:hover { color: var(--color-text-primary); }
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+
+.header {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+}
+
+.title {
+  font-size:      20px;
+  font-weight:    var(--font-weight-semibold);
+  color:          var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin:         0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color:     var(--color-text-muted);
+  margin:    0;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+
+.card {
+  background:     var(--color-bg);
+  border:         1px solid var(--color-border);
+  border-radius:  var(--radius-md);
+  padding:        var(--space-6);
+  box-shadow:     var(--shadow-card);
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-5);
+}
+
+/* ── Section title inside card ────────────────────────────────────────────── */
+
+.sectionTitle {
+  font-size:      13px;
+  font-weight:    var(--font-weight-semibold);
+  color:          var(--color-text-primary);
+  margin:         0;
+  padding-bottom: var(--space-3);
+  border-bottom:  1px solid var(--color-border);
+  letter-spacing: var(--tracking-tight);
+}
+
+.divider {
+  height:     1px;
+  background: var(--color-border);
+}
+
+/* ── Field group ──────────────────────────────────────────────────────────── */
+
+.fieldGroup {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-4);
+}
+
+.row2 {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   var(--space-3);
+}
+
+.field {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.fieldLabel {
+  font-size:   13px;
+  font-weight: var(--font-weight-medium);
+  color:       var(--color-text-primary);
+}
+
+.fieldInput {
+  border:          1px solid var(--color-border);
+  border-radius:   var(--radius-sm);
+  padding:         9px 12px;
+  font-size:       14px;
+  font-family:     var(--font-family);
+  color:           var(--color-text-primary);
+  background:      var(--color-bg);
+  outline:         none;
+  transition:      border-color 0.15s;
+  width:           100%;
+  box-sizing:      border-box;
+}
+
+.fieldInput:focus { border-color: var(--color-primary); }
+.fieldInput:disabled {
+  background: var(--color-surface);
+  color:      var(--color-text-muted);
+  cursor:     not-allowed;
+}
+
+.fieldHint {
+  font-size: 12px;
+  color:     var(--color-text-muted);
+  margin:    0;
+}
+
+.fieldError {
+  font-size: 12px;
+  color:     var(--color-danger);
+}
+
+.textarea {
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding:       10px 12px;
+  font-size:     13px;
+  font-family:   var(--font-family);
+  color:         var(--color-text-primary);
+  background:    var(--color-bg);
+  outline:       none;
+  resize:        vertical;
+  line-height:   1.6;
+  transition:    border-color 0.15s;
+  width:         100%;
+  box-sizing:    border-box;
+  min-height:    80px;
+}
+
+.textarea:focus { border-color: var(--color-primary); }
+
+.select {
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding:       9px 12px;
+  font-size:     14px;
+  font-family:   var(--font-family);
+  color:         var(--color-text-primary);
+  background:    var(--color-bg);
+  outline:       none;
+  width:         100%;
+  box-sizing:    border-box;
+  cursor:        pointer;
+  appearance:    none;
+  transition:    border-color 0.15s;
+}
+
+.select:focus { border-color: var(--color-primary); }
+
+/* ── Actions row ──────────────────────────────────────────────────────────── */
+
+.actions {
+  display:         flex;
+  align-items:     center;
+  justify-content: flex-end;
+  gap:             var(--space-3);
+  padding-top:     var(--space-2);
+}
+
+.savedNote {
+  font-size: 12px;
+  color:     var(--color-accent);
+  flex:      1;
+}
+
+/* ── Toggle row (notifications) ───────────────────────────────────────────── */
+
+.toggleRow {
+  display:      flex;
+  align-items:  center;
+  justify-content: space-between;
+  gap:          var(--space-4);
+  padding:      var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.toggleRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.toggleInfo { flex: 1; }
+
+.toggleLabel {
+  font-size:   14px;
+  font-weight: var(--font-weight-medium);
+  color:       var(--color-text-primary);
+  margin:      0 0 2px;
+}
+
+.toggleDesc {
+  font-size: 12px;
+  color:     var(--color-text-muted);
+  margin:    0;
+}
+
+.toggle {
+  width:         40px;
+  height:        22px;
+  border-radius: var(--radius-pill);
+  background:    var(--color-border);
+  border:        none;
+  cursor:        pointer;
+  position:      relative;
+  transition:    background 0.2s;
+  flex-shrink:   0;
+  padding:       0;
+}
+
+.toggleOn { background: var(--color-accent); }
+
+.toggleThumb {
+  position:     absolute;
+  top:          3px;
+  left:         3px;
+  width:        16px;
+  height:       16px;
+  border-radius: 50%;
+  background:   #fff;
+  transition:   transform 0.2s;
+  box-shadow:   0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggleOn .toggleThumb { transform: translateX(18px); }
+
+/* ── Verification callout ─────────────────────────────────────────────────── */
+
+.verifyCallout {
+  display:     flex;
+  align-items: flex-start;
+  gap:         var(--space-4);
+  padding:     var(--space-5) var(--space-5);
+  background:  #F0FDF4;
+  border:      1px solid #BBF7D0;
+  border-radius: var(--radius-md);
+}
+
+.verifyIcon {
+  width:            44px;
+  height:           44px;
+  border-radius:    50%;
+  background:       #DCFCE7;
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+  flex-shrink:      0;
+}
+
+.verifyBody { flex: 1; }
+
+.verifyTitle {
+  font-size:   15px;
+  font-weight: var(--font-weight-semibold);
+  color:       #15803D;
+  margin:      0 0 4px;
+}
+
+.verifyDesc {
+  font-size:   13px;
+  color:       #166534;
+  margin:      0 0 var(--space-4);
+  line-height: 1.55;
+}
+
+.stepList {
+  list-style:     none;
+  margin:         0;
+  padding:        0;
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-2);
+}
+
+.stepItem {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-2);
+  font-size:   13px;
+  color:       #166534;
+}
+
+/* ── Security info row ────────────────────────────────────────────────────── */
+
+.infoRow {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             var(--space-3);
+  padding:         var(--space-4) 0;
+  border-bottom:   1px solid var(--color-border);
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.infoRowLeft { flex: 1; }
+
+.infoRowLabel {
+  font-size:   13px;
+  font-weight: var(--font-weight-medium);
+  color:       var(--color-text-primary);
+  margin:      0 0 2px;
+}
+
+.infoRowValue {
+  font-size: 13px;
+  color:     var(--color-text-muted);
+  margin:    0;
+}
+
+.infoRowAction {
+  font-size:       13px;
+  font-weight:     var(--font-weight-medium);
+  color:           var(--color-primary);
+  background:      none;
+  border:          none;
+  cursor:          pointer;
+  padding:         0;
+  font-family:     var(--font-family);
+  text-decoration: none;
+  transition:      opacity 0.15s;
+  flex-shrink:     0;
+}
+
+.infoRowAction:hover { opacity: 0.75; }
+.infoRowAction:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Dark mode ────────────────────────────────────────────────────────────── */
+
+:global([data-theme="dark"]) .card {
+  background:   #16181F;
+  border-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .fieldInput,
+:global([data-theme="dark"]) .textarea,
+:global([data-theme="dark"]) .select {
+  background:   #1E2130;
+  border-color: #2E3241;
+  color:        #E5E7EB;
+}
+
+:global([data-theme="dark"]) .divider { background: #2E3241; }
+
+:global([data-theme="dark"]) .sectionTitle {
+  border-bottom-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .toggleRow {
+  border-bottom-color: #2E3241;
+}
+
+:global([data-theme="dark"]) .infoRow {
+  border-bottom-color: #2E3241;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .page {
+    padding: var(--space-5) var(--space-4) var(--space-10);
+  }
+
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+}

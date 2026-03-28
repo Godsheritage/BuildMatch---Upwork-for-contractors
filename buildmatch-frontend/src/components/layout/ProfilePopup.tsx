@@ -99,7 +99,7 @@ export function ProfilePopup({ open, onClose }: ProfilePopupProps) {
         ) : (
           <PopupItem icon={Briefcase} label="My jobs"        onClick={() => go('/dashboard/jobs')} />
         )}
-        <PopupItem icon={Settings} label="Account settings"  onClick={() => go('/dashboard/profile')} />
+        <PopupItem icon={Settings} label="Account settings"  onClick={() => go('/dashboard/settings')} />
       </div>
 
       <div className={styles.divider} />

@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Check, Wrench, MapPin, Camera } from 'lucide-react';
 import JobMediaUploader from '../components/job/JobMediaUploader';
 import { ScopeEstimatorPanel } from '../components/job/ScopeEstimatorPanel';
-import type { ScopeEstimate } from '../components/job/ScopeEstimatorPanel';
 import styles from './ScopeEstimatorPage.module.css';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -48,111 +47,205 @@ const US_STATES = [
   { value: 'WI', label: 'Wisconsin' },     { value: 'WY', label: 'Wyoming' },
 ];
 
+// ── How-it-works sidebar ───────────────────────────────────────────────────────
+
+interface HowItWorksProps {
+  tradeType:  string;
+  city:       string;
+  state:      string;
+  photoCount: number;
+}
+
+function HowItWorksCard({ tradeType, city, state, photoCount }: HowItWorksProps) {
+  const steps = [
+    {
+      icon:  Wrench,
+      title: 'Select trade type',
+      desc:  'Pick the category of work needed',
+      done:  tradeType !== '',
+    },
+    {
+      icon:  MapPin,
+      title: 'Enter location',
+      desc:  'City and state for local pricing data',
+      done:  city.trim() !== '' && state !== '',
+    },
+    {
+      icon:  Camera,
+      title: 'Upload photos',
+      desc:  '1–5 photos of the project area',
+      done:  photoCount > 0,
+    },
+  ];
+
+  const doneCount = steps.filter((s) => s.done).length;
+
+  return (
+    <div className={styles.howCard}>
+      <div className={styles.howHeader}>
+        <Sparkles size={13} color="#7C3AED" strokeWidth={1.75} />
+        <span className={styles.howHeaderText}>How it works</span>
+      </div>
+
+      <div className={styles.steps}>
+        {steps.map(({ icon: Icon, title, desc, done }, i) => (
+          <div key={i} className={styles.step}>
+            <div className={`${styles.stepBubble} ${done ? styles.stepBubbleDone : ''}`}>
+              {done
+                ? <Check size={11} strokeWidth={2.5} />
+                : <Icon size={12} strokeWidth={1.75} />
+              }
+            </div>
+            <div className={styles.stepContent}>
+              <p className={`${styles.stepTitle} ${done ? styles.stepTitleDone : ''}`}>{title}</p>
+              <p className={styles.stepDesc}>{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Progress indicator */}
+      <div className={styles.howProgress}>
+        <div className={styles.howProgressTrack}>
+          <div
+            className={styles.howProgressFill}
+            style={{ width: `${(doneCount / 3) * 100}%` }}
+          />
+        </div>
+        <span className={styles.howProgressLabel}>{doneCount} of 3 complete</span>
+      </div>
+
+      <div className={styles.howDivider} />
+
+      <p className={styles.howFooter}>
+        Once all three steps are complete, AI will analyze your photos and return a budget estimate calibrated to your location.
+      </p>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function ScopeEstimatorPage() {
-  const [photoUrls, setPhotoUrls]   = useState<string[]>([]);
-  const [tradeType, setTradeType]   = useState('');
-  const [city, setCity]             = useState('');
-  const [state, setState]           = useState('');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_lastEstimate, setLastEstimate] = useState<ScopeEstimate | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [tradeType, setTradeType] = useState('');
+  const [city,      setCity]      = useState('');
+  const [state,     setState]     = useState('');
 
   const canEstimate =
     photoUrls.length > 0 && tradeType !== '' && city.trim() !== '' && state !== '';
 
   return (
     <div className={styles.page}>
-      {/* Page header */}
-      <div className={styles.header}>
-        <div className={styles.headerIcon}>
-          <Sparkles size={20} strokeWidth={1.75} color="#7C3AED" />
+
+      {/* ── Page header ───────────────────────────────────────────────────── */}
+      <div className={styles.pageHeader}>
+        <div className={styles.aiBadge}>
+          <Sparkles size={12} color="#7C3AED" strokeWidth={1.75} />
+          <span>Powered by AI</span>
         </div>
-        <div>
-          <h1 className={styles.title}>AI Scope Estimator</h1>
-          <p className={styles.subtitle}>
-            Upload photos of your project site and let AI estimate the scope, budget, and materials needed.
-          </p>
-        </div>
+        <h1 className={styles.pageTitle}>Scope Estimator</h1>
+        <p className={styles.pageSubtitle}>
+          Upload project photos and get an instant AI-powered cost estimate — scope, materials, and budget range included.
+        </p>
       </div>
 
-      {/* Form card */}
-      <div className={styles.card}>
-        <p className={styles.cardTitle}>Project Details</p>
-        <p className={styles.cardSubtitle}>
-          Tell us a bit about the project before uploading photos.
-        </p>
+      {/* ── Two-column body ───────────────────────────────────────────────── */}
+      <div className={styles.body}>
 
-        <div className={styles.fields}>
-          {/* Trade type */}
-          <div className={styles.fieldGroup}>
-            <label className={styles.label} htmlFor="tradeType">Trade Type</label>
-            <select
-              id="tradeType"
-              className={styles.select}
-              value={tradeType}
-              onChange={(e) => setTradeType(e.target.value)}
-            >
-              <option value="">Select trade type…</option>
-              {TRADE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+        {/* Left column — form + uploader */}
+        <div className={styles.leftCol}>
+
+          {/* Section 01 — Project Details */}
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionNum}>01</span>
+              <span className={styles.sectionLabel}>Project Details</span>
+            </div>
+            <div className={styles.card}>
+              <div className={styles.fields}>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel} htmlFor="tradeType">Trade Type</label>
+                  <select
+                    id="tradeType"
+                    className={styles.select}
+                    value={tradeType}
+                    onChange={(e) => setTradeType(e.target.value)}
+                  >
+                    <option value="">Select trade type…</option>
+                    {TRADE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.locationRow}>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel} htmlFor="city">City</label>
+                    <input
+                      id="city"
+                      type="text"
+                      className={styles.input}
+                      placeholder="e.g. Austin"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel} htmlFor="state">State</label>
+                    <select
+                      id="state"
+                      className={styles.select}
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                    >
+                      <option value="">State…</option>
+                      {US_STATES.map((s) => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+              </div>
+            </div>
           </div>
 
-          {/* City + State row */}
-          <div className={styles.locationRow}>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label} htmlFor="city">City</label>
-              <input
-                id="city"
-                type="text"
-                className={styles.input}
-                placeholder="e.g. Austin"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
+          {/* Section 02 — Photos */}
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionNum}>02</span>
+              <span className={styles.sectionLabel}>Project Photos</span>
             </div>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label} htmlFor="state">State</label>
-              <select
-                id="state"
-                className={styles.select}
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-              >
-                <option value="">Select state…</option>
-                {US_STATES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
+            <div className={styles.card}>
+              <JobMediaUploader onMediaChange={setPhotoUrls} />
             </div>
           </div>
+
         </div>
+
+        {/* Right column — how-it-works or estimator panel */}
+        <div className={styles.rightCol}>
+          {canEstimate ? (
+            <ScopeEstimatorPanel
+              photoUrls={photoUrls}
+              tradeType={tradeType}
+              city={city}
+              state={state}
+              onEstimateReceived={() => {}}
+            />
+          ) : (
+            <HowItWorksCard
+              tradeType={tradeType}
+              city={city}
+              state={state}
+              photoCount={photoUrls.length}
+            />
+          )}
+        </div>
+
       </div>
-
-      {/* Photo uploader card */}
-      <div className={styles.card}>
-        <JobMediaUploader onMediaChange={setPhotoUrls} />
-      </div>
-
-      {/* Estimator panel — shown only when all inputs are filled */}
-      {canEstimate && (
-        <ScopeEstimatorPanel
-          photoUrls={photoUrls}
-          tradeType={tradeType}
-          city={city}
-          state={state}
-          onEstimateReceived={(est) => setLastEstimate(est)}
-        />
-      )}
-
-      {/* Hint when inputs incomplete */}
-      {!canEstimate && (
-        <p className={styles.hint}>
-          Fill in the trade type, city, state, and upload at least one photo to enable AI analysis.
-        </p>
-      )}
     </div>
   );
 }

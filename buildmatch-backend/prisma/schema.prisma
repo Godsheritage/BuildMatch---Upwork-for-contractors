@@ -130,6 +130,7 @@ model ContractorProfile {
   totalReviews         Int       @default(0)
   completedJobs        Int       @default(0)
   isAvailable          Boolean   @default(true)
+  portfolioProjects    Json?     // PortfolioProject[]
   // AI matching signals
   responseTimeAvgHours Float     @default(24)
   bidWinRate           Float     @default(0)

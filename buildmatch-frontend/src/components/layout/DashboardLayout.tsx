@@ -17,6 +17,7 @@ import { Avatar } from '../ui/Avatar';
 import { HelpDrawer } from './HelpDrawer';
 import { NotificationsPopup, useNotificationCount } from './NotificationsPopup';
 import { ProfilePopup } from './ProfilePopup';
+import { Footer } from './Footer';
 import styles from './DashboardLayout.module.css';
 
 export function DashboardLayout() {
@@ -193,6 +194,7 @@ export function DashboardLayout() {
       {/* Main content */}
       <main className={styles.main}>
         <Outlet />
+        <Footer />
       </main>
     </div>
     </div>

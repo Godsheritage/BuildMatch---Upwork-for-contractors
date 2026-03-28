@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, CheckCircle2, Briefcase, Clock, Shield, ChevronDown, X } from 'lucide-react';
+import { ArrowLeft, MapPin, CheckCircle2, Briefcase, Clock, Shield, ChevronDown, X, ZoomIn, ChevronLeft, ChevronRight, Images, Star, CalendarDays, DollarSign, Timer, Quote } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getContractorById } from '../services/contractor.service';
 import { getContractorReviews } from '../services/review.service';
@@ -12,7 +12,7 @@ import { useToast } from '../context/ToastContext';
 import { Button } from '../components/ui/Button';
 import { StarRating } from '../components/ui/StarRating';
 import { ReliabilityScoreBadge } from '../components/contractor/ReliabilityScoreBadge';
-import type { ContractorProfile } from '../types/contractor.types';
+import type { ContractorProfile, PortfolioProject } from '../types/contractor.types';
 import type { Review, ReviewBreakdown } from '../types/review.types';
 import styles from './ContractorProfilePage.module.css';
 import { getOptimizedUrl, JOB_PHOTO_FALLBACK } from '../utils/media';
@@ -449,16 +449,295 @@ function ReviewCard({ review }: { review: Review }) {
   );
 }
 
-function PortfolioImg({ url, idx }: { url: string; idx: number }) {
-  const [error, setError] = useState(false);
+// ── Lightbox ────────────────────────────────────────────────────────────────
+
+function Lightbox({
+  images,
+  startIndex,
+  onClose,
+}: {
+  images: string[];
+  startIndex: number;
+  onClose: () => void;
+}) {
+  const [current, setCurrent] = useState(startIndex);
+  const [imgError, setImgError] = useState(false);
+
+  const prev = useCallback(() => {
+    setImgError(false);
+    setCurrent((i) => (i - 1 + images.length) % images.length);
+  }, [images.length]);
+
+  const next = useCallback(() => {
+    setImgError(false);
+    setCurrent((i) => (i + 1) % images.length);
+  }, [images.length]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft')  prev();
+      if (e.key === 'ArrowRight') next();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose, prev, next]);
+
   return (
-    <img
-      src={error ? JOB_PHOTO_FALLBACK : getOptimizedUrl(url, 400)}
-      alt={`Portfolio ${idx + 1}`}
-      className={styles.portfolioImg}
-      loading="lazy"
-      onError={() => setError(true)}
-    />
+    <div className={styles.lightboxOverlay} onClick={onClose}>
+      {/* Close */}
+      <button className={styles.lightboxClose} onClick={onClose} aria-label="Close">
+        <X size={20} strokeWidth={2} />
+      </button>
+
+      {/* Counter */}
+      <span className={styles.lightboxCounter}>{current + 1} / {images.length}</span>
+
+      {/* Prev */}
+      {images.length > 1 && (
+        <button
+          className={`${styles.lightboxNav} ${styles.lightboxNavLeft}`}
+          onClick={(e) => { e.stopPropagation(); prev(); }}
+          aria-label="Previous"
+        >
+          <ChevronLeft size={22} strokeWidth={2} />
+        </button>
+      )}
+
+      {/* Image */}
+      <div className={styles.lightboxImgWrap} onClick={(e) => e.stopPropagation()}>
+        <img
+          key={current}
+          src={imgError ? JOB_PHOTO_FALLBACK : images[current]}
+          alt={`Portfolio ${current + 1}`}
+          className={styles.lightboxImg}
+          onError={() => setImgError(true)}
+        />
+      </div>
+
+      {/* Next */}
+      {images.length > 1 && (
+        <button
+          className={`${styles.lightboxNav} ${styles.lightboxNavRight}`}
+          onClick={(e) => { e.stopPropagation(); next(); }}
+          aria-label="Next"
+        >
+          <ChevronRight size={22} strokeWidth={2} />
+        </button>
+      )}
+
+      {/* Dot strip */}
+      {images.length > 1 && (
+        <div className={styles.lightboxDots}>
+          {images.map((_, i) => (
+            <button
+              key={i}
+              className={`${styles.lightboxDot} ${i === current ? styles.lightboxDotActive : ''}`}
+              onClick={(e) => { e.stopPropagation(); setImgError(false); setCurrent(i); }}
+              aria-label={`Go to image ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Portfolio project card ───────────────────────────────────────────────────
+
+const TRADE_COLORS: Record<string, { bg: string; text: string }> = {
+  GENERAL:     { bg: '#EFF6FF', text: '#1D4ED8' },
+  ELECTRICAL:  { bg: '#FEF9C3', text: '#854D0E' },
+  PLUMBING:    { bg: '#E0F2FE', text: '#0369A1' },
+  HVAC:        { bg: '#F0FDF4', text: '#166534' },
+  ROOFING:     { bg: '#FEF3C7', text: '#92400E' },
+  FLOORING:    { bg: '#F5F3FF', text: '#6D28D9' },
+  PAINTING:    { bg: '#FDF2F8', text: '#9D174D' },
+  LANDSCAPING: { bg: '#ECFDF5', text: '#065F46' },
+  DEMOLITION:  { bg: '#FFF1F2', text: '#9F1239' },
+  OTHER:       { bg: '#F3F4F6', text: '#374151' },
+};
+
+function StarRow({ rating }: { rating: number }) {
+  return (
+    <div style={{ display: 'flex', gap: 2 }}>
+      {[1,2,3,4,5].map((s) => (
+        <Star
+          key={s}
+          size={13}
+          strokeWidth={1.5}
+          fill={s <= rating ? 'var(--color-star)' : 'none'}
+          color={s <= rating ? 'var(--color-star)' : 'var(--color-border)'}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ProjectCard({ project, onPhotoClick }: { project: PortfolioProject; onPhotoClick: (photos: string[], idx: number) => void }) {
+  const [photoErr, setPhotoErr] = useState<Record<number, boolean>>({});
+  const tradeColor = TRADE_COLORS[project.tradeType] ?? TRADE_COLORS.OTHER;
+  const completedDate = new Date(project.completedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const budgetStr = project.budgetMin === project.budgetMax
+    ? `$${project.budgetMin.toLocaleString()}`
+    : `$${project.budgetMin.toLocaleString()} – $${project.budgetMax.toLocaleString()}`;
+
+  return (
+    <div className={styles.projectCard}>
+      {/* Photo strip */}
+      <div className={styles.projectPhotos}>
+        {project.photos.map((url, i) => (
+          <button
+            key={i}
+            type="button"
+            className={`${styles.projectPhotoCell} ${i === 0 ? styles.projectPhotoCellMain : styles.projectPhotoCellThumb}`}
+            onClick={() => onPhotoClick(project.photos, i)}
+            aria-label={`View photo ${i + 1}`}
+          >
+            <img
+              src={photoErr[i] ? JOB_PHOTO_FALLBACK : url}
+              alt={`${project.title} photo ${i + 1}`}
+              className={styles.projectPhotoImg}
+              loading="lazy"
+              onError={() => setPhotoErr((e) => ({ ...e, [i]: true }))}
+            />
+            <div className={styles.projectPhotoOverlay}>
+              <ZoomIn size={18} strokeWidth={1.75} color="#fff" />
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className={styles.projectBody}>
+        {/* Title row */}
+        <div className={styles.projectTitleRow}>
+          <h3 className={styles.projectTitle}>{project.title}</h3>
+          <span
+            className={styles.projectTradeBadge}
+            style={{ background: tradeColor.bg, color: tradeColor.text }}
+          >
+            {SPECIALTY_LABELS[project.tradeType] ?? project.tradeType}
+          </span>
+        </div>
+
+        {/* Meta row */}
+        <div className={styles.projectMeta}>
+          <span className={styles.projectMetaItem}>
+            <MapPin size={12} strokeWidth={2} />
+            {project.city}, {project.state}
+          </span>
+          <span className={styles.projectMetaItem}>
+            <CalendarDays size={12} strokeWidth={2} />
+            Completed {completedDate}
+          </span>
+          <span className={styles.projectMetaItem}>
+            <Timer size={12} strokeWidth={2} />
+            {project.durationWeeks} week{project.durationWeeks !== 1 ? 's' : ''}
+          </span>
+          <span className={styles.projectMetaItem}>
+            <DollarSign size={12} strokeWidth={2} />
+            {budgetStr}
+          </span>
+        </div>
+
+        {/* Description */}
+        <p className={styles.projectDesc}>{project.description}</p>
+
+        {/* Highlights */}
+        {project.highlights.length > 0 && (
+          <div className={styles.projectHighlights}>
+            {project.highlights.map((h) => (
+              <span key={h} className={styles.projectHighlight}>
+                <CheckCircle2 size={11} strokeWidth={2.5} color="var(--color-accent)" />
+                {h}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Client review */}
+        {project.clientReview && (
+          <div className={styles.projectReview}>
+            <div className={styles.projectReviewTop}>
+              <Quote size={14} strokeWidth={1.5} color="var(--color-accent)" />
+              <StarRow rating={project.clientRating} />
+              <span className={styles.projectReviewClient}>{project.clientName}</span>
+            </div>
+            <p className={styles.projectReviewText}>"{project.clientReview}"</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Portfolio section ────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 3;
+
+function PortfolioSection({ projects }: { projects: PortfolioProject[] }) {
+  const [page, setPage]         = useState(0);
+  const [lightbox, setLightbox] = useState<{ photos: string[]; idx: number } | null>(null);
+
+  const totalPages = Math.ceil(projects.length / PAGE_SIZE);
+  const visible    = projects.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
+  return (
+    <>
+      <div className={styles.projectList}>
+        {visible.map((p) => (
+          <ProjectCard
+            key={p.id}
+            project={p}
+            onPhotoClick={(photos, idx) => setLightbox({ photos, idx })}
+          />
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className={styles.projectPagination}>
+          <button
+            className={styles.projectPageBtn}
+            onClick={() => setPage((p) => p - 1)}
+            disabled={page === 0}
+            aria-label="Previous projects"
+          >
+            <ChevronLeft size={15} strokeWidth={2} />
+            Previous
+          </button>
+
+          <div className={styles.projectPageDots}>
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                className={`${styles.projectPageDot} ${i === page ? styles.projectPageDotActive : ''}`}
+                onClick={() => setPage(i)}
+                aria-label={`Page ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          <button
+            className={styles.projectPageBtn}
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page === totalPages - 1}
+            aria-label="Next projects"
+          >
+            Next
+            <ChevronRight size={15} strokeWidth={2} />
+          </button>
+        </div>
+      )}
+
+      {lightbox && (
+        <Lightbox
+          images={lightbox.photos}
+          startIndex={lightbox.idx}
+          onClose={() => setLightbox(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -761,18 +1040,31 @@ export function ContractorProfilePage() {
             </section>
 
             {/* Portfolio */}
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>Portfolio</h2>
-              {contractor.portfolioImages.length > 0 ? (
-                <div className={styles.portfolioGrid}>
-                  {contractor.portfolioImages.map((url, i) => (
-                    <PortfolioImg key={url} url={url} idx={i} />
-                  ))}
-                </div>
-              ) : (
-                <p className={styles.emptyState}>No portfolio photos yet.</p>
-              )}
-            </section>
+            {(() => {
+              const projects = contractor.portfolioProjects ?? [];
+              return (
+                <section className={styles.section}>
+                  <div className={styles.portfolioHeader}>
+                    <h2 className={styles.sectionTitle} style={{ margin: 0, border: 'none', padding: 0 }}>Portfolio</h2>
+                    {projects.length > 0 && (
+                      <span className={styles.portfolioCount}>
+                        <Images size={13} strokeWidth={1.75} />
+                        {projects.length} project{projects.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.portfolioDivider} />
+                  {projects.length > 0 ? (
+                    <PortfolioSection projects={projects} />
+                  ) : (
+                    <div className={styles.portfolioEmpty}>
+                      <Images size={32} strokeWidth={1.25} color="var(--color-border)" />
+                      <p>No portfolio projects yet.</p>
+                    </div>
+                  )}
+                </section>
+              );
+            })()}
 
             {/* Reviews */}
             <ReviewsSection

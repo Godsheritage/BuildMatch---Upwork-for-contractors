@@ -26,6 +26,10 @@ import { FundJobPage } from './pages/FundJobPage';
 import { MyBidsPage } from './pages/MyBidsPage';
 import { BrowseJobsPage } from './pages/BrowseJobsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SettingsPersonalPage } from './pages/SettingsPersonalPage';
+import { SettingsSecurityPage } from './pages/SettingsSecurityPage';
+import { SettingsNotificationsPage } from './pages/SettingsNotificationsPage';
+import { SettingsVerificationPage } from './pages/SettingsVerificationPage';
 import { ProfileEditPage } from './pages/ProfileEditPage';
 import { AboutPage } from './pages/AboutPage';
 import { MessagesPage } from './pages/MessagesPage';
@@ -75,6 +79,10 @@ export default function App() {
                 <Route path="/dashboard/profile" element={<UserProfilePage />} />
                 <Route path="/dashboard/profile/edit" element={<ProfileEditPage />} />
                 <Route path="/dashboard/settings" element={<SettingsPage />} />
+                <Route path="/dashboard/settings/personal"     element={<SettingsPersonalPage />} />
+                <Route path="/dashboard/settings/security"     element={<SettingsSecurityPage />} />
+                <Route path="/dashboard/settings/notifications" element={<SettingsNotificationsPage />} />
+                <Route path="/dashboard/settings/verification" element={<SettingsVerificationPage />} />
                 <Route path="/dashboard/messages" element={<MessagesPage />} />
                 <Route path="/dashboard/messages/:conversationId" element={<MessagesPage />} />
                 <Route
