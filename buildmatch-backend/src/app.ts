@@ -9,6 +9,7 @@ import userRoutes from './routes/user.routes';
 import contractorRoutes from './routes/contractor.routes';
 import jobRoutes from './routes/job.routes';
 import aiRoutes from './routes/ai.routes';
+import aiMatchingRoutes from './routes/ai/matching.routes';
 import notificationRoutes from './routes/notification.routes';
 import stripeRoutes from './routes/stripe.routes';
 import escrowRoutes from './routes/escrow.routes';
@@ -64,6 +65,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/contractors', contractorRoutes);
 app.use('/api/jobs', jobRoutes);
+// Mount /api/ai/matching before /api/ai so Express never passes /matching/* into aiRoutes
+app.use('/api/ai/matching', aiMatchingRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/stripe', stripeRoutes);

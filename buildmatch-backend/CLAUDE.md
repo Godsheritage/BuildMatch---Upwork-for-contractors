@@ -20,6 +20,7 @@ Environment variables in `.env` (see `.env.example`):
 - `JWT_EXPIRES_IN` — token lifetime, e.g. `7d`
 - `PORT` — defaults to `3001`
 - `FRONTEND_URL` — allowed CORS origin, e.g. `http://localhost:5173`
+- `ANTHROPIC_API_KEY` — Anthropic API key; **backend only, never expose to the frontend**
 
 ## Architecture
 
@@ -45,8 +46,19 @@ src/
   controllers/  # Request handlers — call service, send response
   middleware/   # auth, validate, error
   services/     # All business logic and Prisma calls
+    ai/         # One file per AI feature + shared singleton
+      anthropic.client.ts          # Shared Anthropic SDK singleton (import Anthropic from '@anthropic-ai/sdk')
+      matching.service.ts          # Contractor–job matching          [claude-opus-4-5]
+      job-assistant.service.ts     # Job description assistant        [claude-opus-4-5]
+      bid-analyzer.service.ts      # Bid quality analysis             [claude-opus-4-5]
+      contract-generator.service.ts                                 # [claude-opus-4-5]
+      reliability-score.service.ts                                  # [claude-opus-4-5]
+      reply-polisher.service.ts    # Reply polish / summarization     [claude-haiku-4-5-20251001]
+      scope-estimator.service.ts   # Scope / cost estimation          [claude-opus-4-5]
+      __tests__/                   # Unit tests — mock Anthropic SDK, never call real API
   schemas/      # Zod schemas for request validation
   types/        # express.d.ts — extends Request with req.user
+                # ai.types.ts   — all AI request/response shapes (no implicit any)
   utils/        # jwt, password, response, app-error
   lib/          # prisma.ts singleton
   app.ts
@@ -279,3 +291,84 @@ It matches five pattern groups and replaces matches with `[removed]`:
 5. **External URLs** — http/https links and bare `domain.com` patterns
 
 **Enforcement rule: `filterMessageContent()` MUST be called before every `Message` save.** Never bypass it — it is the only protection against out-of-band contact exchange. The raw user input is discarded; only the filtered content is stored. `isFiltered` and `filterReason` are set on the Message record when content is modified.
+
+## AI Engineering Standards
+
+### Anthropic SDK singleton
+
+`src/services/ai/anthropic.client.ts` is the **only** place the SDK is instantiated:
+
+```ts
+import Anthropic from '@anthropic-ai/sdk';
+let _client: Anthropic | null = null;
+export function getAnthropicClient(): Anthropic {
+  if (!_client) _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return _client;
+}
+```
+
+Import `getAnthropicClient()` in every AI service file. Never call `new Anthropic()` elsewhere.
+
+### Model selection
+
+| Use case | Model |
+|---|---|
+| Contractor matching, contract generation, dispute analysis, scope estimation, bid analysis, reliability scoring | `claude-opus-4-5` |
+| Reply polishing, summarization, classification | `claude-haiku-4-5-20251001` |
+
+Always set `max_tokens` appropriate to the task — do not default to 1000 for everything.
+
+### Error handling (required in every AI service)
+
+```ts
+try {
+  const response = await getAnthropicClient().messages.create({ ... });
+  // parse + validate with Zod
+} catch (err) {
+  console.error('[matching.service] Anthropic error:', err);
+  return { error: 'AI feature temporarily unavailable' };  // graceful fallback
+}
+```
+
+- Never expose raw Anthropic error messages to the API response
+- The feature must degrade gracefully — callers must handle the fallback object
+- Log with `[feature-name]` prefix so errors are filterable in logs
+
+### Prompt engineering
+
+- System prompts stored as `const SYSTEM_PROMPT = '...'` at the top of each service file
+- Every system prompt must include: **role**, **context**, **output format**, **constraints**
+- When expecting JSON back, include: `'Respond ONLY with valid JSON, no markdown'`
+- All AI responses that return structured data must be parsed and validated with **Zod** before use
+
+```ts
+const MyResponseSchema = z.object({ ... });
+const parsed = MyResponseSchema.safeParse(JSON.parse(text));
+if (!parsed.success) throw new Error('Invalid AI response shape');
+```
+
+### TypeScript
+
+- All AI request/response types live in `src/types/ai.types.ts`
+- No `implicit any` in AI service files — `strict: true` is enforced
+- Zod schemas for every AI response shape; use `safeParse` and handle the failure branch
+
+### Cost control
+
+- Per-user, per-feature rate limiting via `express-rate-limit` middleware on AI routes
+- Cache matching/scoring results where appropriate (e.g. 5-minute TTL in memory or Redis)
+- Log token usage (`input_tokens`, `output_tokens`) per request to the `ai_usage_log` table
+- Never call the Anthropic API inside a loop without explicit batch logic
+
+### Testing
+
+- Test files: `src/services/ai/__tests__/<feature>.test.ts`
+- Unit-test prompt construction (inputs → expected prompt shape)
+- Unit-test response parsing (valid JSON → Zod pass; malformed JSON → Zod fail)
+- Mock the Anthropic SDK in **all** tests — never call the real API in the test suite
+
+```ts
+jest.mock('@anthropic-ai/sdk', () => ({ default: jest.fn().mockImplementation(() => ({
+  messages: { create: jest.fn().mockResolvedValue({ content: [{ text: '{"result":"ok"}' }] }) }
+})) }));
+```

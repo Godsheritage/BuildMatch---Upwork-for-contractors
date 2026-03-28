@@ -21,6 +21,7 @@ import { Lightbox } from '../components/ui/Lightbox';
 import type { BidWithContractor, JobPost, Message } from '../types/job.types';
 import styles from './JobDetailPage.module.css';
 import { getOptimizedUrl, JOB_PHOTO_FALLBACK } from '../utils/media';
+import { RecommendedContractors } from '../components/job/RecommendedContractors';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -1180,6 +1181,13 @@ export function JobDetailPage() {
                     Leave a Review
                   </Button>
                 </div>
+              </section>
+            )}
+
+            {/* AI-recommended contractors (investor/owner only) */}
+            {isOwner && user && (
+              <section className={styles.section}>
+                <RecommendedContractors jobId={job.id} userId={user.id} />
               </section>
             )}
 

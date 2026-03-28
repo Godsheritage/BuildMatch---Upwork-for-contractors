@@ -95,32 +95,37 @@ model User {
   investorConversations   Conversation[]           @relation("InvestorConversations")
   contractorConversations Conversation[]           @relation("ContractorConversations")
   convMessagesSent        ConversationMessage[]    @relation("ConvMessageSender")
+  aiUsageLogs             AiUsageLog[]
 }
 
 model ContractorProfile {
-  id                String    @id @default(cuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id])
-  bio               String?
-  yearsExperience   Int       @default(0)
-  specialties       String[]
-  licenseNumber     String?
-  licenseState      String?
-  isLicenseVerified Boolean   @default(false)
-  insuranceExpiry   DateTime?
-  hourlyRateMin     Float?
-  hourlyRateMax     Float?
-  avatarUrl         String?
-  portfolioImages   String[]
-  city              String?
-  state             String?
-  zipCode           String?
-  averageRating     Float     @default(0)
-  totalReviews      Int       @default(0)
-  completedJobs     Int       @default(0)
-  isAvailable       Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id])
+  bio                  String?
+  yearsExperience      Int       @default(0)
+  specialties          String[]
+  licenseNumber        String?
+  licenseState         String?
+  isLicenseVerified    Boolean   @default(false)
+  insuranceExpiry      DateTime?
+  hourlyRateMin        Float?
+  hourlyRateMax        Float?
+  avatarUrl            String?
+  portfolioImages      String[]
+  city                 String?
+  state                String?
+  zipCode              String?
+  averageRating        Float     @default(0)
+  totalReviews         Int       @default(0)
+  completedJobs        Int       @default(0)
+  isAvailable          Boolean   @default(true)
+  // AI matching signals
+  responseTimeAvgHours Float     @default(24)
+  bidWinRate           Float     @default(0)
+  reliabilityScore     Int       @default(50)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 model Job {
@@ -145,6 +150,7 @@ model Job {
   reviews                Review[]
   messages               Message[]
   conversations          Conversation[]
+  matchingCache          MatchingCache?
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
 }
@@ -268,4 +274,31 @@ model ConversationMessage {
   sender       User         @relation("ConvMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@map("messages")
+}
+
+// ─── AI tables ────────────────────────────────────────────────────────────────
+
+model AiUsageLog {
+  id           String   @id @default(cuid())
+  feature      String
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  model        String
+  inputTokens  Int?
+  outputTokens Int?
+  latencyMs    Int?
+  success      Boolean  @default(true)
+  errorMsg     String?
+  createdAt    DateTime @default(now())
+
+  @@map("ai_usage_log")
+}
+
+model MatchingCache {
+  jobId       String   @id
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  results     Json
+  generatedAt DateTime @default(now())
+
+  @@map("matching_cache")
 }

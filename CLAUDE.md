@@ -45,6 +45,7 @@ Environment variables live in `.env` (not committed). See `.env.example` for all
 - `JWT_EXPIRES_IN` — token lifetime (e.g. `7d`)
 - `PORT` — defaults to `3001`
 - `FRONTEND_URL` — allowed CORS origin (e.g. `http://localhost:5173`)
+- `ANTHROPIC_API_KEY` — Anthropic API key (backend only, never expose to frontend)
 
 ## Architecture
 
@@ -93,8 +94,9 @@ src/
   controllers/  # Request handlers — call service, send response
   middleware/   # auth (JWT guard), validate (Zod), error (global handler)
   services/     # Business logic — call Prisma, throw on errors
+    ai/         # One file per AI feature + shared anthropic.client.ts singleton
   schemas/      # Zod schemas for request body validation + inferred types
-  types/        # express.d.ts — extends Request with req.user (JwtPayload)
+  types/        # express.d.ts, ai.types.ts
   utils/        # jwt.utils.ts, password.utils.ts, response.utils.ts
   lib/          # prisma.ts singleton
   app.ts        # Express app setup
@@ -121,6 +123,41 @@ src/
 | GET | `/api/jobs` | — | List jobs |
 | GET | `/api/jobs/:id` | — | Job detail |
 | POST | `/api/jobs` | ✓ | Create job |
+
+## AI Features
+
+BuildMatch uses the Anthropic API for AI-powered features. All AI calls originate from the backend — the API key is never exposed to the browser.
+
+### Models
+- **`claude-opus-4-5`** — complex reasoning: contractor matching, contract generation, dispute analysis, scope estimation
+- **`claude-haiku-4-5-20251001`** — simple tasks: reply polishing, summarization, classification
+
+### Backend AI service files
+```
+src/services/ai/
+  anthropic.client.ts      # Shared Anthropic SDK singleton
+  matching.service.ts      # Contractor–job matching
+  job-assistant.service.ts # Job description assistant
+  bid-analyzer.service.ts  # Bid quality analysis
+  contract-generator.service.ts
+  reliability-score.service.ts
+  reply-polisher.service.ts
+  scope-estimator.service.ts
+```
+
+All AI request/response shapes are defined in `src/types/ai.types.ts` and validated with Zod before use.
+
+### Frontend rules for AI features
+- Show a loading skeleton or spinner for **every** AI operation — never a blank state
+- Show an error state with a **Retry** button if the AI call fails
+- Mark all AI-generated content with a subtle **AI badge/indicator**
+- Users can **always dismiss or ignore** AI suggestions — AI never blocks manual flow
+- Never call AI endpoints in a loop; debounce user-triggered AI requests
+
+### Error handling
+- AI failures return `'AI feature temporarily unavailable'` — never raw Anthropic errors
+- Graceful fallback: the page/feature must still work without AI output
+- AI errors are logged to `console.error` with the feature name prefix
 
 ## Design System
 
