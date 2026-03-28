@@ -324,6 +324,21 @@ model SearchCache {
   @@map("search_cache")
 }
 
+model ContractorScoreDetails {
+  contractorUserId  String   @id
+  totalScore        Int
+  responseRatePts   Float?
+  onTimePts         Float?
+  bidAccuracyPts    Float?
+  jobCompletionPts  Float?
+  disputeHistoryPts Float?
+  explanation       String
+  improvementTips   String[]
+  computedAt        DateTime @default(now())
+
+  @@map("contractor_score_details")
+}
+
 model Contract {
   id                          String         @id @default(cuid())
   jobId                       String

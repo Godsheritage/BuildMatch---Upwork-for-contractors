@@ -20,6 +20,7 @@ const LIST_SELECT = {
   avatarUrl: true,
   isAvailable: true,
   isLicenseVerified: true,
+  reliabilityScore: true,
   createdAt: true,
   user: { select: { firstName: true, lastName: true } },
 } satisfies Prisma.ContractorProfileSelect;

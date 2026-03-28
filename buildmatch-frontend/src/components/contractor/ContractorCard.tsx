@@ -3,6 +3,7 @@ import { MapPin, Clock, Star, ShieldCheck } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
 import { useLang } from '../../context/LanguageContext';
 import type { ContractorProfile } from '../../types/contractor.types';
+import { ReliabilityScoreBadge } from './ReliabilityScoreBadge';
 
 interface ContractorCardProps {
   contractor: ContractorProfile;
@@ -166,6 +167,11 @@ export function ContractorCard({ contractor }: ContractorCardProps) {
               <span>New</span>
             )}
           </span>
+
+          {/* Reliability score badge */}
+          {contractor.reliabilityScore != null && contractor.reliabilityScore > 0 && (
+            <ReliabilityScoreBadge score={contractor.reliabilityScore} size="sm" />
+          )}
 
           {/* Experience */}
           {contractor.yearsExperience > 0 && (

@@ -13,6 +13,7 @@ import { classifyPreview } from '../services/ai.service';
 import { useToast } from '../context/ToastContext';
 import { useLang } from '../context/LanguageContext';
 import JobMediaUploader from '../components/job/JobMediaUploader';
+import { ScopeEstimatorPanel } from '../components/job/ScopeEstimatorPanel';
 import { JobDescriptionAssistant, AiAssistedBadge } from '../components/job/JobDescriptionAssistant';
 import type { GeneratedJobDescription } from '../components/job/JobDescriptionAssistant';
 import type { TradeType, CreateJobPayload } from '../types/job.types';
@@ -572,6 +573,23 @@ export function PostJobPage() {
             <div className={styles.section}>
               <p className={styles.sectionTitle}>Photos &amp; Videos</p>
               <JobMediaUploader onMediaChange={(photos) => setPhotoUrls(photos)} />
+              {photoUrls.length > 0 && !!form.tradeType && !!form.city && !!form.state && (
+                <ScopeEstimatorPanel
+                  photoUrls={photoUrls}
+                  tradeType={form.tradeType}
+                  city={form.city}
+                  state={form.state}
+                  onEstimateReceived={(estimate) => {
+                    if (!form.description) {
+                      set('description')(estimate.scopeItems.join('\n'));
+                    }
+                  }}
+                  onApplyBudget={(low, high) => {
+                    set('budgetMin')(String(low));
+                    set('budgetMax')(String(high));
+                  }}
+                />
+              )}
             </div>
 
             {/* Section 4: Location */}

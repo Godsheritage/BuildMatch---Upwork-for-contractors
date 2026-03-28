@@ -11,6 +11,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { Button } from '../components/ui/Button';
 import { StarRating } from '../components/ui/StarRating';
+import { ReliabilityScoreBadge } from '../components/contractor/ReliabilityScoreBadge';
 import type { ContractorProfile } from '../types/contractor.types';
 import type { Review, ReviewBreakdown } from '../types/review.types';
 import styles from './ContractorProfilePage.module.css';
@@ -296,6 +297,13 @@ function ProfileSidebar({ contractor, onContactClick }: { contractor: Contractor
           </div>
         ) : (
           <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 6 }}>No reviews yet</p>
+        )}
+
+        {/* Reliability score badge */}
+        {contractor.reliabilityScore != null && contractor.reliabilityScore > 0 && (
+          <div style={{ marginBottom: 8 }}>
+            <ReliabilityScoreBadge score={contractor.reliabilityScore} size="lg" />
+          </div>
         )}
 
         {/* Location */}

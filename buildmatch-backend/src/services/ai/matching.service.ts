@@ -135,10 +135,11 @@ export async function getMatchedContractors(
   investorId: string,
 ): Promise<MatchingResult> {
 
-  // Step 1 — Check cache (5 min TTL)
-  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+  // Step 1 — Check cache (TTL from env, default 300 s)
+  const cacheTtlMs = parseInt(process.env.AI_MATCHING_CACHE_TTL_SECONDS ?? '300', 10) * 1000;
+  const cacheThreshold = new Date(Date.now() - cacheTtlMs);
   const cached = await prisma.matchingCache.findUnique({ where: { jobId } });
-  if (cached && cached.generatedAt > fiveMinAgo) {
+  if (cached && cached.generatedAt > cacheThreshold) {
     return cached.results as unknown as MatchingResult;
   }
 
@@ -283,9 +284,10 @@ async function callAiRanking(
   const startMs = Date.now();
 
   try {
+    const maxTokens = parseInt(process.env.AI_MAX_TOKENS_MATCHING ?? '1500', 10);
     const response = await anthropicClient.messages.create({
       model:      MODEL,
-      max_tokens: 1500,
+      max_tokens: maxTokens,
       system:     SYSTEM_PROMPT,
       messages:   [{ role: 'user', content: userPrompt }],
     });

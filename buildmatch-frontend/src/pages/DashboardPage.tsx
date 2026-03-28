@@ -14,6 +14,7 @@ import { getMyJobs } from '../services/job.service';
 import type { ContractorProfile } from '../types/contractor.types';
 import type { JobPost } from '../types/job.types';
 import { Button } from '../components/ui/Button';
+import { ContractorScorePanel } from '../components/contractor/ContractorScorePanel';
 import styles from './DashboardPage.module.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -213,6 +214,9 @@ function ContractorDashboard({ greeting, t }: { greeting: string; t: ReturnType<
               </Link>
             </div>
           </div>
+
+          {/* Reliability score */}
+          <ContractorScorePanel />
 
           {/* Respond to clients */}
           <div className={styles.card}>

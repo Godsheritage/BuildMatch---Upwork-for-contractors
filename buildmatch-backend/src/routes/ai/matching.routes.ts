@@ -14,7 +14,7 @@ const router = Router();
 // Keyed by userId so one investor can't exhaust the quota for another.
 
 const matchingRateLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: parseInt(process.env.AI_RATE_LIMIT_WINDOW_MS ?? String(60 * 60 * 1000), 10),
   max:      20,
   standardHeaders: true,
   legacyHeaders:   false,

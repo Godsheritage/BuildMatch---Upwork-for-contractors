@@ -36,6 +36,7 @@ export interface ContractorProfile {
   totalReviews: number;
   completedJobs: number;
   isAvailable: boolean;
+  reliabilityScore: number | null;
   createdAt: string;
   updatedAt: string;
   user: {

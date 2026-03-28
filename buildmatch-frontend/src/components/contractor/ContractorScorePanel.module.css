@@ -1,0 +1,206 @@
+.panel {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panelTitle {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+
+.updatedAt {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* ── Score circle area ─────────────────────────────────────────────────────── */
+
+.scoreTop {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2) 0;
+}
+
+/* ── Skeleton ─────────────────────────────────────────────────────────────── */
+
+.skeletonWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.skeleton {
+  height: 12px;
+  border-radius: 4px;
+  background: #EFEFED;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Breakdown bars ────────────────────────────────────────────────────────── */
+
+.barsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.barLabel {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.barTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--color-surface);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.5s ease;
+}
+
+.barPts {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  width: 34px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.barMax {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-normal);
+}
+
+/* ── AI explanation ────────────────────────────────────────────────────────── */
+
+.explanation {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: var(--leading-body);
+  font-style: italic;
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-border);
+}
+
+/* ── Improvement tips ──────────────────────────────────────────────────────── */
+
+.tipsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tipsHeading {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin: 0;
+}
+
+.tipsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tipItem {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  padding-left: var(--space-4);
+  position: relative;
+}
+
+.tipItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+/* ── Empty state ───────────────────────────────────────────────────────────── */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  text-align: center;
+}
+
+.emptyCircle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--color-text-muted);
+}
+
+.emptyText {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: var(--leading-body);
+  margin: 0;
+  max-width: 240px;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+
+.footer {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}

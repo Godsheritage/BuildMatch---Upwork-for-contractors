@@ -3,7 +3,7 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   Home, Search, Briefcase, PlusCircle,
   FileText, Menu, X,
-  HelpCircle, Bell, Settings, ChevronUp, MessageSquare,
+  HelpCircle, Bell, Settings, ChevronUp, MessageSquare, Sparkles,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getConversations } from '../../services/message.service';
@@ -43,11 +43,12 @@ export function DashboardLayout() {
   }, [queryClient]);
 
   const investorNav = [
-    { to: '/dashboard',              icon: Home,           label: t.nav.dashboard,       badge: 0           },
-    { to: '/dashboard/messages',     icon: MessageSquare,  label: 'Messages',            badge: totalUnread },
-    { to: '/contractors',            icon: Search,         label: t.nav.findContractors, badge: 0           },
-    { to: '/dashboard/jobs',         icon: Briefcase,      label: t.nav.myJobs,          badge: 0           },
-    { to: '/dashboard/post-job',     icon: PlusCircle,     label: t.nav.postJob,         badge: 0           },
+    { to: '/dashboard',                   icon: Home,          label: t.nav.dashboard,       badge: 0           },
+    { to: '/dashboard/messages',          icon: MessageSquare, label: 'Messages',            badge: totalUnread },
+    { to: '/dashboard/scope-estimator',   icon: Sparkles,      label: 'AI Estimator',        badge: 0           },
+    { to: '/contractors',                 icon: Search,        label: t.nav.findContractors, badge: 0           },
+    { to: '/dashboard/jobs',              icon: Briefcase,     label: t.nav.myJobs,          badge: 0           },
+    { to: '/dashboard/post-job',          icon: PlusCircle,    label: t.nav.postJob,         badge: 0           },
   ];
 
   const contractorNav = [

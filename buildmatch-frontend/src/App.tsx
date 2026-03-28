@@ -30,6 +30,7 @@ import { ProfileEditPage } from './pages/ProfileEditPage';
 import { AboutPage } from './pages/AboutPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { ContractReviewPage } from './pages/ContractReviewPage';
+import { ScopeEstimatorPage } from './pages/ScopeEstimatorPage';
 
 const queryClient = new QueryClient();
 
@@ -106,6 +107,14 @@ export default function App() {
                   element={
                     <ProtectedRoute roles={['INVESTOR']}>
                       <PostJobPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/scope-estimator"
+                  element={
+                    <ProtectedRoute roles={['INVESTOR']}>
+                      <ScopeEstimatorPage />
                     </ProtectedRoute>
                   }
                 />
