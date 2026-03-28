@@ -11,12 +11,15 @@ import jobRoutes from './routes/job.routes';
 import aiRoutes from './routes/ai.routes';
 import aiMatchingRoutes from './routes/ai/matching.routes';
 import aiSearchRoutes from './routes/ai/search.routes';
+import aiJobAssistantRoutes from './routes/ai/job-assistant.routes';
+import aiBidAnalyzerRoutes from './routes/ai/bid-analyzer.routes';
 import notificationRoutes from './routes/notification.routes';
 import stripeRoutes from './routes/stripe.routes';
 import escrowRoutes from './routes/escrow.routes';
 import reviewRoutes from './routes/review.routes';
 import messageRoutes from './routes/message.routes';
 import uploadRoutes from './routes/upload.routes';
+import contractRoutes from './routes/contracts.routes';
 import { errorHandler } from './middleware/error.middleware';
 
 dotenv.config();
@@ -69,6 +72,8 @@ app.use('/api/jobs', jobRoutes);
 // Mount specific /api/ai/* prefixes before /api/ai so Express never passes them into aiRoutes
 app.use('/api/ai/matching', aiMatchingRoutes);
 app.use('/api/ai/search', aiSearchRoutes);
+app.use('/api/ai/job-assistant', aiJobAssistantRoutes);
+app.use('/api/ai/bids', aiBidAnalyzerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/stripe', stripeRoutes);
@@ -76,6 +81,7 @@ app.use('/api/escrow', escrowRoutes);
 app.use('/api', reviewRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/contracts', contractRoutes);
 
 // Global error handler — must be last
 app.use(errorHandler);

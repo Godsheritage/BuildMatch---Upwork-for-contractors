@@ -29,6 +29,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ProfileEditPage } from './pages/ProfileEditPage';
 import { AboutPage } from './pages/AboutPage';
 import { MessagesPage } from './pages/MessagesPage';
+import { ContractReviewPage } from './pages/ContractReviewPage';
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,16 @@ export default function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contractors/:id" element={<ContractorProfilePage />} />
               <Route path="/jobs/:id" element={<JobDetailPage />} />
+
+              {/* Contract review — protected, party-only access enforced in page */}
+              <Route
+                path="/contracts/:contractId"
+                element={
+                  <ProtectedRoute>
+                    <ContractReviewPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected dashboard shell — all nested pages rendered via Outlet */}
               <Route

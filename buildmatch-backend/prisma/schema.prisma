@@ -64,6 +64,14 @@ enum TradeType {
   OTHER
 }
 
+enum ContractStatus {
+  DRAFT
+  PENDING_SIGNATURES
+  ACTIVE
+  COMPLETED
+  VOIDED
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -96,6 +104,8 @@ model User {
   contractorConversations Conversation[]           @relation("ContractorConversations")
   convMessagesSent        ConversationMessage[]    @relation("ConvMessageSender")
   aiUsageLogs             AiUsageLog[]
+  investorContracts       Contract[]               @relation("InvestorContracts")
+  contractorContracts     Contract[]               @relation("ContractorContracts")
 }
 
 model ContractorProfile {
@@ -151,6 +161,7 @@ model Job {
   messages               Message[]
   conversations          Conversation[]
   matchingCache          MatchingCache?
+  contracts              Contract[]
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
 }
@@ -165,6 +176,7 @@ model Bid {
   status       BidStatus @default(PENDING)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  contracts    Contract[]
 }
 
 model EscrowPayment {
@@ -310,4 +322,37 @@ model SearchCache {
   generatedAt DateTime @default(now())
 
   @@map("search_cache")
+}
+
+model Contract {
+  id                          String         @id @default(cuid())
+  jobId                       String
+  job                         Job            @relation(fields: [jobId], references: [id])
+  investorId                  String
+  investor                    User           @relation("InvestorContracts", fields: [investorId], references: [id])
+  contractorId                String
+  contractor                  User           @relation("ContractorContracts", fields: [contractorId], references: [id])
+  bidId                       String?
+  bid                         Bid?           @relation(fields: [bidId], references: [id])
+  status                      ContractStatus @default(DRAFT)
+  title                       String
+  scopeOfWork                 String
+  exclusions                  String?
+  investorResponsibilities    String?
+  contractorResponsibilities  String?
+  timelineEstimate            String?
+  timelineOverageClause       String?
+  disputeResolutionProcess    String?
+  paymentSchedule             Json
+  aiGenerated                 Boolean        @default(true)
+  aiModel                     String?
+  investorSignedAt            DateTime?
+  contractorSignedAt          DateTime?
+  investorIp                  String?
+  contractorIp                String?
+  fullText                    String
+  createdAt                   DateTime       @default(now())
+  updatedAt                   DateTime       @updatedAt
+
+  @@map("contracts")
 }

@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 import * as jobService from '../services/job.service';
 import { AppError } from '../utils/app-error';
 import { sendSuccess, sendError } from '../utils/response.utils';
+import prisma from '../lib/prisma';
+import { bidAnalysisCacheKey } from '../services/ai/bid-analyzer.service';
 
 function handleError(res: Response, err: unknown): void {
   if (err instanceof AppError) {
@@ -101,6 +103,11 @@ export async function getMyJobs(req: Request, res: Response): Promise<void> {
 export async function createBid(req: Request, res: Response): Promise<void> {
   try {
     const bid = await jobService.createBid(req.params.jobId, req.user!.userId, req.body);
+
+    // Invalidate bid analysis cache — a new bid changes the analysis
+    prisma.matchingCache.deleteMany({ where: { jobId: bidAnalysisCacheKey(req.params.jobId) } })
+      .catch(() => {}); // fire-and-forget; never block the response
+
     sendSuccess(res, bid, 'Bid submitted', 201);
   } catch (err) {
     handleError(res, err);

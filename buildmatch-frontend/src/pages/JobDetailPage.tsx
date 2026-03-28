@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Calendar, DollarSign, Briefcase,
-  Users, AlertTriangle, CheckCircle2, Star, Camera, MessageSquare,
+  Users, AlertTriangle, CheckCircle2, Star, Camera, MessageSquare, FileText,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
@@ -12,6 +12,7 @@ import {
   createBid, acceptBid, withdrawBid, cancelJob,
   getJobMessages, sendJobMessage,
 } from '../services/job.service';
+import { generateContract, getContractByJob } from '../services/contract.service';
 import { polishReply, summarizeThread } from '../services/ai.service';
 import { ReviewModal } from '../components/review/ReviewModal';
 import { getOrCreateConversation } from '../services/message.service';
@@ -22,6 +23,7 @@ import type { BidWithContractor, JobPost, Message } from '../types/job.types';
 import styles from './JobDetailPage.module.css';
 import { getOptimizedUrl, JOB_PHOTO_FALLBACK } from '../utils/media';
 import { RecommendedContractors } from '../components/job/RecommendedContractors';
+import { BidAnalysisPanel, BidAnalysisPanelErrorBoundary } from '../components/job/BidAnalysisPanel';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -471,13 +473,16 @@ function MyBidCard({ jobId, investorId }: { jobId: string; investorId: string })
 // ── Sidebar: Investor view (owns the job) ─────────────────────────────────────
 
 function InvestorCard({
-  job, bidsRef,
+  job, bidsRef, acceptedBidId, contractId,
 }: {
-  job: JobPost;
-  bidsRef: React.RefObject<HTMLElement | null>;
+  job:           JobPost;
+  bidsRef:       React.RefObject<HTMLElement | null>;
+  acceptedBidId: string | undefined;
+  contractId:    string | null | undefined;
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [confirmCancel, setConfirmCancel] = useState(false);
 
   const cancel = useMutation({
@@ -489,6 +494,18 @@ function InvestorCard({
     },
     onError: (err: Error) => {
       toast(err.message || 'Failed to cancel job', 'error');
+    },
+  });
+
+  const genContract = useMutation({
+    mutationFn: () => generateContract(job.id, acceptedBidId!),
+    onSuccess: (contract) => {
+      toast('Contract generated!');
+      qc.invalidateQueries({ queryKey: ['contract-by-job', job.id] });
+      navigate(`/contracts/${contract.id}`);
+    },
+    onError: (err: Error) => {
+      toast(err.message || 'Failed to generate contract', 'error');
     },
   });
 
@@ -511,6 +528,27 @@ function InvestorCard({
         <button className={styles.viewBidsBtn} onClick={scrollToBids}>
           View all bids ↓
         </button>
+      )}
+
+      {/* Contract CTA — awarded, no contract yet */}
+      {job.status === 'AWARDED' && acceptedBidId && !contractId && (
+        <button
+          className={styles.generateContractBtn}
+          onClick={() => genContract.mutate()}
+          disabled={genContract.isPending}
+          type="button"
+        >
+          <FileText size={13} strokeWidth={2} />
+          {genContract.isPending ? 'Generating…' : 'Generate Contract'}
+        </button>
+      )}
+
+      {/* View contract link — contract exists */}
+      {contractId && (
+        <Link to={`/contracts/${contractId}`} className={styles.viewContractLink}>
+          <FileText size={13} strokeWidth={2} />
+          View Contract
+        </Link>
       )}
 
       {job.status === 'OPEN' && (
@@ -984,10 +1022,24 @@ export function JobDetailPage() {
     staleTime: 30_000,
   });
 
+  // Fetch contract for AWARDED/IN_PROGRESS jobs where user is a party
+  const isParty = isOwner || (isContractor && job?.hasBid);
+  const fetchContract = !!id && !!user && !!job &&
+    ['AWARDED', 'IN_PROGRESS', 'COMPLETED'].includes(job.status) && isParty;
+
+  const { data: existingContract } = useQuery({
+    queryKey: ['contract-by-job', id],
+    queryFn:  () => getContractByJob(id!),
+    enabled:  fetchContract,
+    staleTime: 60_000,
+  });
+
   const acceptedBid    = bids?.find((b) => b.status === 'ACCEPTED');
   const contractorName = acceptedBid?.contractor
     ? `${acceptedBid.contractor.user.firstName} ${acceptedBid.contractor.user.lastName}`
     : 'the contractor';
+  const contractId = existingContract?.id ?? null;
+  const contractPendingSig = existingContract?.status === 'PENDING_SIGNATURES';
   const investorName   = job ? `${job.investor.firstName} ${job.investor.lastName}` : '';
 
   // Sidebar state machine
@@ -1136,6 +1188,37 @@ export function JobDetailPage() {
               </div>
             </section>
 
+            {/* Contract banner — pending signatures (both parties) */}
+            {contractId && contractPendingSig && isParty && (
+              <section className={styles.section}>
+                <div className={styles.contractBanner}>
+                  <AlertTriangle size={15} color="#D97706" strokeWidth={2} />
+                  <div className={styles.contractBannerBody}>
+                    <p className={styles.contractBannerTitle}>Contract pending — both parties must sign before work begins</p>
+                    <p className={styles.contractBannerSub}>
+                      Review the AI-generated contract and add your digital signature to activate it.
+                    </p>
+                  </div>
+                  <Link to={`/contracts/${contractId}`} className={styles.contractBannerBtn}>
+                    Review &amp; Sign
+                  </Link>
+                </div>
+              </section>
+            )}
+
+            {/* View contract link — contractor who has bid, contract exists and active */}
+            {isContractor && job.hasBid && contractId && existingContract?.status === 'ACTIVE' && (
+              <section className={styles.section}>
+                <div className={styles.contractActiveBanner}>
+                  <CheckCircle2 size={15} color="#16A34A" strokeWidth={2.5} />
+                  <p className={styles.contractActiveBannerText}>Contract is active</p>
+                  <Link to={`/contracts/${contractId}`} className={styles.viewContractLink}>
+                    View Contract →
+                  </Link>
+                </div>
+              </section>
+            )}
+
             {/* Complete job callout (investor, IN_PROGRESS, not yet completed) */}
             {isOwner && job.status === 'IN_PROGRESS' && !job.isCompleted && (
               <section className={styles.section}>
@@ -1198,6 +1281,22 @@ export function JobDetailPage() {
                 ref={(el) => { bidsRef.current = el; }}
               >
                 <h2 className={styles.sectionTitle}>Bids</h2>
+                <BidAnalysisPanelErrorBoundary>
+                  <BidAnalysisPanel
+                    jobId={job.id}
+                    bidCount={job.bidCount}
+                    bids={(bids ?? [])
+                      .filter((b) => b.contractor && (b.status === 'PENDING' || b.status === 'ACCEPTED'))
+                      .map((b) => ({
+                        contractorProfileId: b.contractor!.userId,
+                        firstName:           b.contractor!.user.firstName,
+                        lastName:            b.contractor!.user.lastName,
+                        completedJobs:       b.contractor!.completedJobs ?? 0,
+                        averageRating:       b.contractor!.averageRating,
+                        amount:              b.amount,
+                      }))}
+                  />
+                </BidAnalysisPanelErrorBoundary>
                 <BidsList jobId={job.id} />
               </section>
             )}
@@ -1230,7 +1329,12 @@ export function JobDetailPage() {
             )}
             {sidebarVariant === 'my-bid' && <MyBidCard jobId={job.id} investorId={job.investorId} />}
             {sidebarVariant === 'investor' && (
-              <InvestorCard job={job} bidsRef={bidsRef} />
+              <InvestorCard
+                job={job}
+                bidsRef={bidsRef}
+                acceptedBidId={acceptedBid?.id}
+                contractId={contractId}
+              />
             )}
             {sidebarVariant === 'guest' && <GuestCard />}
           </aside>

@@ -13,6 +13,8 @@ import { classifyPreview } from '../services/ai.service';
 import { useToast } from '../context/ToastContext';
 import { useLang } from '../context/LanguageContext';
 import JobMediaUploader from '../components/job/JobMediaUploader';
+import { JobDescriptionAssistant, AiAssistedBadge } from '../components/job/JobDescriptionAssistant';
+import type { GeneratedJobDescription } from '../components/job/JobDescriptionAssistant';
 import type { TradeType, CreateJobPayload } from '../types/job.types';
 import styles from './PostJobPage.module.css';
 
@@ -341,7 +343,8 @@ export function PostJobPage() {
   const [form, setForm]     = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
-  const [aiHint, setAiHint] = useState<string | null>(null);
+  const [aiHint, setAiHint]           = useState<string | null>(null);
+  const [aiAssisted, setAiAssisted]   = useState(false);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const classifyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -485,18 +488,26 @@ export function PostJobPage() {
 
               <div className={styles.field} data-error={!!errors.description || undefined} style={{ marginBottom: 0 }}>
                 <div className={styles.fieldHeader}>
-                  <label htmlFor="description" className={styles.label}>{t.postJob.labels.description}</label>
-                  <span className={[styles.charCount, form.description.length > 2000 ? styles.charCountOver : ''].join(' ')}>
-                    {form.description.length}/2000
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label className={styles.label}>{t.postJob.labels.description}</label>
+                    {aiAssisted && <AiAssistedBadge />}
+                  </div>
                 </div>
-                <textarea
-                  id="description"
-                  rows={6}
-                  value={form.description}
-                  onChange={set('description')}
-                  placeholder={t.postJob.placeholders.description}
-                  className={[styles.textarea, errors.description ? styles.inputError : ''].join(' ')}
+                <JobDescriptionAssistant
+                  tradeType={form.tradeType}
+                  budgetMin={parseFloat(form.budgetMin) || 0}
+                  budgetMax={parseFloat(form.budgetMax) || 0}
+                  city={form.city}
+                  state={form.state}
+                  onGenerated={(result: GeneratedJobDescription) => {
+                    if (!form.title.trim()) set('title')(result.title);
+                    set('description')(result.fullDescription);
+                    setAiAssisted(true);
+                  }}
+                  manualValue={form.description}
+                  onManualChange={set('description')}
+                  manualError={errors.description}
+                  manualPlaceholder={t.postJob.placeholders.description}
                 />
                 {errors.description && <p className={styles.errorMsg}>{errors.description}</p>}
                 {aiHint && (
