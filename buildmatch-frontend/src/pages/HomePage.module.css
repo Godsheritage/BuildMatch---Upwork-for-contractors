@@ -644,6 +644,24 @@
   justify-content: center;
 }
 
+@keyframes spinCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes spinCCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+.categoryIcon svg {
+  animation: spinCCW 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.categoryCard:hover .categoryIcon svg {
+  animation: spinCW 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
 .categoryName {
   font-size: 13px;
   font-weight: var(--font-weight-semibold);
