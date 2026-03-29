@@ -751,7 +751,7 @@
 
 /* ── Visual areas ────────────────────────────────────── */
 .howStepVisual {
-  height: 260px;
+  height: 200px;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -799,21 +799,50 @@
   z-index: 1;
 }
 
+.howBrandIconWrap {
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0F4A2E;
+  margin-bottom: 2px;
+}
+
 .howBrandWordmark {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: var(--font-weight-semibold);
   color: #0F4A2E;
   letter-spacing: -0.04em;
 }
 
 .howBrandAction {
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: var(--font-weight-medium);
   color: #1B5E3E;
   background: rgba(255, 255, 255, 0.7);
-  padding: 7px 18px;
+  padding: 5px 14px;
   border-radius: var(--radius-pill);
   backdrop-filter: blur(6px);
+}
+
+/* Icon inside card 2 (sand) and card 3 (navy) */
+.howVisualIcon {
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  background: rgba(0, 0, 0, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6B4F1A;
+}
+
+.howVisualIconLight {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 /* ── Card content area ───────────────────────────────── */
@@ -840,22 +869,33 @@
   margin: 0;
 }
 
-.howStepCta {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 11px 22px;
-  background: var(--color-accent);
+/* ── Hover-reveal CTA button ─────────────────────────── */
+.howCardBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 10px 20px;
+  background: var(--color-primary);
   color: #fff;
   font-size: 13.5px;
   font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family);
   border-radius: var(--radius-sm);
   text-decoration: none;
-  transition: background 0.15s;
   align-self: flex-start;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.22s ease, transform 0.22s ease, background 0.15s;
 }
 
-.howStepCta:hover {
-  background: #0a5a45;
+.howStepCard:hover .howCardBtn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.howCardBtn:hover {
+  background: #142d47;
 }
 
 /* ── Benefits ────────────────────────────────────────── */
@@ -1160,7 +1200,7 @@
 
 @media (max-width: 680px) {
   .howCardsRow { grid-template-columns: 1fr; }
-  .howStepVisual { height: 200px; }
+  .howStepVisual { height: 160px; }
 }
 
 @media (max-width: 768px) {

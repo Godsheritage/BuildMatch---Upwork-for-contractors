@@ -5,6 +5,7 @@ import {
   Zap, Droplets, Wind, Home, Layers, Paintbrush,
   Trees, Hammer, Wrench, Building2,
   ArrowRight, Search,
+  FileText, Users, CheckCircle2, UserCircle, Briefcase, Send,
 } from 'lucide-react';
 import { useContractorSearch } from '../hooks/useContractorSearch';
 import { ContractorSearchResults } from '../components/contractor/ContractorSearchResults';
@@ -27,31 +28,43 @@ const CATEGORIES = [
 
 const HOW_INVESTOR = [
   {
+    Icon: FileText,
     title: 'Post your job',
     desc: 'Describe the project, your budget, and timeline. It takes less than 3 minutes.',
+    cta: { label: 'Post a Job', to: '/register?role=INVESTOR' },
   },
   {
+    Icon: Users,
     title: 'Review competitive bids',
     desc: 'Receive bids from qualified, licensed contractors in your area. Compare profiles and ratings.',
+    cta: { label: 'Explore contractors', to: '/contractors' },
   },
   {
+    Icon: CheckCircle2,
     title: 'Hire and get it done',
     desc: 'Choose your contractor, agree on terms, and communicate directly through BuildMatch.',
+    cta: { label: 'Get started', to: '/register?role=INVESTOR' },
   },
 ];
 
 const HOW_CONTRACTOR = [
   {
+    Icon: UserCircle,
     title: 'Create your profile',
     desc: 'Showcase your licenses, specialties, portfolio, and hourly rates to stand out from the crowd.',
+    cta: { label: 'Create Profile', to: '/register?role=CONTRACTOR' },
   },
   {
+    Icon: Briefcase,
     title: 'Browse matching jobs',
     desc: 'See open jobs that match your trade, location, and availability — updated daily.',
+    cta: { label: 'Browse Jobs', to: '/register?role=CONTRACTOR' },
   },
   {
+    Icon: Send,
     title: 'Submit bids and win work',
     desc: 'Send a competitive proposal, connect with investors, and grow your business.',
+    cta: { label: 'Start Bidding', to: '/register?role=CONTRACTOR' },
   },
 ];
 
@@ -325,31 +338,30 @@ export function HomePage() {
         </div>
 
         <div className={styles.howCardsRow}>
-          {(howTab === 'INVESTOR' ? HOW_INVESTOR : HOW_CONTRACTOR).map((step, i) => (
-            <div key={step.title} className={styles.howStepCard}>
+          {(howTab === 'INVESTOR' ? HOW_INVESTOR : HOW_CONTRACTOR).map(({ Icon, title, desc, cta }, i) => (
+            <div key={title} className={styles.howStepCard}>
               <div className={`${styles.howStepVisual} ${
                 i === 0 ? styles.howVisual1 : i === 1 ? styles.howVisual2 : styles.howVisual3
               }`}>
-                {i === 0 && (
+                {i === 0 ? (
                   <div className={styles.howBrandCard}>
-                    <span className={styles.howBrandWordmark}>BuildMatch</span>
-                    <span className={styles.howBrandAction}>
-                      {howTab === 'INVESTOR' ? 'Post a Job' : 'Get started'}
-                    </span>
+                    <div className={styles.howBrandIconWrap}>
+                      <Icon size={48} strokeWidth={1.5} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`${styles.howVisualIcon} ${i === 2 ? styles.howVisualIconLight : ''}`}>
+                    <Icon size={48} strokeWidth={1.25} />
                   </div>
                 )}
               </div>
               <div className={styles.howStepContent}>
-                <p className={styles.howStepTitle2}>{step.title}</p>
-                <p className={styles.howStepDesc2}>{step.desc}</p>
-                {i === 1 && (
-                  <Link
-                    to={howTab === 'INVESTOR' ? '/contractors' : '/register?role=CONTRACTOR'}
-                    className={styles.howStepCta}
-                  >
-                    {howTab === 'INVESTOR' ? 'Explore contractors' : 'Browse jobs'}
-                  </Link>
-                )}
+                <p className={styles.howStepTitle2}>{title}</p>
+                <p className={styles.howStepDesc2}>{desc}</p>
+                <Link to={cta.to} className={styles.howCardBtn}>
+                  {cta.label}
+                  <ArrowRight size={14} strokeWidth={2} />
+                </Link>
               </div>
             </div>
           ))}
