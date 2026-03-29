@@ -25,6 +25,7 @@ import uploadRoutes from './routes/upload.routes';
 import contractRoutes from './routes/contracts.routes';
 import disputeRoutes from './routes/dispute.routes';
 import adminDisputeRoutes from './routes/admin/disputes.routes';
+import savedRoutes from './routes/saved.routes';
 import { errorHandler } from './middleware/error.middleware';
 import { authenticate, requireRole } from './middleware/auth.middleware';
 import { sendSuccess, sendError } from './utils/response.utils';
@@ -106,6 +107,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/disputes', disputeRoutes);
 app.use('/api/admin/disputes', adminDisputeRoutes);
+app.use('/api/saved', savedRoutes);
 
 // ── Admin endpoints ──────────────────────────────────────────────────────────
 // POST /api/admin/reliability/recompute-all — triggers batch score computation

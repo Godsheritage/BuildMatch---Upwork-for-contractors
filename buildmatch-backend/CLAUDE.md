@@ -143,6 +143,34 @@ src/
 
 **Audit log:** every admin action inserts a row into `audit_log` (non-fatal — failure is logged but does not block the response).
 
+### Saved Contractors — `/api/saved`
+All routes require `authenticate` + `requireRole('INVESTOR')`. Mounted at `app.use('/api/saved', savedRoutes)` **before** `app.use('/api/ai', aiRoutes)` in `app.ts`.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/saved/toggle` | INVESTOR | Toggle save/unsave a contractor; creates default list if none exists. Body: `{ contractorProfileId, listId? }`. Returns `{ saved, listId }`. Rate-limited: 60 req/min/user. |
+| GET | `/api/saved/ids` | INVESTOR | Returns `{ saved: Record<contractorProfileId, listId> }` — fast lookup map for bookmark icon states. |
+| GET | `/api/saved/lists` | INVESTOR | All lists for this investor with `contractorCount` merged in. |
+| POST | `/api/saved/lists` | INVESTOR | Create a new list. Body: `{ name }`. Max 10 lists per investor. |
+| PUT | `/api/saved/lists/:listId` | INVESTOR | Rename a list. Body: `{ name }`. |
+| DELETE | `/api/saved/lists/:listId` | INVESTOR | Delete a list (not allowed on default list). |
+| GET | `/api/saved/lists/:listId/contractors` | INVESTOR | All saved contractors in a list with full contractor+user join. |
+| DELETE | `/api/saved/lists/:listId/contractors/:savedId` | INVESTOR | Remove a single saved contractor from a list. |
+| PUT | `/api/saved/contractors/:savedId/move` | INVESTOR | Move a saved contractor to a different list. Body: `{ targetListId }`. |
+| PUT | `/api/saved/contractors/:savedId/note` | INVESTOR | Update the private note on a saved contractor. Body: `{ note: string \| null }`. |
+
+**Tables (Supabase raw SQL, not Prisma):** `saved_lists` and `saved_contractors`. All reads/writes use `getServiceClient()` (service-role key, bypasses RLS). Ownership verified before every mutation.
+
+**Service file:** `src/services/saved-contractors.service.ts`
+- `getOrCreateDefaultList(investorId)` — ensures every investor has a default list
+- `getSavedIds(investorId)` — returns the `{ saved: Record<...> }` map
+- `toggleSave(investorId, contractorProfileId, listId?)` — upsert/delete in `saved_contractors`
+- `getLists(investorId)` — lists + contractor counts
+- `getListContractors(investorId, listId)` — full join with contractor+user profile
+- `createList / renameList / deleteList / moveContractor / updateNote`
+
+**Types:** `src/types/saved.types.ts` — `SavedList`, `SavedContractor`, `SavedContractorIds`.
+
 ### Health
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -307,6 +335,8 @@ Static segments must be declared before dynamic params in every router:
 - `/:jobId/bids/my-bid` before `/:jobId/bids/:bidId/...`
 - `/unread-count` before `/:id` (messages router)
 - `/summary` before `/:id` (disputes router)
+- `/ids`, `/lists` before `/:listId` (saved router)
+- `/contractors/:savedId/move` and `/contractors/:savedId/note` — static `move`/`note` before any further dynamic param
 
 ### Dispute system architecture
 Dispute tables (`disputes`, `dispute_messages`, `dispute_evidence`) are raw SQL (created via Supabase migrations), **not** Prisma models. All dispute reads/writes use `getServiceClient()` (Supabase JS with service role key) to bypass RLS. User, Job, and Bid lookups within dispute operations use Prisma as normal.
