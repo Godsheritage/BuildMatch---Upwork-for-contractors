@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Bookmarks,
+  BookMarked,
   MoreVertical,
   MessageSquare,
   ArrowUpRight,
@@ -504,7 +504,7 @@ function ContractorGrid({
 
       {!isLoading && sorted.length === 0 && (
         <div className={styles.emptyState}>
-          <Bookmarks size={48} className={styles.emptyIcon} />
+          <BookMarked size={48} className={styles.emptyIcon} />
           <p className={styles.emptyTitle}>This list is empty</p>
           <p className={styles.emptySubtitle}>
             Browse contractors and click the bookmark icon to save them here.
@@ -568,7 +568,7 @@ function ListRow({
       onKeyDown={(e) => e.key === 'Enter' && onActivate()}
     >
       <div className={styles.listRowLeft}>
-        <Bookmarks size={14} className={styles.listRowIcon} />
+        <BookMarked size={14} className={styles.listRowIcon} />
         <span className={styles.listName}>{list.name}</span>
         {list.isDefault && <span className={styles.defaultPill}>Default</span>}
       </div>
@@ -829,7 +829,7 @@ export function SavedContractorsPage() {
           !listsLoading && (
             <div className={styles.main}>
               <div className={styles.emptyState}>
-                <Bookmarks size={48} className={styles.emptyIcon} />
+                <BookMarked size={48} className={styles.emptyIcon} />
                 <p className={styles.emptyTitle}>No lists yet</p>
                 <p className={styles.emptySubtitle}>
                   Create a list to start saving contractors.

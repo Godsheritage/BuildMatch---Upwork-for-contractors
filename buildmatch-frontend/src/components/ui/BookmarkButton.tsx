@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { useSavedContractors } from '../../context/SavedContractorsContext';
 import { useAuth } from '../../hooks/useAuth';
-import { useToast } from '../../hooks/useToast';
+import { useToast } from '../../context/ToastContext';
 import styles from './BookmarkButton.module.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────

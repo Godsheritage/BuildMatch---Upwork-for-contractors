@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
-import { useToast } from '../hooks/useToast';
+import { useToast } from '../context/ToastContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
