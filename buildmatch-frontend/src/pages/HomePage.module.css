@@ -681,73 +681,181 @@
   padding: 80px 40px;
 }
 
-.howHeader {
+.howHeaderRow {
   max-width: 1120px;
-  margin: 0 auto 48px;
-  text-align: center;
-}
-
-.howGrid {
-  max-width: 1120px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  margin: 0 auto 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 24px;
 }
 
-.howCard {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 36px;
-}
-
-.howCardTitle {
-  font-size: 16px;
+.howTitle {
+  font-size: clamp(24px, 3vw, 34px);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  letter-spacing: -0.01em;
-  margin-bottom: 28px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0;
 }
 
-.howStep {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
+.howToggle {
+  display: inline-flex;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  gap: 2px;
+  flex-shrink: 0;
 }
-.howStep:last-child { margin-bottom: 0; }
 
-.howStepNum {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--color-primary);
+.howToggleBtn {
+  padding: 8px 20px;
+  font-size: 13.5px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: background 0.18s, color 0.18s;
+  white-space: nowrap;
+}
+
+.howToggleActive {
+  background: var(--color-text-primary);
   color: #fff;
-  font-size: 12px;
-  font-weight: var(--font-weight-semibold);
+}
+
+/* ── 3-column card grid ──────────────────────────────── */
+.howCardsRow {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.howStepCard {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s;
+}
+
+.howStepCard:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Visual areas ────────────────────────────────────── */
+.howStepVisual {
+  height: 260px;
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  margin-top: 1px;
 }
 
-.howStepBody { flex: 1; }
+/* Card 1 — branded mint */
+.howVisual1 {
+  background: linear-gradient(140deg, #C6F0D8 0%, #91DEB5 60%, #6ECBA0 100%);
+}
 
-.howStepTitle {
-  font-size: 14px;
+/* Card 2 — warm sand */
+.howVisual2 {
+  background: #F0EDE8;
+  position: relative;
+}
+
+.howVisual2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 70% 30%, rgba(255,255,255,0.5) 0%, transparent 60%);
+}
+
+/* Card 3 — slate blue */
+.howVisual3 {
+  background: #1B3A5C;
+  position: relative;
+}
+
+.howVisual3::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 70%, rgba(94,203,161,0.18) 0%, transparent 60%);
+}
+
+/* Branded content inside visual 1 */
+.howBrandCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 1;
+}
+
+.howBrandWordmark {
+  font-size: 28px;
+  font-weight: var(--font-weight-semibold);
+  color: #0F4A2E;
+  letter-spacing: -0.04em;
+}
+
+.howBrandAction {
+  font-size: 13.5px;
+  font-weight: var(--font-weight-medium);
+  color: #1B5E3E;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 7px 18px;
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(6px);
+}
+
+/* ── Card content area ───────────────────────────────── */
+.howStepContent {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.howStepTitle2 {
+  font-size: 16px;
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  margin-bottom: 4px;
+  letter-spacing: -0.015em;
+  margin: 0;
 }
 
-.howStepDesc {
-  font-size: 13px;
+.howStepDesc2 {
+  font-size: 13.5px;
   color: var(--color-text-muted);
   line-height: 1.6;
+  margin: 0;
+}
+
+.howStepCta {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 11px 22px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background 0.15s;
+  align-self: flex-start;
+}
+
+.howStepCta:hover {
+  background: #0a5a45;
 }
 
 /* ── Benefits ────────────────────────────────────────── */
@@ -1040,12 +1148,19 @@
   .heroInner { flex-direction: column; gap: 40px; }
   .heroRight { width: 100%; max-width: 400px; margin: 0 auto; }
   .howGrid { grid-template-columns: 1fr; }
+  .howCardsRow { grid-template-columns: 1fr; }
+  .howHeaderRow { flex-direction: column; align-items: flex-start; gap: 16px; }
   .benefitsGrid { grid-template-columns: 1fr 1fr; }
   .featuredGrid { grid-template-columns: 1fr 1fr; }
   .statsInner { grid-template-columns: 1fr; }
   .statItem { border-right: none; border-bottom: 1px solid var(--color-border); }
   .statItem:last-child { border-bottom: none; }
   .footerTop { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+
+@media (max-width: 680px) {
+  .howCardsRow { grid-template-columns: 1fr; }
+  .howStepVisual { height: 200px; }
 }
 
 @media (max-width: 768px) {

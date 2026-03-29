@@ -1,12 +1,35 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Clock, Star, ShieldCheck } from 'lucide-react';
-import { Avatar } from '../ui/Avatar';
+import { MapPin, Briefcase, Shield, Award, CheckCircle, ArrowRight } from 'lucide-react';
 import { useLang } from '../../context/LanguageContext';
-import type { ContractorProfile } from '../../types/contractor.types';
 import { ReliabilityScoreBadge } from './ReliabilityScoreBadge';
+import type { ContractorProfile } from '../../types/contractor.types';
+import styles from './ContractorCard.module.css';
 
 interface ContractorCardProps {
   contractor: ContractorProfile;
+}
+
+// First two letters of name for avatar fallback
+function initials(name: string) {
+  const parts = name.trim().split(' ');
+  return (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '');
+}
+
+// Star rendering — filled amber stars
+function Stars({ rating }: { rating: number }) {
+  return (
+    <span className={styles.stars}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <svg key={n} width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <polygon
+            points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+            fill={n <= Math.round(rating) ? '#F59E0B' : '#E5E4E0'}
+            stroke="none"
+          />
+        </svg>
+      ))}
+    </span>
+  );
 }
 
 export function ContractorCard({ contractor }: ContractorCardProps) {
@@ -15,81 +38,110 @@ export function ContractorCard({ contractor }: ContractorCardProps) {
   const fullName = `${user.firstName} ${user.lastName}`;
   const location = [contractor.city, contractor.state].filter(Boolean).join(', ');
 
-  const hasRate = contractor.hourlyRateMin != null || contractor.hourlyRateMax != null;
-  const rateLabel = hasRate
-    ? `$${contractor.hourlyRateMin ?? '?'}–$${contractor.hourlyRateMax ?? '?'}/hr`
-    : null;
-
-  const visibleSpecialties = contractor.specialties.slice(0, 3);
-  const extraCount = contractor.specialties.length - visibleSpecialties.length;
-
   const hasRating = contractor.averageRating > 0;
 
+  // Up to 3 specialty pills; rest in services text
+  const pills = contractor.specialties.slice(0, 3);
+  const allServices = contractor.specialties
+    .map((s) => t.specialties[s as keyof typeof t.specialties] ?? s);
+  const serviceLabel =
+    allServices.length <= 4
+      ? allServices.join(', ')
+      : `${allServices.slice(0, 3).join(', ')}, +${allServices.length - 3} more`;
+
+  const isPartner = contractor.isLicenseVerified;
+
   return (
-    <Link
-      to={`/contractors/${id}`}
-      style={{ textDecoration: 'none', display: 'block' }}
-    >
-      <div
-        style={{
-          display: 'flex', flexDirection: 'column', gap: 0,
-          background: 'var(--color-bg)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-          cursor: 'pointer',
-          transition: 'border-color 0.15s, box-shadow 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
-          (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--color-text-muted)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
-          (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--color-border)';
-        }}
-      >
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
-          <Avatar name={fullName} size="md" src={contractor.avatarUrl ?? undefined} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <p
-                style={{
-                  fontSize: 15, fontWeight: 600,
-                  color: 'var(--color-text-primary)',
-                  letterSpacing: '-0.01em',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  flex: 1,
-                }}
-              >
-                {fullName}
-              </p>
-              {contractor.isLicenseVerified && (
-                <ShieldCheck size={14} color="var(--color-accent)" strokeWidth={2} style={{ flexShrink: 0 }} />
-              )}
-            </div>
-            {location && (
-              <p
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 3,
-                  fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2,
-                }}
-              >
-                <MapPin size={11} strokeWidth={2} />
-                {location}
-              </p>
-            )}
+    <Link to={`/contractors/${id}`} className={styles.card}>
+      {/* Coloured banner */}
+      <div className={styles.banner}>
+        {isPartner && (
+          <span className={styles.partnerBadge}>
+            <Award size={11} strokeWidth={2} />
+            Official Partner
+          </span>
+        )}
+      </div>
+
+      {/* Avatar overlapping the banner */}
+      <div className={styles.avatarWrap}>
+        {contractor.avatarUrl ? (
+          <img src={contractor.avatarUrl} alt={fullName} className={styles.avatarImg} />
+        ) : (
+          <div className={styles.avatarFallback}>{initials(fullName).toUpperCase()}</div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className={styles.content}>
+        <p className={styles.name}>{fullName}</p>
+
+        {location && (
+          <p className={styles.location}>
+            <MapPin size={11} strokeWidth={2} />
+            {location}
+          </p>
+        )}
+
+        {/* Rating + Verified */}
+        <div className={styles.ratingRow}>
+          <Stars rating={contractor.averageRating} />
+          {hasRating ? (
+            <>
+              <span className={styles.ratingValue}>
+                {contractor.averageRating.toFixed(1)}
+              </span>
+              <span className={styles.ratingCount}>({contractor.totalReviews})</span>
+            </>
+          ) : (
+            <span className={styles.ratingCount}>New</span>
+          )}
+          {contractor.isLicenseVerified && (
+            <span className={styles.verifiedBadge}>
+              <CheckCircle size={10} strokeWidth={2.5} />
+              Verified
+            </span>
+          )}
+          {contractor.reliabilityScore != null && contractor.reliabilityScore > 0 && (
+            <ReliabilityScoreBadge score={contractor.reliabilityScore} size="sm" />
+          )}
+        </div>
+
+        {/* Specialty pills */}
+        {pills.length > 0 && (
+          <div className={styles.pills}>
+            {pills.map((s) => (
+              <span key={s} className={styles.pill}>
+                {t.specialties[s as keyof typeof t.specialties] ?? s}
+              </span>
+            ))}
           </div>
+        )}
+
+        {/* Services */}
+        {allServices.length > 0 && (
+          <>
+            <p className={styles.servicesLabel}>Services:</p>
+            <p className={styles.servicesText}>{serviceLabel}</p>
+          </>
+        )}
+
+        {/* Experience + Licensed */}
+        <div className={styles.metaRow}>
+          {contractor.yearsExperience > 0 && (
+            <span className={styles.metaItem}>
+              <Briefcase size={12} strokeWidth={1.75} />
+              {contractor.yearsExperience} yr{contractor.yearsExperience !== 1 ? 's' : ''}
+            </span>
+          )}
+          {contractor.licenseNumber && (
+            <span className={`${styles.metaItem} ${styles.licensedItem}`}>
+              <Shield size={12} strokeWidth={1.75} />
+              Licensed
+            </span>
+          )}
           {contractor.isAvailable && (
-            <span
-              style={{
-                flexShrink: 0, fontSize: 11, fontWeight: 500,
-                padding: '2px 8px', borderRadius: 'var(--radius-pill)',
-                background: 'var(--color-highlight)', color: 'var(--color-accent)',
-              }}
-            >
+            <span className={`${styles.metaItem} ${styles.availableItem}`}>
               Available
             </span>
           )}
@@ -97,106 +149,16 @@ export function ContractorCard({ contractor }: ContractorCardProps) {
 
         {/* Bio */}
         {contractor.bio && (
-          <p
-            style={{
-              fontSize: 13, color: 'var(--color-text-muted)',
-              lineHeight: 1.6, marginBottom: 12,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
-            {contractor.bio}
-          </p>
+          <>
+            <hr className={styles.divider} />
+            <p className={styles.bio}>{contractor.bio}</p>
+          </>
         )}
 
-        {/* Specialties */}
-        {contractor.specialties.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-            {visibleSpecialties.map((s) => (
-              <span
-                key={s}
-                style={{
-                  fontSize: 11, fontWeight: 500,
-                  padding: '3px 10px', borderRadius: 'var(--radius-pill)',
-                  background: 'var(--color-surface)',
-                  color: 'var(--color-text-muted)',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                {t.specialties[s as keyof typeof t.specialties] ?? s}
-              </span>
-            ))}
-            {extraCount > 0 && (
-              <span style={{ fontSize: 11, color: 'var(--color-text-muted)', alignSelf: 'center' }}>
-                +{extraCount}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Footer */}
-        <div
-          style={{
-            display: 'flex', alignItems: 'center', gap: 14,
-            paddingTop: 12, borderTop: '1px solid var(--color-border)',
-            marginTop: 'auto',
-          }}
-        >
-          {/* Rating */}
-          <span
-            style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 12, color: 'var(--color-text-muted)',
-            }}
-          >
-            <Star
-              size={12}
-              strokeWidth={0}
-              fill={hasRating ? 'var(--color-star)' : 'var(--color-border)'}
-            />
-            {hasRating ? (
-              <>
-                <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                  {contractor.averageRating.toFixed(1)}
-                </span>
-                <span>({contractor.totalReviews})</span>
-              </>
-            ) : (
-              <span>New</span>
-            )}
-          </span>
-
-          {/* Reliability score badge */}
-          {contractor.reliabilityScore != null && contractor.reliabilityScore > 0 && (
-            <ReliabilityScoreBadge score={contractor.reliabilityScore} size="sm" />
-          )}
-
-          {/* Experience */}
-          {contractor.yearsExperience > 0 && (
-            <span
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                fontSize: 12, color: 'var(--color-text-muted)',
-              }}
-            >
-              <Clock size={11} strokeWidth={2} />
-              {contractor.yearsExperience} yr{contractor.yearsExperience !== 1 ? 's' : ''}
-            </span>
-          )}
-
-          {/* Rate */}
-          {rateLabel && (
-            <span
-              style={{
-                marginLeft: 'auto', fontSize: 13, fontWeight: 600,
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              {rateLabel}
-            </span>
-          )}
+        {/* CTA */}
+        <div className={styles.cta}>
+          View Profile
+          <ArrowRight size={14} strokeWidth={2} className={styles.ctaArrow} />
         </div>
       </div>
     </Link>

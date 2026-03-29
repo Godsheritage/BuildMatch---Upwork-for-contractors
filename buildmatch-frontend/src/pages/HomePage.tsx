@@ -83,6 +83,7 @@ export function HomePage() {
   const [submittedQuery, setSubmittedQuery] = useState('');
   const resultsRef = useRef<HTMLDivElement>(null);
   const [userCity, setUserCity] = useState<string | null>(null);
+  const [howTab, setHowTab] = useState<'INVESTOR' | 'CONTRACTOR'>('INVESTOR');
 
   // Typewriter effect for search placeholder
   const [typedText, setTypedText]     = useState('');
@@ -303,74 +304,55 @@ export function HomePage() {
 
       {/* ── HOW IT WORKS ───────────────────────────────── */}
       <section className={styles.howItWorks}>
-        <div className={styles.howHeader}>
-          <p className={styles.sectionEyebrow}>Simple by design</p>
-          <h2 className={styles.sectionHeading}>How BuildMatch works</h2>
-          <p className={styles.sectionSub}>
-            Two types of users, one powerful platform. Whether you're hiring or looking for work,
-            we've made it straightforward.
-          </p>
+        <div className={styles.howHeaderRow}>
+          <h2 className={styles.howTitle}>How it works</h2>
+          <div className={styles.howToggle}>
+            <button
+              className={`${styles.howToggleBtn} ${howTab === 'INVESTOR' ? styles.howToggleActive : ''}`}
+              onClick={() => setHowTab('INVESTOR')}
+              type="button"
+            >
+              For hiring
+            </button>
+            <button
+              className={`${styles.howToggleBtn} ${howTab === 'CONTRACTOR' ? styles.howToggleActive : ''}`}
+              onClick={() => setHowTab('CONTRACTOR')}
+              type="button"
+            >
+              For finding work
+            </button>
+          </div>
         </div>
-        <div className={styles.howGrid}>
-          {/* For investors */}
-          <div className={styles.howCard}>
-            <p className={styles.howCardTitle}>
-              <Building2 size={18} color="var(--color-primary)" strokeWidth={1.75} />
-              For Investors &amp; Property Owners
-            </p>
-            {HOW_INVESTOR.map((step, i) => (
-              <div key={step.title} className={styles.howStep}>
-                <div className={styles.howStepNum}>{i + 1}</div>
-                <div className={styles.howStepBody}>
-                  <p className={styles.howStepTitle}>{step.title}</p>
-                  <p className={styles.howStepDesc}>{step.desc}</p>
-                </div>
-              </div>
-            ))}
-            <div style={{ marginTop: 28 }}>
-              <Link
-                to="/register?role=INVESTOR"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontSize: 14, fontWeight: 500, color: 'var(--color-primary)',
-                  textDecoration: 'none',
-                }}
-              >
-                Post your first job <ArrowRight size={14} strokeWidth={2.5} />
-              </Link>
-            </div>
-          </div>
 
-          {/* For contractors */}
-          <div className={styles.howCard}>
-            <p className={styles.howCardTitle}>
-              <Hammer size={18} color="var(--color-accent)" strokeWidth={1.75} />
-              For Contractors
-            </p>
-            {HOW_CONTRACTOR.map((step, i) => (
-              <div key={step.title} className={styles.howStep}>
-                <div className={styles.howStepNum} style={{ background: 'var(--color-accent)' }}>
-                  {i + 1}
-                </div>
-                <div className={styles.howStepBody}>
-                  <p className={styles.howStepTitle}>{step.title}</p>
-                  <p className={styles.howStepDesc}>{step.desc}</p>
-                </div>
+        <div className={styles.howCardsRow}>
+          {(howTab === 'INVESTOR' ? HOW_INVESTOR : HOW_CONTRACTOR).map((step, i) => (
+            <div key={step.title} className={styles.howStepCard}>
+              <div className={`${styles.howStepVisual} ${
+                i === 0 ? styles.howVisual1 : i === 1 ? styles.howVisual2 : styles.howVisual3
+              }`}>
+                {i === 0 && (
+                  <div className={styles.howBrandCard}>
+                    <span className={styles.howBrandWordmark}>BuildMatch</span>
+                    <span className={styles.howBrandAction}>
+                      {howTab === 'INVESTOR' ? 'Post a Job' : 'Get started'}
+                    </span>
+                  </div>
+                )}
               </div>
-            ))}
-            <div style={{ marginTop: 28 }}>
-              <Link
-                to="/register?role=CONTRACTOR"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontSize: 14, fontWeight: 500, color: 'var(--color-accent)',
-                  textDecoration: 'none',
-                }}
-              >
-                Create your profile <ArrowRight size={14} strokeWidth={2.5} />
-              </Link>
+              <div className={styles.howStepContent}>
+                <p className={styles.howStepTitle2}>{step.title}</p>
+                <p className={styles.howStepDesc2}>{step.desc}</p>
+                {i === 1 && (
+                  <Link
+                    to={howTab === 'INVESTOR' ? '/contractors' : '/register?role=CONTRACTOR'}
+                    className={styles.howStepCta}
+                  >
+                    {howTab === 'INVESTOR' ? 'Explore contractors' : 'Browse jobs'}
+                  </Link>
+                )}
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       </section>
 
