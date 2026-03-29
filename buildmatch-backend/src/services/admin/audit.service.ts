@@ -1,48 +1,47 @@
 import { getServiceClient } from '../../lib/supabase';
 
 // ── Action enum ───────────────────────────────────────────────────────────────
+// Must match the admin_action Postgres enum in supabase_admin_tables.sql.
 
 export type AuditAction =
-  | 'USER_BANNED'
-  | 'USER_UNBANNED'
-  | 'USER_ROLE_CHANGED'
-  | 'CONTRACTOR_LICENSE_VERIFIED'
-  | 'CONTRACTOR_LICENSE_UNVERIFIED'
-  | 'CONTRACTOR_AVAILABILITY_TOGGLED'
-  | 'JOB_FORCE_CLOSED'
-  | 'DISPUTE_RULING'
-  | 'DISPUTE_STATUS_CHANGED';
+  | 'USER_SUSPEND' | 'USER_UNSUSPEND' | 'USER_BAN' | 'USER_UNBAN'
+  | 'USER_ROLE_CHANGE' | 'USER_VERIFY' | 'USER_IMPERSONATE'
+  | 'JOB_REMOVE' | 'JOB_FEATURE' | 'JOB_STATUS_CHANGE'
+  | 'DISPUTE_RULING' | 'DISPUTE_NOTE' | 'DISPUTE_CLOSE'
+  | 'REVIEW_APPROVE' | 'REVIEW_REMOVE' | 'REVIEW_EDIT'
+  | 'MESSAGE_VIEW' | 'MESSAGE_REMOVE'
+  | 'PAYMENT_RETRY' | 'PAYMENT_REFUND'
+  | 'SETTING_CHANGE' | 'FEATURE_FLAG_CHANGE'
+  | 'FILTER_PATTERN_ADD' | 'FILTER_PATTERN_REMOVE';
 
 // ── Write params ──────────────────────────────────────────────────────────────
 
 export interface WriteAuditLogParams {
   adminId:    string;
   action:     AuditAction;
-  targetType: 'user' | 'contractor' | 'job' | 'dispute';
+  targetType: string;
   targetId:   string;
-  payload:    Record<string, unknown>;
+  payload?:   Record<string, unknown>;
   ipAddress?: string;
   note?:      string;
 }
 
 // ── writeAuditLog ─────────────────────────────────────────────────────────────
 // Non-fatal: logs errors to console but never throws so the API response
-// is never blocked. Call this BEFORE returning a successful response.
+// is never blocked by an audit failure.
 
 export async function writeAuditLog(params: WriteAuditLogParams): Promise<void> {
   try {
     const { error } = await getServiceClient()
       .from('audit_log')
       .insert({
-        action:    params.action,
-        actor_id:  params.adminId,
-        entity_id: params.targetId,
-        payload: {
-          targetType: params.targetType,
-          ipAddress:  params.ipAddress ?? null,
-          note:       params.note ?? null,
-          ...params.payload,
-        },
+        admin_id:    params.adminId,
+        action:      params.action,
+        target_type: params.targetType,
+        target_id:   params.targetId,
+        payload:     params.payload ?? null,
+        ip_address:  params.ipAddress ?? null,
+        note:        params.note ?? null,
       });
 
     if (error) console.error('[audit] insert failed:', error.message);
@@ -51,15 +50,18 @@ export async function writeAuditLog(params: WriteAuditLogParams): Promise<void> 
   }
 }
 
-// ── getAuditLog ────────────────────────────────────────────────────────────────
+// ── AuditLogEntry (response shape) ────────────────────────────────────────────
 
 export interface AuditLogEntry {
-  id:        number;
-  action:    string;
-  actorId:   string;
-  entityId:  string;
-  payload:   Record<string, unknown>;
-  createdAt: string;
+  id:         string;
+  adminId:    string;
+  action:     string;
+  targetType: string;
+  targetId:   string;
+  payload:    Record<string, unknown> | null;
+  ipAddress:  string | null;
+  note:       string | null;
+  createdAt:  string;
 }
 
 export interface AuditLogPage {
@@ -69,6 +71,8 @@ export interface AuditLogPage {
   totalPages: number;
   limit:      number;
 }
+
+// ── getAuditLog ────────────────────────────────────────────────────────────────
 
 export async function getAuditLog(params: {
   page:      number;
@@ -80,45 +84,42 @@ export async function getAuditLog(params: {
   const offset = (page - 1) * limit;
   const supabase = getServiceClient();
 
-  let countQ = supabase
-    .from('audit_log')
-    .select('*', { count: 'exact', head: true });
-
-  let dataQ = supabase
+  let countQ = supabase.from('audit_log').select('*', { count: 'exact', head: true });
+  let dataQ  = supabase
     .from('audit_log')
     .select('*')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (action) {
-    countQ = countQ.eq('action', action);
-    dataQ  = dataQ.eq('action', action);
-  }
-  if (adminId) {
-    countQ = countQ.eq('actor_id', adminId);
-    dataQ  = dataQ.eq('actor_id', adminId);
-  }
+  if (action)  { countQ = countQ.eq('action',   action);   dataQ = dataQ.eq('action',   action); }
+  if (adminId) { countQ = countQ.eq('admin_id', adminId);  dataQ = dataQ.eq('admin_id', adminId); }
 
   const [countRes, dataRes] = await Promise.all([countQ, dataQ]);
 
   const total = countRes.count ?? 0;
   const rows  = (dataRes.data ?? []) as {
-    id:         number;
-    action:     string;
-    actor_id:   string;
-    entity_id:  string;
-    payload:    Record<string, unknown> | null;
-    created_at: string;
+    id:          string;
+    admin_id:    string;
+    action:      string;
+    target_type: string;
+    target_id:   string;
+    payload:     Record<string, unknown> | null;
+    ip_address:  string | null;
+    note:        string | null;
+    created_at:  string;
   }[];
 
   return {
     data: rows.map((r) => ({
-      id:        r.id,
-      action:    r.action,
-      actorId:   r.actor_id,
-      entityId:  r.entity_id,
-      payload:   r.payload ?? {},
-      createdAt: r.created_at,
+      id:         r.id,
+      adminId:    r.admin_id,
+      action:     r.action,
+      targetType: r.target_type,
+      targetId:   r.target_id,
+      payload:    r.payload,
+      ipAddress:  r.ip_address,
+      note:       r.note,
+      createdAt:  r.created_at,
     })),
     total,
     page,

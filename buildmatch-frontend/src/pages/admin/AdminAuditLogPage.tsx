@@ -100,8 +100,8 @@ export function AdminAuditLogPage() {
                   {e.adminId ? e.adminId.slice(0, 8) + '…' : '—'}
                 </td>
                 <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-                  {e.entityId
-                    ? <><span style={{ color: 'var(--color-text-primary)' }}>{e.targetType ?? 'entity'}</span>{' '}{e.entityId.slice(0, 8)}…</>
+                  {e.targetId
+                    ? <><span style={{ color: 'var(--color-text-primary)' }}>{e.targetType}</span>{' '}{e.targetId.slice(0, 8)}…</>
                     : '—'
                   }
                 </td>

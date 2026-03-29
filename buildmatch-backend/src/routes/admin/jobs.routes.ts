@@ -79,7 +79,7 @@ router.put('/:jobId/force-close', async (req: Request, res: Response): Promise<v
     const { previousStatus } = await forceCloseJob(jobId);
     await writeAuditLog({
       adminId,
-      action:     'JOB_FORCE_CLOSED',
+      action:     'JOB_STATUS_CHANGE',
       targetType: 'job',
       targetId:   jobId,
       payload:    { previousStatus },

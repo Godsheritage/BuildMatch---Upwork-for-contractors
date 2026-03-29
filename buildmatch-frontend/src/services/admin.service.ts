@@ -74,8 +74,25 @@ export interface AdminDisputeDetail {
 }
 
 export interface AuditLogEntry {
-  id: number; action: string; actorId: string; entityId: string;
-  payload: Record<string, unknown>; createdAt: string;
+  id: string; adminId: string; action: string;
+  targetType: string; targetId: string;
+  payload: Record<string, unknown> | null;
+  ipAddress: string | null; note: string | null;
+  createdAt: string;
+}
+
+export interface PlatformSetting {
+  key: string; value: unknown; description: string | null;
+  updatedBy: string | null; updatedAt: string;
+}
+
+export interface FeatureFlag {
+  key: string; enabled: boolean; rolloutPct: number;
+  description: string | null; updatedBy: string | null; updatedAt: string;
+}
+
+export interface BannedEmail {
+  email: string; bannedAt: string; bannedBy: string | null; reason: string | null;
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
@@ -138,3 +155,30 @@ export const updateDisputeStatus = (id: string, status: string, note?: string) =
 
 export const getAuditLog = (params: Record<string, unknown>) =>
   api.get('/admin/audit', { params }).then(data<PageResponse<AuditLogEntry>>);
+
+// ── Platform Settings ─────────────────────────────────────────────────────────
+
+export const getSettings    = () =>
+  api.get('/admin/settings').then(data<PlatformSetting[]>);
+
+export const updateSetting  = (key: string, value: unknown) =>
+  api.put(`/admin/settings/${encodeURIComponent(key)}`, { value }).then(data<PlatformSetting>);
+
+// ── Feature Flags ─────────────────────────────────────────────────────────────
+
+export const getFeatureFlags   = () =>
+  api.get('/admin/flags').then(data<FeatureFlag[]>);
+
+export const updateFeatureFlag = (key: string, enabled: boolean, rolloutPct?: number) =>
+  api.put(`/admin/flags/${encodeURIComponent(key)}`, { enabled, rolloutPct }).then(data<FeatureFlag>);
+
+// ── Banned Emails ─────────────────────────────────────────────────────────────
+
+export const getBannedEmails = (params: Record<string, unknown>) =>
+  api.get('/admin/banned-emails', { params }).then(data<PageResponse<BannedEmail>>);
+
+export const banEmail   = (email: string, reason?: string) =>
+  api.post('/admin/banned-emails', { email, reason });
+
+export const unbanEmail = (email: string) =>
+  api.delete(`/admin/banned-emails/${encodeURIComponent(email)}`);

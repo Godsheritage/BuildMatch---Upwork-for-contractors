@@ -6,6 +6,8 @@ import {
   Briefcase,
   Scale,
   FileSearch,
+  Settings,
+  Flag,
   ArrowLeft,
   ShieldAlert,
 } from 'lucide-react';
@@ -21,6 +23,8 @@ const NAV_ITEMS = [
   { to: '/admin/jobs',        icon: Briefcase,       label: 'Jobs'               },
   { to: '/admin/disputes',    icon: Scale,           label: 'Disputes'           },
   { to: '/admin/audit',       icon: FileSearch,      label: 'Audit Log'          },
+  { to: '/admin/settings',    icon: Settings,        label: 'Settings'           },
+  { to: '/admin/flags',       icon: Flag,            label: 'Feature Flags'      },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────

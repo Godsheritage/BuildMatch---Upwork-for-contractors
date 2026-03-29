@@ -200,3 +200,76 @@ export function useAdminAuditLog(params: Record<string, unknown>) {
     staleTime: 30_000,
   });
 }
+
+// ── Platform Settings ─────────────────────────────────────────────────────────
+
+export function useAdminSettings() {
+  return useQuery({
+    queryKey:  qk('settings'),
+    queryFn:   adminService.getSettings,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateSetting() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ key, value }: { key: string; value: unknown }) =>
+      adminService.updateSetting(key, value),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('settings') }); toast('Setting updated', 'success'); },
+    onError:    () => toast('Failed to update setting', 'error'),
+  });
+}
+
+// ── Feature Flags ─────────────────────────────────────────────────────────────
+
+export function useAdminFeatureFlags() {
+  return useQuery({
+    queryKey:  qk('flags'),
+    queryFn:   adminService.getFeatureFlags,
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateFeatureFlag() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ key, enabled, rolloutPct }: { key: string; enabled: boolean; rolloutPct?: number }) =>
+      adminService.updateFeatureFlag(key, enabled, rolloutPct),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('flags') }); toast('Flag updated', 'success'); },
+    onError:    () => toast('Failed to update flag', 'error'),
+  });
+}
+
+// ── Banned Emails ─────────────────────────────────────────────────────────────
+
+export function useAdminBannedEmails(params: Record<string, unknown>) {
+  return useQuery({
+    queryKey:  qk('banned-emails', params),
+    queryFn:   () => adminService.getBannedEmails(params),
+    staleTime: 30_000,
+  });
+}
+
+export function useBanEmail() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ email, reason }: { email: string; reason?: string }) =>
+      adminService.banEmail(email, reason),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('banned-emails') }); toast('Email banned', 'success'); },
+    onError:    () => toast('Failed to ban email', 'error'),
+  });
+}
+
+export function useUnbanEmail() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (email: string) => adminService.unbanEmail(email),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('banned-emails') }); toast('Email unbanned', 'success'); },
+    onError:    () => toast('Failed to unban email', 'error'),
+  });
+}

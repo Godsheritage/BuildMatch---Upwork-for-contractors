@@ -57,7 +57,7 @@ router.put('/:profileId/verify-license', async (req: Request, res: Response): Pr
     const { licenseNumber, licenseState } = await setLicenseVerified(profileId, true);
     await writeAuditLog({
       adminId,
-      action:     'CONTRACTOR_LICENSE_VERIFIED',
+      action:     'USER_VERIFY',
       targetType: 'contractor',
       targetId:   profileId,
       payload:    { licenseNumber, licenseState },
@@ -80,7 +80,7 @@ router.put('/:profileId/unverify-license', async (req: Request, res: Response): 
     const { licenseNumber, licenseState } = await setLicenseVerified(profileId, false);
     await writeAuditLog({
       adminId,
-      action:     'CONTRACTOR_LICENSE_UNVERIFIED',
+      action:     'USER_VERIFY',
       targetType: 'contractor',
       targetId:   profileId,
       payload:    { licenseNumber, licenseState },
@@ -110,7 +110,7 @@ router.put('/:profileId/availability', async (req: Request, res: Response): Prom
     await setAvailability(profileId, parsed.data.isAvailable);
     await writeAuditLog({
       adminId,
-      action:     'CONTRACTOR_AVAILABILITY_TOGGLED',
+      action:     'SETTING_CHANGE',
       targetType: 'contractor',
       targetId:   profileId,
       payload:    { isAvailable: parsed.data.isAvailable },

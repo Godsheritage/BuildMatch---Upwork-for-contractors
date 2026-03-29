@@ -71,7 +71,7 @@ router.put('/:userId/ban', async (req: Request, res: Response): Promise<void> =>
     await setUserActive(userId, false);
     await writeAuditLog({
       adminId,
-      action:     'USER_BANNED',
+      action:     'USER_BAN',
       targetType: 'user',
       targetId:   userId,
       payload:    {},
@@ -94,7 +94,7 @@ router.put('/:userId/unban', async (req: Request, res: Response): Promise<void> 
     await setUserActive(userId, true);
     await writeAuditLog({
       adminId,
-      action:     'USER_UNBANNED',
+      action:     'USER_UNBAN',
       targetType: 'user',
       targetId:   userId,
       payload:    {},
@@ -124,7 +124,7 @@ router.put('/:userId/role', async (req: Request, res: Response): Promise<void> =
     const { previousRole } = await changeUserRole(userId, parsed.data.role, adminId);
     await writeAuditLog({
       adminId,
-      action:     'USER_ROLE_CHANGED',
+      action:     'USER_ROLE_CHANGE',
       targetType: 'user',
       targetId:   userId,
       payload:    { previousRole, newRole: parsed.data.role },

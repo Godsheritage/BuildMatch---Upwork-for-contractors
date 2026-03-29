@@ -334,11 +334,12 @@ router.put('/:id/status', async (req: Request, res: Response): Promise<void> => 
     // 4. Audit log (non-fatal)
     void writeAuditLog({
       adminId,
-      action:     'DISPUTE_STATUS_CHANGED',
+      action:     newStatus === 'CLOSED' ? 'DISPUTE_CLOSE' : 'DISPUTE_NOTE',
       targetType: 'dispute',
       targetId:   id,
-      payload:    { status: newStatus, note: note ?? null, previousStatus: existing.status },
+      payload:    { status: newStatus, previousStatus: existing.status },
       ipAddress:  req.ip,
+      note:       note,
     });
 
     // 5. Fetch updated dispute for the response and notifications

@@ -30,6 +30,9 @@ import adminUsersRoutes from './routes/admin/users.routes';
 import adminContractorsRoutes from './routes/admin/contractors.routes';
 import adminJobsRoutes from './routes/admin/jobs.routes';
 import adminAuditRoutes from './routes/admin/audit.routes';
+import adminSettingsRoutes from './routes/admin/settings.routes';
+import adminFeatureFlagsRoutes from './routes/admin/feature-flags.routes';
+import adminBannedEmailsRoutes from './routes/admin/banned-emails.routes';
 import savedRoutes from './routes/saved.routes';
 import { errorHandler } from './middleware/error.middleware';
 import { authenticate, requireRole } from './middleware/auth.middleware';
@@ -119,8 +122,11 @@ app.use('/api/admin/stats',       adminStatsRoutes);
 app.use('/api/admin/users',       adminUsersRoutes);
 app.use('/api/admin/contractors', adminContractorsRoutes);
 app.use('/api/admin/jobs',        adminJobsRoutes);
-app.use('/api/admin/disputes',    adminDisputeRoutes);
-app.use('/api/admin/audit',       adminAuditRoutes);
+app.use('/api/admin/disputes',      adminDisputeRoutes);
+app.use('/api/admin/audit',         adminAuditRoutes);
+app.use('/api/admin/settings',      adminSettingsRoutes);
+app.use('/api/admin/flags',         adminFeatureFlagsRoutes);
+app.use('/api/admin/banned-emails', adminBannedEmailsRoutes);
 app.use('/api/saved', savedRoutes);
 
 // ── Admin endpoints ──────────────────────────────────────────────────────────

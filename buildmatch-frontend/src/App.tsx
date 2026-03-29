@@ -48,6 +48,8 @@ import { AdminContractorsPage } from './pages/admin/AdminContractorsPage';
 import { AdminJobsPage } from './pages/admin/AdminJobsPage';
 import { AdminDisputesPage } from './pages/admin/AdminDisputesPage';
 import { AdminAuditLogPage } from './pages/admin/AdminAuditLogPage';
+import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
+import { AdminFeatureFlagsPage } from './pages/admin/AdminFeatureFlagsPage';
 
 const queryClient = new QueryClient();
 
@@ -109,6 +111,8 @@ export default function App() {
                 <Route path="/admin/jobs"        element={<AdminJobsPage />} />
                 <Route path="/admin/disputes"    element={<AdminDisputesPage />} />
                 <Route path="/admin/audit"       element={<AdminAuditLogPage />} />
+                <Route path="/admin/settings"    element={<AdminSettingsPage />} />
+                <Route path="/admin/flags"       element={<AdminFeatureFlagsPage />} />
               </Route>
 
               {/* Protected dashboard shell — all nested pages rendered via Outlet */}
