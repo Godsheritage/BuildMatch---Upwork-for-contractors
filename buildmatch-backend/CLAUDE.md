@@ -48,6 +48,12 @@ src/
   services/     # All business logic and Prisma calls
     dispute.service.ts              # All user-facing dispute logic; uses Supabase service client for dispute tables, Prisma for User/Job/Bid
     dispute-notifications.service.ts # Provider-agnostic email notifications for disputes (filed, status change, new message, withdrawn)
+    admin/      # Admin-only services (never import from user-facing code)
+      audit.service.ts              # writeAuditLog() + getAuditLog()
+      stats.service.ts              # getPlatformStats() + getRecentActivity()
+      users.service.ts              # listUsers, getUserDetail, setUserActive, changeUserRole
+      contractors.service.ts        # listContractors, setLicenseVerified, setAvailability
+      jobs.service.ts               # listJobs, getJobDetail, forceCloseJob
     ai/         # One file per AI feature + shared singleton
       anthropic.client.ts          # Shared Anthropic SDK singleton (import Anthropic from '@anthropic-ai/sdk')
       matching.service.ts          # Contractor–job matching          [claude-opus-4-5]
@@ -135,13 +141,65 @@ src/
 
 **Access control:** `assertParty(disputeId, userId)` enforces that only the two named parties can read or write to a dispute. Admin routes bypass this via `adminGetDispute()`.
 
-### Admin Disputes — `/api/admin/disputes`
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/admin/disputes/:id/ruling` | `authenticate` + `requireRole('ADMIN')` | Record ruling + resolve dispute; notifies both parties |
-| PUT | `/api/admin/disputes/:id/status` | `authenticate` + `requireRole('ADMIN')` | Update status (UNDER_REVIEW / AWAITING_EVIDENCE / PENDING_RULING / CLOSED); inserts system message; notifies parties per spec |
+### Admin API — `/api/admin/*`
 
-**Audit log:** every admin action inserts a row into `audit_log` (non-fatal — failure is logged but does not block the response).
+**Security:** Every admin router applies `router.use(authenticate, requireAdmin)` — two named middleware layers. `requireAdmin` is defined in `src/middleware/admin.middleware.ts`; it returns 403 if `req.user.role !== 'ADMIN'`. Never use `requireRole('ADMIN')` for admin routes.
+
+**Audit logging:** every destructive/sensitive mutation calls `writeAuditLog()` from `src/services/admin/audit.service.ts` **before** returning the response. `writeAuditLog` is non-fatal — on error it logs to `console.error` and continues; it never throws.
+
+#### Admin Stats — `/api/admin/stats`
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/admin/stats` | Platform stats: user counts by role, job counts by status, contractor availability/license breakdown, dispute counts |
+| GET | `/api/admin/stats/activity` | Recent N activity events (users/jobs/disputes) sorted by `createdAt` desc |
+
+#### Admin Users — `/api/admin/users`
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/admin/users` | Paginated list; query: `search` (name/email), `role`, `isActive` |
+| GET | `/api/admin/users/:userId` | User detail with contractor profile + recent jobs |
+| PUT | `/api/admin/users/:userId/ban` | Set `isActive = false`; guards: cannot ban ADMIN accounts |
+| PUT | `/api/admin/users/:userId/unban` | Set `isActive = true` |
+| PUT | `/api/admin/users/:userId/role` | Change role; body: `{ role, note? }`; guards: cannot change own role or another admin's role |
+
+#### Admin Contractors — `/api/admin/contractors`
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/admin/contractors` | Paginated list; query: `search`, `state`, `isLicenseVerified`, `isAvailable` |
+| PUT | `/api/admin/contractors/:profileId/verify-license` | Set `isLicenseVerified = true` |
+| PUT | `/api/admin/contractors/:profileId/unverify-license` | Set `isLicenseVerified = false` |
+| PUT | `/api/admin/contractors/:profileId/availability` | Toggle availability; body: `{ isAvailable: boolean }` |
+
+#### Admin Jobs — `/api/admin/jobs`
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/admin/jobs` | Paginated list; query: `search`, `status`, `tradeType` |
+| GET | `/api/admin/jobs/:jobId` | Job detail with all bids + contractor names |
+| PUT | `/api/admin/jobs/:jobId/force-close` | Set status CANCELLED; body: `{ note? }`; guards: cannot close already COMPLETED/CANCELLED jobs |
+
+#### Admin Disputes — `/api/admin/disputes`
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/admin/disputes` | Paginated list; query: `status` |
+| GET | `/api/admin/disputes/:id` | Dispute detail via `adminGetDispute()` (bypasses party check) |
+| POST | `/api/admin/disputes/:id/ruling` | Record ruling + resolve dispute; notifies both parties |
+| PUT | `/api/admin/disputes/:id/status` | Update status (UNDER_REVIEW / AWAITING_EVIDENCE / PENDING_RULING / CLOSED); inserts system message; notifies parties |
+
+#### Admin Audit Log — `/api/admin/audit`
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/admin/audit` | Paginated audit events; query: `action`, `adminId` |
+
+**Admin services** live in `src/services/admin/`:
+- `audit.service.ts` — `writeAuditLog()` + `getAuditLog()`; stores `targetType`, `ipAddress`, `note` inside JSONB `payload` column (no schema migration needed)
+- `stats.service.ts` — `getPlatformStats()` + `getRecentActivity(limit)`
+- `users.service.ts` — `listUsers()`, `getUserDetail()`, `setUserActive()`, `changeUserRole()`
+- `contractors.service.ts` — `listContractors()`, `setLicenseVerified()`, `setAvailability()`
+- `jobs.service.ts` — `listJobs()`, `getJobDetail()`, `forceCloseJob()`
+
+**AuditAction enum values:** `USER_BANNED | USER_UNBANNED | USER_ROLE_CHANGED | CONTRACTOR_LICENSE_VERIFIED | CONTRACTOR_LICENSE_UNVERIFIED | CONTRACTOR_AVAILABILITY_TOGGLED | JOB_FORCE_CLOSED | DISPUTE_RULING | DISPUTE_STATUS_CHANGED`
+
+**Route ordering in `app.ts`:** `/api/admin/stats`, `/api/admin/users`, `/api/admin/contractors`, `/api/admin/jobs`, `/api/admin/disputes`, `/api/admin/audit` — all mounted before the global error handler.
 
 ### Saved Contractors — `/api/saved`
 All routes require `authenticate` + `requireRole('INVESTOR')`. Mounted at `app.use('/api/saved', savedRoutes)` **before** `app.use('/api/ai', aiRoutes)` in `app.ts`.

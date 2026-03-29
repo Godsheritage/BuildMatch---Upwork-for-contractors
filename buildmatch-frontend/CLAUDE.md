@@ -75,12 +75,19 @@ src/
 | `FileDisputePage.tsx` | `/dashboard/settings/disputes/new` **and** `/settings/disputes/new` | auth | 3-step dispute wizard; `?jobId=` pre-selects job + skips to Step 2 |
 | `DisputeDetailPage.tsx` | `/dashboard/settings/disputes/:disputeId` **and** `/settings/disputes/:disputeId` | auth | Full dispute thread; live Realtime messages + evidence upload |
 | `SavedContractorsPage.tsx` | `/dashboard/saved` | INVESTOR | Two-column saved contractors manager: list sidebar (create/rename/delete) + contractor grid with sort, notes, and quick actions (message, view profile, move, remove) |
+| `AdminDashboardPage.tsx` | `/admin` | ADMIN | Stats grid (6 cards), job status breakdown, recent activity feed |
+| `AdminUsersPage.tsx` | `/admin/users` | ADMIN | Paginated user table; ban/unban, change role (with modal + note) |
+| `AdminContractorsPage.tsx` | `/admin/contractors` | ADMIN | Paginated contractor table; verify/unverify license, toggle availability |
+| `AdminJobsPage.tsx` | `/admin/jobs` | ADMIN | Paginated job table with force-close (modal + note, irreversible) |
+| `AdminDisputesPage.tsx` | `/admin/disputes` | ADMIN | Paginated dispute table; detail drawer with change-status + record-ruling panels |
+| `AdminAuditLogPage.tsx` | `/admin/audit` | ADMIN | Paginated audit event table; filter by action type or admin ID |
 
 **Route layout rules:**
 - All `/dashboard/*` routes render inside `DashboardLayout` (240px role-aware sidebar + `<Outlet />`).
 - `/dashboard/settings/*` routes additionally render inside `SettingsLayout` (220px settings sidebar + `<Outlet />`), creating a dual-sidebar layout.
 - `/settings/disputes/*` routes render inside `SettingsLayout` **without** `DashboardLayout` — used as the entry point from public pages (e.g. `JobDetailPage`). SettingsLayout sidebar links go back to `/dashboard/settings/*` paths.
 - Static segment `disputes/new` is declared before `disputes/:disputeId` to prevent param capture.
+- All `/admin/*` routes render inside `AdminLayout` (dark navy sidebar) wrapped by `AdminRoute` (403 redirect for non-ADMIN).
 
 ## Component Hierarchy
 
@@ -245,6 +252,64 @@ addDisputeMessage(id, content)               // POST /disputes/:id/messages
 submitEvidence(id, payload)                  // POST /disputes/:id/evidence
 withdrawDispute(id, reason)                  // POST /disputes/:id/withdraw
 ```
+
+### Admin Service — `src/services/admin.service.ts`
+
+All admin API calls. Typed with: `PlatformStats`, `AdminUser`, `AdminContractor`, `AdminJob`, `AdminDispute`, `AdminDisputeDetail`, `AuditLogEntry`, `PageResponse<T>`.
+
+```ts
+getStats()                                      // GET  /admin/stats
+getActivity(limit?)                             // GET  /admin/stats/activity
+getUsers(params)                                // GET  /admin/users
+getUserById(userId)                             // GET  /admin/users/:userId
+banUser(userId)                                 // PUT  /admin/users/:userId/ban
+unbanUser(userId)                               // PUT  /admin/users/:userId/unban
+changeUserRole(params)                          // PUT  /admin/users/:userId/role
+getContractors(params)                          // GET  /admin/contractors
+verifyLicense(profileId)                        // PUT  /admin/contractors/:profileId/verify-license
+unverifyLicense(profileId)                      // PUT  /admin/contractors/:profileId/unverify-license
+setAvailability(params)                         // PUT  /admin/contractors/:profileId/availability
+getJobs(params)                                 // GET  /admin/jobs
+getJobById(jobId)                               // GET  /admin/jobs/:jobId
+forceCloseJob(params)                           // PUT  /admin/jobs/:jobId/force-close
+getAdminDisputes(params)                        // GET  /admin/disputes
+getAdminDisputeById(id)                         // GET  /admin/disputes/:id
+recordRuling(params)                            // POST /admin/disputes/:id/ruling
+updateDisputeStatus(params)                     // PUT  /admin/disputes/:id/status
+getAuditLog(params)                             // GET  /admin/audit
+```
+
+### Admin Hooks — `src/hooks/useAdmin.ts`
+
+React Query hooks for all admin data. All query keys are prefixed `['admin', ...]`, staleTime 30–60s.
+
+| Hook | Query Key | Description |
+|------|-----------|-------------|
+| `useAdminStats()` | `['admin', 'stats']` | Platform stats (6 counters) |
+| `useAdminActivity(limit?)` | `['admin', 'activity']` | Recent events feed |
+| `useAdminUsers(params)` | `['admin', 'users', params]` | Paginated user list |
+| `useAdminUser(id)` | `['admin', 'users', id]` | Single user detail |
+| `useBanUser()` | — | PUT ban; invalidates users list |
+| `useUnbanUser()` | — | PUT unban; invalidates users list |
+| `useChangeUserRole()` | — | PUT role; invalidates users list |
+| `useAdminContractors(params)` | `['admin', 'contractors', params]` | Paginated contractor list |
+| `useVerifyLicense()` | — | PUT verify; invalidates contractors |
+| `useUnverifyLicense()` | — | PUT unverify; invalidates contractors |
+| `useSetAvailability()` | — | PUT availability; invalidates contractors |
+| `useAdminJobs(params)` | `['admin', 'jobs', params]` | Paginated job list |
+| `useAdminJob(id)` | `['admin', 'jobs', id]` | Single job detail |
+| `useForceCloseJob()` | — | PUT force-close; invalidates jobs list |
+| `useAdminDisputes(params)` | `['admin', 'disputes', params]` | Paginated dispute list |
+| `useAdminDispute(id)` | `['admin', 'disputes', id]` | Single dispute detail |
+| `useRecordRuling()` | — | POST ruling; invalidates disputes |
+| `useUpdateDisputeStatus()` | — | PUT status; invalidates disputes |
+| `useAdminAuditLog(params)` | `['admin', 'audit', params]` | Paginated audit log |
+
+### Admin Components
+
+- **`AdminLayout`** (`src/components/admin/AdminLayout.tsx`) — dark navy sidebar (`#0F1F33`), 6 nav items, admin indicator dot, "Back to app" button. Renders `<Outlet />` in main content area.
+- **`AdminRoute`** (`src/components/admin/AdminRoute.tsx`) — unauthenticated → `/login`; authenticated non-ADMIN → `/dashboard`; ADMIN → renders children.
+- **`admin-shared.module.css`** (`src/pages/admin/`) — shared table, badge, pagination, modal, filter, skeleton, and action-button styles. Import as `sh` in all admin pages.
 
 ### Supabase Realtime Channels
 

@@ -1,0 +1,173 @@
+/* ── Shell ──────────────────────────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-surface);
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #0F1F33;           /* dark navy — admin-specific */
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* Brand */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.brandIcon {
+  color: #F87171;   /* soft red — admin indicator */
+  flex-shrink: 0;
+}
+
+.brandText {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: #F8F7F5;
+  letter-spacing: var(--tracking-tight);
+  text-transform: uppercase;
+}
+
+/* Nav */
+.nav {
+  flex: 1;
+  padding: var(--space-3) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 9px var(--space-4);
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: rgba(248,247,245,0.65);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: color 120ms, background 120ms;
+}
+
+.navItem:hover {
+  color: #F8F7F5;
+  background: rgba(255,255,255,0.06);
+}
+
+.navItemActive {
+  color: #F8F7F5;
+  background: rgba(255,255,255,0.10);
+  border-left-color: #F87171;
+}
+
+.navIcon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.navItemActive .navIcon {
+  opacity: 1;
+}
+
+/* Footer */
+.sidebarFooter {
+  padding: var(--space-4);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.adminBadge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.adminBadgeDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ADE80;
+  flex-shrink: 0;
+}
+
+.adminBadgeName {
+  font-size: 12px;
+  color: rgba(248,247,245,0.7);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  color: rgba(248,247,245,0.5);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 120ms;
+}
+
+.backBtn:hover {
+  color: rgba(248,247,245,0.85);
+}
+
+/* ── Main ────────────────────────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-8);
+  overflow-y: auto;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .shell { flex-direction: column; }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .brand        { display: none; }
+  .sidebarFooter { display: none; }
+  .nav          { flex-direction: row; padding: 0; gap: 0; }
+
+  .navItem {
+    padding: var(--space-3) var(--space-4);
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+
+  .navItemActive {
+    border-left-color: transparent;
+    border-bottom-color: #F87171;
+  }
+
+  .main { padding: var(--space-4); }
+}

@@ -2,12 +2,14 @@
  * src/routes/admin/disputes.routes.ts
  *
  * Admin-only dispute management endpoints.
- * All routes require authenticate + requireRole('ADMIN').
+ * All routes require authenticate + requireAdmin (two middleware layers).
  *
  * Mounted at: /api/admin/disputes
  *
  * Routes
  * ──────
+ *   GET  /api/admin/disputes               — paginated list of all disputes
+ *   GET  /api/admin/disputes/:id           — dispute detail
  *   POST /api/admin/disputes/:id/ruling    — record ruling, resolve dispute, notify both parties
  *   PUT  /api/admin/disputes/:id/status    — change status, insert system message, notify parties
  */
@@ -15,20 +17,114 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { authenticate, requireRole } from '../../middleware/auth.middleware';
+import { authenticate } from '../../middleware/auth.middleware';
+import { requireAdmin } from '../../middleware/admin.middleware';
 import { sendSuccess, sendError } from '../../utils/response.utils';
 import { AppError } from '../../utils/app-error';
 import { getServiceClient } from '../../lib/supabase';
 import { adminGetDispute } from '../../services/dispute.service';
+import { writeAuditLog } from '../../services/admin/audit.service';
 import {
   notifyStatusChange,
 } from '../../services/dispute-notifications.service';
 import type { DisputeStatus } from '../../types/dispute.types';
+import prisma from '../../lib/prisma';
 
 const router = Router();
 
-// Every route in this file is admin-only
-router.use(authenticate, requireRole('ADMIN'));
+// Every route in this file requires authenticate THEN requireAdmin
+router.use(authenticate, requireAdmin);
+
+// ── Schemas ────────────────────────────────────────────────────────────────────
+
+const listQuerySchema = z.object({
+  page:   z.coerce.number().int().min(1).default(1),
+  limit:  z.coerce.number().int().min(1).max(100).default(25),
+  status: z.enum([
+    'OPEN', 'UNDER_REVIEW', 'AWAITING_EVIDENCE',
+    'PENDING_RULING', 'RESOLVED', 'CLOSED', 'WITHDRAWN',
+  ] as const).optional(),
+});
+
+// ── GET /api/admin/disputes ───────────────────────────────────────────────────
+// NOTE: declared before /:id to avoid param capture
+
+router.get('/', async (req: Request, res: Response): Promise<void> => {
+  const parsed = listQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    sendError(res, parsed.error.issues[0]?.message ?? 'Invalid query', 400);
+    return;
+  }
+  const { page, limit, status } = parsed.data;
+  const offset = (page - 1) * limit;
+  const supabase = getServiceClient();
+
+  try {
+    let countQ = supabase.from('disputes').select('*', { count: 'exact', head: true });
+    let dataQ  = supabase
+      .from('disputes').select('id, job_id, filed_by_id, against_id, status, category, amount_disputed, created_at, last_activity_at')
+      .order('last_activity_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (status) { countQ = countQ.eq('status', status); dataQ = dataQ.eq('status', status); }
+
+    const [countRes, dataRes] = await Promise.all([countQ, dataQ]);
+    if (countRes.error || dataRes.error) throw new AppError('Failed to fetch disputes', 500);
+
+    type DisputeRow = { id: string; job_id: string; filed_by_id: string; against_id: string; status: string; category: string; amount_disputed: number; created_at: string; last_activity_at: string };
+    const rows = (dataRes.data ?? []) as DisputeRow[];
+    const total = countRes.count ?? 0;
+
+    // Enrich with job titles and party names
+    const jobIds     = [...new Set(rows.map(r => r.job_id))];
+    const partyIds   = [...new Set([...rows.map(r => r.filed_by_id), ...rows.map(r => r.against_id)])];
+    const [jobs, users] = await Promise.all([
+      jobIds.length   > 0 ? prisma.job.findMany({ where: { id: { in: jobIds } },   select: { id: true, title: true } }) : [],
+      partyIds.length > 0 ? prisma.user.findMany({ where: { id: { in: partyIds } }, select: { id: true, firstName: true, lastName: true } }) : [],
+    ]);
+    const jobMap  = new Map(jobs.map(j  => [j.id,  j.title]));
+    const userMap = new Map(users.map(u => [u.id,  `${u.firstName} ${u.lastName}`]));
+
+    sendSuccess(res, {
+      data: rows.map(r => ({
+        id:             r.id,
+        jobId:          r.job_id,
+        jobTitle:       jobMap.get(r.job_id) ?? '',
+        filedById:      r.filed_by_id,
+        filedByName:    userMap.get(r.filed_by_id) ?? '',
+        againstId:      r.against_id,
+        againstName:    userMap.get(r.against_id) ?? '',
+        status:         r.status,
+        category:       r.category,
+        amountDisputed: Number(r.amount_disputed),
+        createdAt:      r.created_at,
+        lastActivityAt: r.last_activity_at,
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      limit,
+    });
+  } catch (err) {
+    if (err instanceof AppError) { sendError(res, err.message, err.statusCode); return; }
+    console.error('[admin/disputes] GET / error:', err);
+    sendError(res, 'Failed to fetch disputes', 500);
+  }
+});
+
+// ── GET /api/admin/disputes/:id ───────────────────────────────────────────────
+
+router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const dispute = await adminGetDispute(req.params.id);
+    if (!dispute) { sendError(res, 'Dispute not found', 404); return; }
+    sendSuccess(res, dispute);
+  } catch (err) {
+    if (err instanceof AppError) { sendError(res, err.message, err.statusCode); return; }
+    console.error('[admin/disputes] GET /:id error:', err);
+    sendError(res, 'Failed to fetch dispute', 500);
+  }
+});
 
 // ── Validation schemas ────────────────────────────────────────────────────────
 
@@ -61,30 +157,6 @@ const adminStatusSchema = z.object({
   note: z.string().max(2000).optional(),
 });
 
-// ── Audit log helper ──────────────────────────────────────────────────────────
-// Non-fatal: if the audit_log table does not exist yet the operation still succeeds.
-// Schema expected: id (auto), action text, actor_id text, entity_id text,
-//                 payload jsonb, created_at timestamptz default now().
-
-function writeAuditLog(opts: {
-  action:    string;
-  actorId:   string;
-  entityId:  string;
-  payload:   Record<string, unknown>;
-}): void {
-  void (async () => {
-    await getServiceClient()
-      .from('audit_log')
-      .insert({
-        action:    opts.action,
-        actor_id:  opts.actorId,
-        entity_id: opts.entityId,
-        payload:   opts.payload,
-      });
-  })().catch((e: unknown) =>
-    console.error('[admin-disputes] audit_log insert failed (table may not exist):', e),
-  );
-}
 
 // ── POST /api/admin/disputes/:id/ruling ───────────────────────────────────────
 //
@@ -153,11 +225,13 @@ router.post('/:id/ruling', async (req: Request, res: Response): Promise<void> =>
     });
 
     // 4. Audit log (non-fatal)
-    writeAuditLog({
-      action:   'DISPUTE_RULING',
-      actorId:  adminId,
-      entityId: id,
-      payload:  { ruling, note, previousStatus: existing.status },
+    void writeAuditLog({
+      adminId,
+      action:     'DISPUTE_RULING',
+      targetType: 'dispute',
+      targetId:   id,
+      payload:    { ruling, note: note ?? null, previousStatus: existing.status },
+      ipAddress:  req.ip,
     });
 
     // 5. Fetch the fully-built resolved dispute for the response and notifications
@@ -258,11 +332,13 @@ router.put('/:id/status', async (req: Request, res: Response): Promise<void> => 
     }
 
     // 4. Audit log (non-fatal)
-    writeAuditLog({
-      action:   'DISPUTE_STATUS_CHANGE',
-      actorId:  adminId,
-      entityId: id,
-      payload:  { status: newStatus, note: note ?? null, previousStatus: existing.status },
+    void writeAuditLog({
+      adminId,
+      action:     'DISPUTE_STATUS_CHANGED',
+      targetType: 'dispute',
+      targetId:   id,
+      payload:    { status: newStatus, note: note ?? null, previousStatus: existing.status },
+      ipAddress:  req.ip,
     });
 
     // 5. Fetch updated dispute for the response and notifications

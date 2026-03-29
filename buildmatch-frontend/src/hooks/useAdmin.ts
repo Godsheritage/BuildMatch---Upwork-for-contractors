@@ -1,0 +1,202 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as adminService from '../services/admin.service';
+import { useToast } from '../context/ToastContext';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function qk(...parts: unknown[]) {
+  return ['admin', ...parts];
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+
+export function useAdminStats() {
+  return useQuery({
+    queryKey:  qk('stats'),
+    queryFn:   adminService.getStats,
+    staleTime: 60_000,
+  });
+}
+
+export function useAdminActivity() {
+  return useQuery({
+    queryKey:  qk('activity'),
+    queryFn:   adminService.getActivity,
+    staleTime: 30_000,
+  });
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+
+export function useAdminUsers(params: Record<string, unknown>) {
+  return useQuery({
+    queryKey:  qk('users', params),
+    queryFn:   () => adminService.getUsers(params),
+    staleTime: 30_000,
+  });
+}
+
+export function useAdminUser(id: string | null) {
+  return useQuery({
+    queryKey:  qk('users', id),
+    queryFn:   () => adminService.getUserById(id!),
+    enabled:   !!id,
+    staleTime: 30_000,
+  });
+}
+
+export function useBanUser() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (id: string) => adminService.banUser(id),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('users') }); toast('User banned', 'success'); },
+    onError:    () => toast('Failed to ban user', 'error'),
+  });
+}
+
+export function useUnbanUser() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (id: string) => adminService.unbanUser(id),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('users') }); toast('User unbanned', 'success'); },
+    onError:    () => toast('Failed to unban user', 'error'),
+  });
+}
+
+export function useChangeUserRole() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ id, role, note }: { id: string; role: string; note?: string }) =>
+      adminService.changeUserRole(id, role, note),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk('users') }); toast('Role updated', 'success'); },
+    onError:   () => toast('Failed to change role', 'error'),
+  });
+}
+
+// ── Contractors ───────────────────────────────────────────────────────────────
+
+export function useAdminContractors(params: Record<string, unknown>) {
+  return useQuery({
+    queryKey:  qk('contractors', params),
+    queryFn:   () => adminService.getContractors(params),
+    staleTime: 30_000,
+  });
+}
+
+export function useVerifyLicense() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (profileId: string) => adminService.verifyLicense(profileId),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('contractors') }); toast('License verified', 'success'); },
+    onError:    () => toast('Failed to verify license', 'error'),
+  });
+}
+
+export function useUnverifyLicense() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (profileId: string) => adminService.unverifyLicense(profileId),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('contractors') }); toast('License unverified', 'success'); },
+    onError:    () => toast('Failed to unverify license', 'error'),
+  });
+}
+
+export function useSetAvailability() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ profileId, isAvailable }: { profileId: string; isAvailable: boolean }) =>
+      adminService.setAvailability(profileId, isAvailable),
+    onSuccess: (_, { isAvailable }) => {
+      qc.invalidateQueries({ queryKey: qk('contractors') });
+      toast(`Availability set to ${isAvailable ? 'available' : 'unavailable'}`, 'success');
+    },
+    onError: () => toast('Failed to update availability', 'error'),
+  });
+}
+
+// ── Jobs ──────────────────────────────────────────────────────────────────────
+
+export function useAdminJobs(params: Record<string, unknown>) {
+  return useQuery({
+    queryKey:  qk('jobs', params),
+    queryFn:   () => adminService.getJobs(params),
+    staleTime: 30_000,
+  });
+}
+
+export function useAdminJob(id: string | null) {
+  return useQuery({
+    queryKey:  qk('jobs', id),
+    queryFn:   () => adminService.getJobById(id!),
+    enabled:   !!id,
+    staleTime: 30_000,
+  });
+}
+
+export function useForceCloseJob() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) =>
+      adminService.forceCloseJob(id, note),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('jobs') }); toast('Job force-closed', 'success'); },
+    onError:    () => toast('Failed to close job', 'error'),
+  });
+}
+
+// ── Disputes ──────────────────────────────────────────────────────────────────
+
+export function useAdminDisputes(params: Record<string, unknown>) {
+  return useQuery({
+    queryKey:  qk('disputes', params),
+    queryFn:   () => adminService.getAdminDisputes(params),
+    staleTime: 30_000,
+  });
+}
+
+export function useAdminDispute(id: string | null) {
+  return useQuery({
+    queryKey:  qk('disputes', id),
+    queryFn:   () => adminService.getAdminDisputeById(id!),
+    enabled:   !!id,
+    staleTime: 30_000,
+  });
+}
+
+export function useRecordRuling() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ id, ruling, note }: { id: string; ruling: string; note?: string }) =>
+      adminService.recordRuling(id, ruling, note),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('disputes') }); toast('Ruling recorded', 'success'); },
+    onError:    () => toast('Failed to record ruling', 'error'),
+  });
+}
+
+export function useUpdateDisputeStatus() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ id, status, note }: { id: string; status: string; note?: string }) =>
+      adminService.updateDisputeStatus(id, status, note),
+    onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('disputes') }); toast('Status updated', 'success'); },
+    onError:    () => toast('Failed to update status', 'error'),
+  });
+}
+
+// ── Audit Log ─────────────────────────────────────────────────────────────────
+
+export function useAdminAuditLog(params: Record<string, unknown>) {
+  return useQuery({
+    queryKey:  qk('audit', params),
+    queryFn:   () => adminService.getAuditLog(params),
+    staleTime: 30_000,
+  });
+}

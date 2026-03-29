@@ -40,6 +40,14 @@ import { SavedContractorsPage } from './pages/SavedContractorsPage';
 import { DisputesListPage } from './pages/settings/DisputesListPage';
 import { DisputeDetailPage } from './pages/settings/DisputeDetailPage';
 import { FileDisputePage } from './pages/settings/FileDisputePage';
+import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminRoute } from './components/admin/AdminRoute';
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { AdminUsersPage } from './pages/admin/AdminUsersPage';
+import { AdminContractorsPage } from './pages/admin/AdminContractorsPage';
+import { AdminJobsPage } from './pages/admin/AdminJobsPage';
+import { AdminDisputesPage } from './pages/admin/AdminDisputesPage';
+import { AdminAuditLogPage } from './pages/admin/AdminAuditLogPage';
 
 const queryClient = new QueryClient();
 
@@ -86,6 +94,22 @@ export default function App() {
                 path="/settings/disputes/:disputeId"
                 element={<ProtectedRoute><DisputeDetailPage /></ProtectedRoute>}
               />
+
+              {/* Admin portal — ADMIN role only */}
+              <Route
+                element={
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                }
+              >
+                <Route path="/admin"             element={<AdminDashboardPage />} />
+                <Route path="/admin/users"       element={<AdminUsersPage />} />
+                <Route path="/admin/contractors" element={<AdminContractorsPage />} />
+                <Route path="/admin/jobs"        element={<AdminJobsPage />} />
+                <Route path="/admin/disputes"    element={<AdminDisputesPage />} />
+                <Route path="/admin/audit"       element={<AdminAuditLogPage />} />
+              </Route>
 
               {/* Protected dashboard shell — all nested pages rendered via Outlet */}
               <Route
