@@ -17,8 +17,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { authenticate } from '../../middleware/auth.middleware';
-import { requireAdmin } from '../../middleware/admin.middleware';
 import { sendSuccess, sendError } from '../../utils/response.utils';
 import { AppError } from '../../utils/app-error';
 import { getServiceClient } from '../../lib/supabase';
@@ -33,7 +31,6 @@ import prisma from '../../lib/prisma';
 const router = Router();
 
 // Every route in this file requires authenticate THEN requireAdmin
-router.use(authenticate, requireAdmin);
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 

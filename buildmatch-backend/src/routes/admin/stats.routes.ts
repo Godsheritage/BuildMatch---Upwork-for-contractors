@@ -1,13 +1,10 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { authenticate } from '../../middleware/auth.middleware';
-import { requireAdmin } from '../../middleware/admin.middleware';
 import { sendSuccess, sendError } from '../../utils/response.utils';
 import { AppError } from '../../utils/app-error';
 import { getPlatformStats, getRecentActivity } from '../../services/admin/stats.service';
 
 const router = Router();
-router.use(authenticate, requireAdmin);
 
 // GET /api/admin/stats
 router.get('/', async (_req: Request, res: Response): Promise<void> => {

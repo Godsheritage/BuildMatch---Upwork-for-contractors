@@ -1,20 +1,22 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { authenticate } from '../../middleware/auth.middleware';
-import { requireAdmin } from '../../middleware/admin.middleware';
 import { sendSuccess, sendError } from '../../utils/response.utils';
 import { AppError } from '../../utils/app-error';
 import { getAuditLog } from '../../services/admin/audit.service';
 
 const router = Router();
-router.use(authenticate, requireAdmin);
 
 const AUDIT_ACTIONS = [
-  'USER_BANNED', 'USER_UNBANNED', 'USER_ROLE_CHANGED',
-  'CONTRACTOR_LICENSE_VERIFIED', 'CONTRACTOR_LICENSE_UNVERIFIED',
-  'CONTRACTOR_AVAILABILITY_TOGGLED', 'JOB_FORCE_CLOSED',
-  'DISPUTE_RULING', 'DISPUTE_STATUS_CHANGED',
+  'USER_SUSPEND', 'USER_UNSUSPEND', 'USER_BAN', 'USER_UNBAN',
+  'USER_ROLE_CHANGE', 'USER_VERIFY', 'USER_IMPERSONATE',
+  'JOB_REMOVE', 'JOB_FEATURE', 'JOB_STATUS_CHANGE',
+  'DISPUTE_RULING', 'DISPUTE_NOTE', 'DISPUTE_CLOSE',
+  'REVIEW_APPROVE', 'REVIEW_REMOVE', 'REVIEW_EDIT',
+  'MESSAGE_VIEW', 'MESSAGE_REMOVE',
+  'PAYMENT_RETRY', 'PAYMENT_REFUND',
+  'SETTING_CHANGE', 'FEATURE_FLAG_CHANGE',
+  'FILTER_PATTERN_ADD', 'FILTER_PATTERN_REMOVE',
 ] as const;
 
 const querySchema = z.object({

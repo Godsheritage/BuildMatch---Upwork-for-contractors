@@ -1,8 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
-import { authenticate } from '../../middleware/auth.middleware';
-import { requireAdmin } from '../../middleware/admin.middleware';
 import { sendSuccess, sendError } from '../../utils/response.utils';
 import { AppError } from '../../utils/app-error';
 import {
@@ -14,7 +12,6 @@ import {
 import { writeAuditLog } from '../../services/admin/audit.service';
 
 const router = Router();
-router.use(authenticate, requireAdmin);
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 

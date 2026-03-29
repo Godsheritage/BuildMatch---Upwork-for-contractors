@@ -14,9 +14,9 @@ export type AuditAction =
   | 'SETTING_CHANGE' | 'FEATURE_FLAG_CHANGE'
   | 'FILTER_PATTERN_ADD' | 'FILTER_PATTERN_REMOVE';
 
-// ── Write params ──────────────────────────────────────────────────────────────
+// ── Params ────────────────────────────────────────────────────────────────────
 
-export interface WriteAuditLogParams {
+export interface LogAdminActionParams {
   adminId:    string;
   action:     AuditAction;
   targetType: string;
@@ -26,11 +26,12 @@ export interface WriteAuditLogParams {
   note?:      string;
 }
 
-// ── writeAuditLog ─────────────────────────────────────────────────────────────
-// Non-fatal: logs errors to console but never throws so the API response
-// is never blocked by an audit failure.
+// ── logAdminAction ────────────────────────────────────────────────────────────
+// Uses the Supabase SERVICE ROLE client so it bypasses RLS on audit_log.
+// Non-fatal: if the insert fails we log the error but never throw, ensuring
+// audit failures never block the admin action itself.
 
-export async function writeAuditLog(params: WriteAuditLogParams): Promise<void> {
+export async function logAdminAction(params: LogAdminActionParams): Promise<void> {
   try {
     const { error } = await getServiceClient()
       .from('audit_log')
@@ -49,6 +50,9 @@ export async function writeAuditLog(params: WriteAuditLogParams): Promise<void> 
     console.error('[audit] unexpected error:', err);
   }
 }
+
+// Backward-compat alias — existing call sites using writeAuditLog still work.
+export const writeAuditLog = logAdminAction;
 
 // ── AuditLogEntry (response shape) ────────────────────────────────────────────
 
