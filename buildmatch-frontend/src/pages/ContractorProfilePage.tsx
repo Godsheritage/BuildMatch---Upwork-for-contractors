@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, CheckCircle2, Briefcase, Clock, Shield, ChevronDown, X, ZoomIn, ChevronLeft, ChevronRight, Images, Star, CalendarDays, DollarSign, Timer, Quote } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, MapPin, CheckCircle2, Briefcase, Clock, Shield, ChevronDown, X, ZoomIn, ChevronLeft, ChevronRight, Images, Star, CalendarDays, DollarSign, Timer, Quote, BookmarkCheck, FolderInput, Trash2 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getContractorById } from '../services/contractor.service';
 import { getContractorReviews } from '../services/review.service';
 import type { ReviewSort } from '../services/review.service';
@@ -10,6 +10,10 @@ import { getOrCreateConversation } from '../services/message.service';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { Button } from '../components/ui/Button';
+import BookmarkButton from '../components/ui/BookmarkButton';
+import { useSavedContractors } from '../context/SavedContractorsContext';
+import { useSavedLists, useListContractors } from '../hooks/useSavedContractors';
+import api from '../services/api';
 import { StarRating } from '../components/ui/StarRating';
 import { ReliabilityScoreBadge } from '../components/contractor/ReliabilityScoreBadge';
 import type { ContractorProfile, PortfolioProject } from '../types/contractor.types';
@@ -265,6 +269,165 @@ function ContactModal({
 
 // ── Profile sidebar ────────────────────────────────────────────────────────
 
+// ── Saved indicator (shown when contractor is already saved) ──────────────
+
+function SavedIndicator({ contractorProfileId }: { contractorProfileId: string }) {
+  const { isSaved, getListId, toggle } = useSavedContractors();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const saved = isSaved(contractorProfileId);
+  const currentListId = getListId(contractorProfileId) ?? null;
+
+  const { data: listsData } = useSavedLists();
+  const lists = Array.isArray(listsData) ? (listsData as { id: string; name: string; isDefault: boolean }[]) : [];
+  const currentList = lists.find((l) => l.id === currentListId);
+  const otherLists  = lists.filter((l) => l.id !== currentListId);
+
+  // Fetch saved row for this contractor (to get savedId for move)
+  const { data: listContractors = [] } = useListContractors(open ? currentListId : null) as { data: { id: string; contractorProfileId: string }[] };
+  const savedId = listContractors.find((sc) => sc.contractorProfileId === contractorProfileId)?.id;
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setMoveOpen(false);
+      }
+    }
+    if (open) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  if (!saved) return null;
+
+  async function handleRemove() {
+    await toggle(contractorProfileId);
+    qc.invalidateQueries({ queryKey: ['saved-lists'] });
+    setOpen(false);
+  }
+
+  async function handleMove(targetListId: string) {
+    if (!savedId) return;
+    try {
+      await api.put(`/saved/contractors/${savedId}/move`, { targetListId });
+      qc.invalidateQueries({ queryKey: ['saved-list-contractors', currentListId] });
+      qc.invalidateQueries({ queryKey: ['saved-lists'] });
+      const target = lists.find((l) => l.id === targetListId);
+      toast(`Moved to ${target?.name ?? 'list'}`, 'success');
+    } catch {
+      toast('Could not move contractor. Please try again.', 'error');
+    }
+    setOpen(false);
+    setMoveOpen(false);
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 7,
+          width: '100%', padding: '8px 14px',
+          background: 'var(--color-highlight)', border: '1px solid #A7F3D0',
+          borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+          fontSize: 13, fontWeight: 500, color: 'var(--color-accent)',
+          fontFamily: 'var(--font-family)',
+        }}
+      >
+        <BookmarkCheck size={15} strokeWidth={2} />
+        Saved to {currentList?.name ?? 'My Contractors'}
+        <ChevronDown size={13} style={{ marginLeft: 'auto', opacity: 0.6 }} />
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+          background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
+          zIndex: 30, overflow: 'hidden',
+        }}>
+          {/* Current list label */}
+          <div style={{
+            padding: '8px 14px', fontSize: 12, fontWeight: 600,
+            color: 'var(--color-text-muted)', textTransform: 'uppercase',
+            letterSpacing: '0.05em', borderBottom: '1px solid var(--color-border)',
+          }}>
+            Saved in
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '9px 14px', fontSize: 13, color: 'var(--color-accent)',
+          }}>
+            <BookmarkCheck size={13} strokeWidth={2} />
+            {currentList?.name ?? 'My Saved Contractors'}
+          </div>
+
+          {/* Move submenu */}
+          {otherLists.length > 0 && (
+            <div style={{ borderTop: '1px solid var(--color-border)' }}>
+              <button
+                type="button"
+                onClick={() => setMoveOpen((v) => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  width: '100%', padding: '9px 14px', background: 'none', border: 'none',
+                  fontSize: 13, color: 'var(--color-text-primary)', cursor: 'pointer',
+                  fontFamily: 'var(--font-family)',
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <FolderInput size={13} /> Move to a different list
+                </span>
+                <ChevronDown size={12} style={{ opacity: 0.5, transform: moveOpen ? 'rotate(180deg)' : 'none' }} />
+              </button>
+              {moveOpen && otherLists.map((l) => (
+                <button
+                  key={l.id}
+                  type="button"
+                  onClick={() => handleMove(l.id)}
+                  style={{
+                    display: 'block', width: '100%', padding: '7px 14px 7px 34px',
+                    background: 'none', border: 'none', fontSize: 13,
+                    color: 'var(--color-text-primary)', cursor: 'pointer',
+                    textAlign: 'left', fontFamily: 'var(--font-family)',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-surface)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                >
+                  {l.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Remove */}
+          <div style={{ borderTop: '1px solid var(--color-border)' }}>
+            <button
+              type="button"
+              onClick={handleRemove}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                width: '100%', padding: '9px 14px', background: 'none', border: 'none',
+                fontSize: 13, color: 'var(--color-danger)', cursor: 'pointer',
+                fontFamily: 'var(--font-family)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#FEF2F2')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+            >
+              <Trash2 size={13} /> Remove from saved list
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProfileSidebar({ contractor, onContactClick }: { contractor: ContractorProfile; onContactClick: () => void }) {
   const fullName = `${contractor.user.firstName} ${contractor.user.lastName}`;
   const location = [contractor.city, contractor.state].filter(Boolean).join(', ');
@@ -350,13 +513,13 @@ function ProfileSidebar({ contractor, onContactClick }: { contractor: Contractor
         >
           Message Contractor
         </Button>
-        <Button
-          variant="secondary"
+        <SavedIndicator contractorProfileId={contractor.id} />
+        <BookmarkButton
+          contractorProfileId={contractor.id}
+          size="lg"
+          variant="icon-label"
           className="w-full justify-center"
-          onClick={() => {/* Phase 4 — save to list */}}
-        >
-          Save to List
-        </Button>
+        />
       </div>
 
       {/* License badge */}

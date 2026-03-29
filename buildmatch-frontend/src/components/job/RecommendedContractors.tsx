@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, Star, AlertTriangle } from 'lucide-react';
 import { useContractorMatching, type MatchedContractor } from '../../hooks/useContractorMatching';
 import { getOrCreateConversation } from '../../services/message.service';
+import BookmarkButton from '../ui/BookmarkButton';
 import styles from './RecommendedContractors.module.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -54,6 +55,13 @@ function ContractorMatchCard({ match, jobId, userId }: ContractorCardProps) {
 
   return (
     <div className={styles.card}>
+      <BookmarkButton
+        contractorProfileId={match.contractorProfileId}
+        size="sm"
+        variant="icon"
+        className={styles.bookmark}
+      />
+
       {/* Top row: avatar + name + score badge */}
       <div className={styles.cardTop}>
         <div className={styles.cardIdentity}>

@@ -3,7 +3,7 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   Home, Search, Briefcase, PlusCircle,
   FileText, Menu, X,
-  HelpCircle, Bell, Settings, ChevronUp, MessageSquare, Sparkles, ShieldAlert,
+  HelpCircle, Bell, Settings, ChevronUp, MessageSquare, Sparkles, ShieldAlert, BookMarked,
 } from 'lucide-react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { getDisputeSummary } from '../../services/dispute.service';
@@ -11,6 +11,7 @@ import { getConversations } from '../../services/message.service';
 import { useUnreadCount } from '../../hooks/useUnreadCount';
 import { useMessageNotifications } from '../../hooks/useMessageNotifications';
 import { useAuth } from '../../hooks/useAuth';
+import { useSavedContractors } from '../../context/SavedContractorsContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLang } from '../../context/LanguageContext';
 import type { Lang } from '../../i18n/translations';
@@ -52,13 +53,16 @@ export function DashboardLayout() {
     });
   }, [queryClient]);
 
+  const { totalSaved } = useSavedContractors();
+
   const investorNav = [
-    { to: '/dashboard',                   icon: Home,          label: t.nav.dashboard,       badge: 0           },
-    { to: '/dashboard/messages',          icon: MessageSquare, label: 'Messages',            badge: totalUnread },
-    { to: '/dashboard/scope-estimator',   icon: Sparkles,      label: 'AI Estimator',        badge: 0           },
-    { to: '/contractors',                 icon: Search,        label: t.nav.findContractors, badge: 0           },
-    { to: '/dashboard/jobs',              icon: Briefcase,     label: t.nav.myJobs,          badge: 0           },
-    { to: '/dashboard/post-job',          icon: PlusCircle,    label: t.nav.postJob,         badge: 0           },
+    { to: '/dashboard',                   icon: Home,          label: t.nav.dashboard,       badge: 0                          },
+    { to: '/dashboard/messages',          icon: MessageSquare, label: 'Messages',            badge: totalUnread                },
+    { to: '/dashboard/scope-estimator',   icon: Sparkles,      label: 'AI Estimator',        badge: 0                          },
+    { to: '/contractors',                 icon: Search,        label: t.nav.findContractors, badge: 0                          },
+    { to: '/dashboard/saved',             icon: BookMarked,    label: 'Saved Contractors',   badge: totalSaved > 0 ? totalSaved : 0 },
+    { to: '/dashboard/jobs',              icon: Briefcase,     label: t.nav.myJobs,          badge: 0                          },
+    { to: '/dashboard/post-job',          icon: PlusCircle,    label: t.nav.postJob,         badge: 0                          },
   ];
 
   const contractorNav = [

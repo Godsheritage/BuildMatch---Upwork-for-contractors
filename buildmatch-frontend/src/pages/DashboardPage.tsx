@@ -4,9 +4,11 @@ import {
   Briefcase, MessageSquare, FileText, TrendingUp,
   Star, DollarSign, CheckCircle2, Circle, ChevronRight,
   MessageCircle, ArrowRight, Pencil, MapPin, Award, Eye,
-  Shield, Video, Wand2,
+  Shield, Video, Wand2, BookMarked,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useSavedContractors } from '../context/SavedContractorsContext';
+import { useSavedLists, useListContractors } from '../hooks/useSavedContractors';
 import { useAuth } from '../hooks/useAuth';
 import { useLang } from '../context/LanguageContext';
 import { getMyContractorProfile } from '../services/contractor.service';
@@ -107,6 +109,8 @@ function InvestorDashboard({ greeting, t }: { greeting: string; t: ReturnType<ty
           <StatCard label={t.dashboard.stats.contractorsHired} value="0" />
           <StatCard label={t.dashboard.stats.totalSpent}       value="$0" />
         </div>
+
+        <SavedContractorsWidget />
 
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>{t.dashboard.sections.recentJobs}</h2>
@@ -438,6 +442,64 @@ function FeedbackCard() {
 }
 
 // ── Reusable stat card (investor) ─────────────────────────────────────────────
+
+// ── Saved contractors widget (investor dashboard) ─────────────────────────────
+
+interface SavedListWidget { id: string; name: string; isDefault: boolean; contractorCount: number; }
+interface SavedContractorWidget { id: string; contractorProfileId: string; contractor: { firstName: string; lastName: string; avatarUrl: string | null; }; }
+
+function SavedContractorsWidget() {
+  const { totalSaved } = useSavedContractors();
+  const { data: listsData } = useSavedLists();
+  const lists: SavedListWidget[] = Array.isArray(listsData) ? (listsData as SavedListWidget[]) : [];
+  const defaultList = lists.find((l) => l.isDefault) ?? lists[0] ?? null;
+
+  const { data: contractorsData } = useListContractors(defaultList?.id ?? null);
+  const topFive: SavedContractorWidget[] = Array.isArray(contractorsData)
+    ? (contractorsData as SavedContractorWidget[]).slice(0, 5)
+    : [];
+
+  return (
+    <Link to="/dashboard/saved" className={styles.savedWidget}>
+      <div className={styles.savedWidgetHeader}>
+        <BookMarked size={15} className={styles.savedWidgetIcon} />
+        <span>Saved Contractors</span>
+        <ChevronRight size={14} className={styles.savedWidgetArrow} />
+      </div>
+
+      {totalSaved > 0 ? (
+        <div className={styles.savedWidgetBody}>
+          <div className={styles.avatarStack}>
+            {topFive.map((sc, i) => (
+              <div
+                key={sc.id}
+                className={styles.stackAvatar}
+                style={{ left: i * 22 }}
+              >
+                {sc.contractor.avatarUrl ? (
+                  <img src={sc.contractor.avatarUrl} alt="" className={styles.stackAvatarImg} />
+                ) : (
+                  <span className={styles.stackAvatarInitials}>
+                    {(sc.contractor.firstName[0] ?? '').toUpperCase()}{(sc.contractor.lastName[0] ?? '').toUpperCase()}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className={styles.savedWidgetCount}>
+            {totalSaved} contractor{totalSaved !== 1 ? 's' : ''} saved
+          </p>
+          <span className={styles.savedWidgetCta}>Manage List</span>
+        </div>
+      ) : (
+        <div className={styles.savedWidgetEmpty}>
+          <p className={styles.savedWidgetEmptyText}>No contractors saved yet</p>
+          <span className={styles.savedWidgetCta}>Browse Contractors</span>
+        </div>
+      )}
+    </Link>
+  );
+}
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (

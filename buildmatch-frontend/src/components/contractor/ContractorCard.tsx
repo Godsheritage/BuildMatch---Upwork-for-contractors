@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Briefcase, Shield, Award, CheckCircle, ArrowRight } from 'lucide-react';
 import { useLang } from '../../context/LanguageContext';
 import { ReliabilityScoreBadge } from './ReliabilityScoreBadge';
+import BookmarkButton from '../ui/BookmarkButton';
 import type { ContractorProfile } from '../../types/contractor.types';
 import styles from './ContractorCard.module.css';
 
@@ -53,6 +54,14 @@ export function ContractorCard({ contractor }: ContractorCardProps) {
 
   return (
     <Link to={`/contractors/${id}`} className={styles.card}>
+      {/* Bookmark — absolutely positioned top-right; stopPropagation prevents card nav */}
+      <BookmarkButton
+        contractorProfileId={id}
+        size="sm"
+        variant="icon"
+        className={styles.bookmark}
+      />
+
       {/* Coloured banner */}
       <div className={styles.banner}>
         {isPartner && (

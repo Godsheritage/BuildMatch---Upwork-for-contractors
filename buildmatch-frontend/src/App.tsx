@@ -34,7 +34,9 @@ import { ProfileEditPage } from './pages/ProfileEditPage';
 import { AboutPage } from './pages/AboutPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { ContractReviewPage } from './pages/ContractReviewPage';
+import { SavedContractorsProvider } from './context/SavedContractorsContext';
 import { ScopeEstimatorPage } from './pages/ScopeEstimatorPage';
+import { SavedContractorsPage } from './pages/SavedContractorsPage';
 import { DisputesListPage } from './pages/settings/DisputesListPage';
 import { DisputeDetailPage } from './pages/settings/DisputeDetailPage';
 import { FileDisputePage } from './pages/settings/FileDisputePage';
@@ -48,6 +50,7 @@ export default function App() {
       <LanguageProvider>
       <AuthProvider>
         <ToastProvider>
+          <SavedContractorsProvider>
           <BrowserRouter>
             <Routes>
               {/* Public routes */}
@@ -148,6 +151,14 @@ export default function App() {
                   }
                 />
                 <Route
+                  path="/dashboard/saved"
+                  element={
+                    <ProtectedRoute roles={['INVESTOR']}>
+                      <SavedContractorsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/dashboard/profile/setup"
                   element={
                     <ProtectedRoute roles={['CONTRACTOR']}>
@@ -190,6 +201,7 @@ export default function App() {
               </Route>
             </Routes>
           </BrowserRouter>
+          </SavedContractorsProvider>
         </ToastProvider>
       </AuthProvider>
       </LanguageProvider>

@@ -1,0 +1,99 @@
+/* ── Base button ──────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+/* ── Size variants (padding so the hit target is comfortable) ─────────────── */
+.sm { padding: 4px; }
+.md { padding: 6px; }
+.lg { padding: 8px; }
+
+/* ── Icon states ──────────────────────────────────────────────────────────── */
+.iconUnsaved {
+  color: #9CA3AF;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.iconSaved {
+  color: var(--color-primary);
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+/* Hover — unsaved: darken to navy */
+.btn:not(.btnSaved):not(.btnGuest):not(.btnToggling):hover .iconUnsaved {
+  color: var(--color-primary);
+}
+
+/* Hover — saved: signal removal with danger red */
+.btnSaved:not(.btnToggling):hover .iconSaved {
+  color: var(--color-danger);
+}
+
+/* Guest: static gray, not interactive */
+.btnGuest {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* Toggling: disable interactions visually */
+.btnToggling {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ── Save pulse animation ─────────────────────────────────────────────────── */
+@keyframes bookmarkPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); }
+  70%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+.btnPulse .iconSaved {
+  animation: bookmarkPulse 0.22s ease forwards;
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  border: 2px solid #E5E4E0;
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Label (icon-label variant) ───────────────────────────────────────────── */
+.label {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: inherit;
+  white-space: nowrap;
+  transition: color 0.18s ease;
+}
+
+.btn:not(.btnSaved) .label { color: #9CA3AF; }
+.btnSaved .label            { color: var(--color-primary); }
+
+.btn:not(.btnSaved):not(.btnGuest):hover .label { color: var(--color-primary); }
+.btnSaved:not(.btnGuest):hover .label           { color: var(--color-danger); }

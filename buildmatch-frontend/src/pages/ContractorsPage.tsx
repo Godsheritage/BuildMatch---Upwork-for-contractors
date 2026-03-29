@@ -1,9 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, SlidersHorizontal, ChevronDown, ChevronUp, Check, Star, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, SlidersHorizontal, ChevronDown, ChevronUp, Check, Star, X, BookMarked } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getContractors } from '../services/contractor.service';
 import { ContractorCard } from '../components/contractor/ContractorCard';
 import { useLang } from '../context/LanguageContext';
+import { useAuth } from '../hooks/useAuth';
+import { useSavedContractors } from '../context/SavedContractorsContext';
 import type { ContractorProfile } from '../types/contractor.types';
 import styles from './ContractorsPage.module.css';
 
@@ -150,6 +153,9 @@ function StarFilter({ value, onChange }: { value: number | null; onChange: (v: n
 
 export function ContractorsPage() {
   const { t } = useLang();
+  const { user } = useAuth();
+  const { totalSaved } = useSavedContractors();
+  const isInvestor = user?.role === 'INVESTOR';
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sort, setSort] = useState<SortKey>('rating');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
@@ -354,6 +360,19 @@ export function ContractorsPage() {
           </div>
         )}
       </div>
+
+      {/* ── Saved contractors banner (investor only) ── */}
+      {isInvestor && totalSaved > 0 && (
+        <div className={styles.savedBanner}>
+          <div className={styles.savedBannerLeft}>
+            <BookMarked size={14} className={styles.savedBannerIcon} />
+            You have {totalSaved} saved contractor{totalSaved !== 1 ? 's' : ''}
+          </div>
+          <Link to="/dashboard/saved" className={styles.savedBannerLink}>
+            View Saved List
+          </Link>
+        </div>
+      )}
 
       {/* ── Results grid ── */}
       <main className={styles.results}>

@@ -3,6 +3,7 @@ import { Sparkles, RefreshCw, ChevronUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Spinner } from '../ui/Spinner';
 import { StarRating } from '../ui/StarRating';
+import BookmarkButton from '../ui/BookmarkButton';
 import api from '../../services/api';
 import styles from './BidAnalysisPanel.module.css';
 
@@ -198,7 +199,14 @@ function AnalysisContent({ analysis, generatedAt, onRefresh, isRefreshing, onCol
                   return (
                     <tr key={c.contractorId} className={styles.tableRow}>
                       <td>
-                        <div className={styles.contractorInitials}>{initials}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div className={styles.contractorInitials}>{initials}</div>
+                          <BookmarkButton
+                            contractorProfileId={c.contractorId}
+                            size="sm"
+                            variant="icon"
+                          />
+                        </div>
                       </td>
                       <td>
                         <span className={styles.amount}>

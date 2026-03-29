@@ -74,6 +74,7 @@ src/
 | `DisputesListPage.tsx` | `/dashboard/settings/disputes` **and** `/settings/disputes` | auth | Dispute list with summary stats and status tabs |
 | `FileDisputePage.tsx` | `/dashboard/settings/disputes/new` **and** `/settings/disputes/new` | auth | 3-step dispute wizard; `?jobId=` pre-selects job + skips to Step 2 |
 | `DisputeDetailPage.tsx` | `/dashboard/settings/disputes/:disputeId` **and** `/settings/disputes/:disputeId` | auth | Full dispute thread; live Realtime messages + evidence upload |
+| `SavedContractorsPage.tsx` | `/dashboard/saved` | INVESTOR | Two-column saved contractors manager: list sidebar (create/rename/delete) + contractor grid with sort, notes, and quick actions (message, view profile, move, remove) |
 
 **Route layout rules:**
 - All `/dashboard/*` routes render inside `DashboardLayout` (240px role-aware sidebar + `<Outlet />`).
@@ -167,6 +168,9 @@ Calls `useMessageNotifications()` so the global Supabase Realtime subscription f
 | `['conversations']` | `GET /messages/conversations` | MessagesPage, ConversationList |
 | `['conversations', id]` | `GET /messages/conversations/:id` | MessagesPage (marks read, invalidates unread) |
 | `['unreadCount']` | `GET /messages/conversations/unread-count` | useUnreadCount (badge in sidebar) |
+| `['saved-lists']` | `GET /saved/lists` | SavedContractorsPage sidebar, SavedContractorsWidget |
+| `['saved-list-contractors', listId]` | `GET /saved/lists/:id/contractors` | SavedContractorsPage grid, SavedIndicator (ContractorProfilePage) |
+| `['investor-jobs-for-message']` | `GET /jobs/my-jobs` (filtered) | JobPickerModal inside SavedContractorsPage |
 
 **Invalidation rules:**
 - Submitting a bid → invalidate `['jobs', jobId]`
@@ -175,6 +179,8 @@ Calls `useMessageNotifications()` so the global Supabase Realtime subscription f
 - Cancelling a job → invalidate `['jobs', 'my-jobs']`
 - Opening a conversation → invalidate `['conversations']` + `['unreadCount']`
 - New Realtime message → invalidate `['conversations']` + `['unreadCount']`
+- Remove/move saved contractor → invalidate `['saved-list-contractors', listId]` + `['saved-lists']`
+- Create/rename/delete list → invalidate `['saved-lists']`
 
 **staleTime:** 30–60 seconds on all queries. Never use `refetchOnWindowFocus` defaults — data is not real-time.
 
@@ -250,6 +256,55 @@ withdrawDispute(id, reason)                  // POST /disputes/:id/withdraw
 | `dispute-messages:{id}` | `dispute_messages` | INSERT | `useDisputeMessages` — live dispute thread |
 
 **Important:** `useMessageNotifications` must **not** be mounted multiple times — it is called exactly once in `DashboardLayout`.
+
+## Saved Contractors Feature
+
+### Context — `src/context/SavedContractorsContext.tsx`
+`SavedContractorsProvider` must wrap the router (inside `AuthProvider`, outside `BrowserRouter`). Fetches `GET /saved/ids` once on INVESTOR login and maintains a `savedIds: Record<contractorProfileId, listId>` map in state.
+
+```tsx
+const { savedIds, isSaved, getListId, toggle, totalSaved, isLoading } = useSavedContractors();
+```
+
+- `isSaved(contractorProfileId)` — `boolean`, used by `BookmarkButton` for icon state
+- `toggle(contractorProfileId, listId?)` — optimistic update + API call; reverts on error; `pendingRef` (Set) prevents concurrent toggles on the same contractor
+- `totalSaved` — count of saved contractors; shown as sidebar badge in `DashboardLayout`
+- Non-INVESTOR users: context returns empty state + no-ops (safe to call on any page)
+
+### Hooks — `src/hooks/useSavedContractors.ts`
+Re-exports `useSavedContractors` from context, plus TanStack Query wrappers:
+
+| Hook | Query Key | Description |
+|------|-----------|-------------|
+| `useSavedLists()` | `['saved-lists']` | All lists for the investor (staleTime 5 min) |
+| `useListContractors(listId)` | `['saved-list-contractors', listId]` | Full contractor join for one list (staleTime 2 min, enabled: !!listId) |
+| `useCreateList()` | — | POST `/saved/lists`; invalidates `['saved-lists']` on success |
+| `useDeleteList()` | — | DELETE `/saved/lists/:id`; invalidates `['saved-lists']` |
+| `useRenameList()` | — | PUT `/saved/lists/:id`; invalidates `['saved-lists']` |
+| `useRemoveFromList()` | — | DELETE `/saved/lists/:id/contractors/:savedId`; invalidates `['saved-list-contractors', listId]` |
+
+Move and note-update are direct `api.put()` calls in the page/component (no dedicated hook).
+
+### BookmarkButton — `src/components/ui/BookmarkButton.tsx`
+Self-contained toggle button. Import directly (not via barrel).
+
+```tsx
+<BookmarkButton
+  contractorProfileId={id}
+  size="sm" | "md" | "lg"
+  variant="icon" | "icon-label"
+  className?={string}
+/>
+```
+
+- CONTRACTOR role → returns `null` (never visible to contractors)
+- Non-investor → non-interactive gray icon; click redirects to `/login`
+- Reads/writes via `useSavedContractors()` context — no local API calls
+- `justSaved` state triggers `bookmarkPulse` CSS animation (220 ms scale pop)
+- Used on: `ContractorCard`, `ContractorProfilePage` sidebar, `RecommendedContractors`, `BidAnalysisPanel` comparison table
+
+### SavedIndicator — inline in `ContractorProfilePage.tsx`
+When `isSaved(contractor.id)` is true, renders a teal "Saved to [list name]" button in the sidebar CTA block. Clicking opens a dropdown: current list name, "Move to a different list" submenu (lazily fetches `useListContractors` to get `savedId`), "Remove from saved list" (calls `toggle`). `SavedIndicator` returns `null` when not saved — `BookmarkButton` shows below it for the save action.
 
 ## Design System
 
