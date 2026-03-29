@@ -14,8 +14,7 @@ import { useToast } from '../context/ToastContext';
 import { useLang } from '../context/LanguageContext';
 import JobMediaUploader from '../components/job/JobMediaUploader';
 import { ScopeEstimatorPanel } from '../components/job/ScopeEstimatorPanel';
-import { JobDescriptionAssistant, AiAssistedBadge } from '../components/job/JobDescriptionAssistant';
-import type { GeneratedJobDescription } from '../components/job/JobDescriptionAssistant';
+import { AiAssistedBadge } from '../components/job/JobDescriptionAssistant';
 import type { TradeType, CreateJobPayload } from '../types/job.types';
 import styles from './PostJobPage.module.css';
 
@@ -495,52 +494,59 @@ export function PostJobPage() {
               Describe your project in plain language. AI will read it and pre-fill the job form for you.
             </p>
 
-            <div className={styles.tipPanel}>
-              <p className={styles.tipPanelHeading}>Tips for a better result</p>
-              <div className={styles.tipGrid}>
-                <div className={styles.tip}>
-                  <span className={styles.tipIcon}>📍</span>
-                  <div>
-                    <p className={styles.tipLabel}>Location</p>
-                    <p className={styles.tipText}>Include the city and state — e.g. <em>"in Dallas, TX"</em></p>
+            <div className={styles.tipRow}>
+              <span className={styles.tipRowLabel}>Tips:</span>
+              {[
+                {
+                  icon: '📍',
+                  label: 'Location',
+                  body: 'Include the city and state so AI can set your location automatically.',
+                  example: '"…in Dallas, TX"',
+                },
+                {
+                  icon: '🔨',
+                  label: 'Type of work',
+                  body: 'Name the trade so AI can select the right category for you.',
+                  example: '"roof repair", "HVAC install", "kitchen remodel"',
+                },
+                {
+                  icon: '💰',
+                  label: 'Budget',
+                  body: 'A range or rough estimate helps AI pre-fill your budget fields.',
+                  example: '"around $10,000–$15,000"',
+                },
+                {
+                  icon: '🏠',
+                  label: 'Property type',
+                  body: 'Describing the property gives contractors helpful context.',
+                  example: '"3-bed rental", "commercial unit", "duplex"',
+                },
+                {
+                  icon: '📋',
+                  label: 'Scope of work',
+                  body: 'List the specific tasks so the description is ready to post.',
+                  example: '"replace cabinets, countertops, and flooring"',
+                },
+                {
+                  icon: '📅',
+                  label: 'Timeline',
+                  body: 'Mention urgency or a start date so contractors can plan.',
+                  example: '"needs to start within 2 weeks"',
+                },
+              ].map((tip) => (
+                <div key={tip.label} className={styles.tipChipWrap}>
+                  <div className={styles.tipChip}>
+                    <span>{tip.icon}</span>
+                    {tip.label}
+                  </div>
+                  <div className={styles.tipPopup}>
+                    <div className={styles.tipPopupArrow} />
+                    <p className={styles.tipPopupTitle}>{tip.icon} {tip.label}</p>
+                    <p className={styles.tipPopupBody}>{tip.body}</p>
+                    <p className={styles.tipPopupExample}>{tip.example}</p>
                   </div>
                 </div>
-                <div className={styles.tip}>
-                  <span className={styles.tipIcon}>🔨</span>
-                  <div>
-                    <p className={styles.tipLabel}>Type of work</p>
-                    <p className={styles.tipText}>Name the trade — e.g. <em>"roof repair"</em>, <em>"HVAC install"</em>, <em>"kitchen remodel"</em></p>
-                  </div>
-                </div>
-                <div className={styles.tip}>
-                  <span className={styles.tipIcon}>💰</span>
-                  <div>
-                    <p className={styles.tipLabel}>Budget</p>
-                    <p className={styles.tipText}>Give a range or estimate — e.g. <em>"around $10,000–$15,000"</em></p>
-                  </div>
-                </div>
-                <div className={styles.tip}>
-                  <span className={styles.tipIcon}>🏠</span>
-                  <div>
-                    <p className={styles.tipLabel}>Property type</p>
-                    <p className={styles.tipText}>Mention the property — e.g. <em>"3-bed rental"</em>, <em>"commercial unit"</em></p>
-                  </div>
-                </div>
-                <div className={styles.tip}>
-                  <span className={styles.tipIcon}>📋</span>
-                  <div>
-                    <p className={styles.tipLabel}>Scope of work</p>
-                    <p className={styles.tipText}>List what needs doing — e.g. <em>"replace cabinets, countertops, and flooring"</em></p>
-                  </div>
-                </div>
-                <div className={styles.tip}>
-                  <span className={styles.tipIcon}>📅</span>
-                  <div>
-                    <p className={styles.tipLabel}>Timeline</p>
-                    <p className={styles.tipText}>Add urgency if relevant — e.g. <em>"needs to start within 2 weeks"</em></p>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
 
             <textarea
@@ -656,22 +662,17 @@ export function PostJobPage() {
                     <label className={styles.label}>{t.postJob.labels.description}</label>
                     {aiAssisted && <AiAssistedBadge />}
                   </div>
+                  <span className={[styles.charCount, form.description.length > 2000 ? styles.charCountOver : ''].join(' ')}>
+                    {form.description.length}/2000
+                  </span>
                 </div>
-                <JobDescriptionAssistant
-                  tradeType={form.tradeType}
-                  budgetMin={parseFloat(form.budgetMin) || 0}
-                  budgetMax={parseFloat(form.budgetMax) || 0}
-                  city={form.city}
-                  state={form.state}
-                  onGenerated={(result: GeneratedJobDescription) => {
-                    if (!form.title.trim()) set('title')(result.title);
-                    set('description')(result.fullDescription);
-                    setAiAssisted(true);
-                  }}
-                  manualValue={form.description}
-                  onManualChange={set('description')}
-                  manualError={errors.description}
-                  manualPlaceholder={t.postJob.placeholders.description}
+                <textarea
+                  rows={6}
+                  value={form.description}
+                  onChange={set('description')}
+                  placeholder={t.postJob.placeholders.description}
+                  className={[styles.input, errors.description ? styles.inputError : ''].join(' ')}
+                  style={{ resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6 }}
                 />
                 {errors.description && <p className={styles.errorMsg}>{errors.description}</p>}
                 {aiHint && (

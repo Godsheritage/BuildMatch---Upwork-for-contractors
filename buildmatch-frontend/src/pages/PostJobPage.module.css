@@ -67,60 +67,118 @@
   max-width: 520px;
 }
 
-/* ── Tips panel ───────────────────────────────────────── */
-.tipPanel {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 20px 22px;
+/* ── Tip chips ────────────────────────────────────────── */
+@keyframes tipPopIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)   scale(1);    }
+}
+
+.tipRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 24px;
 }
 
-.tipPanelHeading {
-  font-size: 11px;
+.tipRowLabel {
+  font-size: 12px;
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 14px;
-}
-
-.tipGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px 24px;
-}
-
-.tip {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.tipIcon {
-  font-size: 15px;
-  line-height: 1;
+  letter-spacing: 0.07em;
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-right: 2px;
 }
 
-.tipLabel {
+.tipChipWrap {
+  position: relative;
+}
+
+.tipChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  cursor: default;
+  user-select: none;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.tipChipWrap:hover .tipChip {
+  border-color: var(--color-primary);
+  background: #EEF3F8;
+  box-shadow: 0 2px 8px rgba(27, 58, 92, 0.1);
+}
+
+/* Floating popup card */
+.tipPopup {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px) scale(0.96);
+  opacity: 0;
+  pointer-events: none;
+  width: 240px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 50;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.tipChipWrap:hover .tipPopup {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+  pointer-events: auto;
+  animation: tipPopIn 0.18s ease both;
+}
+
+/* Caret / arrow pointing down */
+.tipPopupArrow {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 9px;
+  height: 9px;
+  background: #fff;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tipPopupTitle {
+  font-size: 13px;
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  margin-bottom: 2px;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
 }
 
-.tipText {
+.tipPopupBody {
   font-size: 12px;
   color: var(--color-text-muted);
-  line-height: 1.5;
+  line-height: 1.55;
+  margin-bottom: 10px;
 }
 
-.tipText em {
-  font-style: normal;
-  color: var(--color-text-primary);
+.tipPopupExample {
+  font-size: 12px;
   font-weight: var(--font-weight-medium);
+  color: var(--color-accent);
+  background: var(--color-highlight);
+  border-radius: 6px;
+  padding: 6px 10px;
+  line-height: 1.5;
 }
 
 /* ── Describe textarea ────────────────────────────────── */
