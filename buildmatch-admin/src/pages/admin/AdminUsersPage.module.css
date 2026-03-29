@@ -1,0 +1,214 @@
+/* ── Filter card ─────────────────────────────────────────────────────────── */
+
+.filterCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+/* ── Search ──────────────────────────────────────────────────────────────── */
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 7px var(--space-3) 7px 30px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--color-primary);
+}
+
+/* ── Pill groups ─────────────────────────────────────────────────────────── */
+
+.pillGroup {
+  display: flex;
+  gap: 2px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.pill {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 100ms, color 100ms;
+  white-space: nowrap;
+}
+
+.pill:hover {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.pillActive {
+  background: var(--color-bg);
+  color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.pillFlagged {
+  background: #FEF3C7;
+  color: #92400E;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Date range ──────────────────────────────────────────────────────────── */
+
+.dateRange {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dateInput {
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  outline: none;
+}
+
+.dateInput:focus {
+  border-color: var(--color-primary);
+}
+
+.dateSep {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ── Clear button ────────────────────────────────────────────────────────── */
+
+.clearBtn {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  margin-left: auto;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clearBtn:hover {
+  color: var(--color-danger);
+}
+
+/* ── Risk score badge ────────────────────────────────────────────────────── */
+
+.riskScore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+/* ── Kebab menu ──────────────────────────────────────────────────────────── */
+
+.kebab {
+  position: relative;
+}
+
+.kebabTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 100ms;
+}
+
+.kebabTrigger:hover {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.kebabMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  min-width: 148px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.kebabItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 80ms;
+}
+
+.kebabItem:hover {
+  background: var(--color-surface);
+}
+
+.kebabDanger {
+  color: var(--color-danger);
+}
+
+.kebabDanger:hover {
+  background: #FEF2F2;
+}

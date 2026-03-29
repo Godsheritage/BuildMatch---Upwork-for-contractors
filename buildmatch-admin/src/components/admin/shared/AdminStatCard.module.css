@@ -1,0 +1,8 @@
+.card { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-5) var(--space-6); display: flex; align-items: flex-start; gap: var(--space-4); box-shadow: var(--shadow-card); }
+.icon { width: 40px; height: 40px; border-radius: var(--radius-sm); background: var(--color-surface); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #1B3A5C; }
+.body { flex: 1; min-width: 0; }
+.value { font-size: 32px; font-weight: var(--font-weight-semibold); color: #1B3A5C; line-height: 1.1; letter-spacing: var(--tracking-tight); }
+.label { font-size: 11px; font-weight: var(--font-weight-medium); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: var(--tracking-wide); margin-top: var(--space-1); }
+.delta { font-size: 12px; font-weight: var(--font-weight-medium); padding: 2px var(--space-2); border-radius: var(--radius-pill); align-self: flex-start; margin-top: 2px; }
+.deltaPos { background: #DCFCE7; color: #166534; }
+.deltaNeg { background: #FEE2E2; color: #991B1B; }

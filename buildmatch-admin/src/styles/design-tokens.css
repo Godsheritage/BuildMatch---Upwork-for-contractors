@@ -1,0 +1,56 @@
+/* === Colors === */
+:root {
+  --color-primary: #1B3A5C;
+  --color-accent: #0F6E56;
+  --color-highlight: #E8F4F0;
+  --color-warning: #BA7517;
+  --color-warning-bg: #FEF3C7;
+  --color-bg: #FFFFFF;
+  --color-surface: #F8F7F5;
+  --color-border: #E5E4E0;
+  --color-text-primary: #1A1A18;
+  --color-text-muted: #6B6B67;
+  --color-star: #F59E0B;
+  --color-danger: #DC2626;
+}
+
+/* === Spacing (4px base) === */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+}
+
+/* === Typography === */
+:root {
+  --font-family: system-ui, -apple-system, 'SF Pro Text', sans-serif;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --tracking-tight: -0.02em;
+  --tracking-tighter: -0.04em;
+  --tracking-wide: 0.06em;
+  --leading-body: 1.6;
+}
+
+/* === Border Radius === */
+:root {
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-pill: 20px;
+}
+
+/* === Shadows === */
+:root {
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 2px 12px rgba(0, 0, 0, 0.06);
+}

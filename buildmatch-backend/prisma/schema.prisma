@@ -89,9 +89,11 @@ model User {
   company     String?
   title       String?
   website     String?
-  isVerified  Boolean   @default(false)
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
+  isVerified     Boolean   @default(false)
+  isActive       Boolean   @default(true)
+  isBanned       Boolean   @default(false)
+  suspendedUntil DateTime?
+  createdAt      DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   contractor              ContractorProfile?

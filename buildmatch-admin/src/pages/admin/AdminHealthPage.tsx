@@ -1,0 +1,52 @@
+import { useState, useEffect } from 'react';
+import { AdminPageHeader } from '../../components/admin/shared/AdminPageHeader';
+import { AdminStatCard } from '../../components/admin/shared/AdminStatCard';
+import { Button } from '../../components/ui';
+import api from '../../services/api';
+import styles from './AdminHealthPage.module.css';
+
+interface ServiceStatus { ok: boolean; latencyMs?: number; }
+interface HealthData { database: ServiceStatus; supabase: ServiceStatus; anthropic: ServiceStatus; }
+const SERVICES: { name: string; key: keyof HealthData }[] = [
+  { name: 'PostgreSQL / Prisma', key: 'database' },
+  { name: 'Supabase', key: 'supabase' },
+  { name: 'Anthropic AI', key: 'anthropic' },
+];
+
+export function AdminHealthPage() {
+  const [health, setHealth] = useState<HealthData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [checkedAt, setCheckedAt] = useState<Date | null>(null);
+
+  async function check() {
+    setLoading(true);
+    try {
+      const res = await api.get<{ data: HealthData }>('/admin/health');
+      setHealth(res.data.data);
+      setCheckedAt(new Date());
+    } catch { setHealth(null); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { check(); }, []);
+  const allOk = health ? Object.values(health).every(s => s.ok) : null;
+
+  return (
+    <div>
+      <AdminPageHeader title="System Health" subtitle={checkedAt ? `Last checked ${checkedAt.toLocaleTimeString()}` : 'Checking…'} actions={<Button variant="secondary" size="sm" onClick={check} disabled={loading}>{loading ? 'Checking…' : 'Refresh'}</Button>} />
+      <div className={styles.summary}><AdminStatCard label="Overall Status" value={allOk === null ? '…' : allOk ? 'Healthy' : 'Degraded'} /></div>
+      <div className={styles.serviceGrid}>
+        {SERVICES.map(({ name, key }) => {
+          const s = health?.[key];
+          return (
+            <div key={key} className={`${styles.serviceCard} ${s?.ok === false ? styles.serviceErr : ''}`}>
+              <div className={styles.serviceName}>{name}</div>
+              <div className={`${styles.serviceStatus} ${s?.ok ? styles.ok : s?.ok === false ? styles.err : styles.pending}`}>{s === undefined ? '…' : s.ok ? 'OK' : 'Error'}</div>
+              {s?.latencyMs !== undefined && <div className={styles.serviceLatency}>{s.latencyMs} ms</div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
