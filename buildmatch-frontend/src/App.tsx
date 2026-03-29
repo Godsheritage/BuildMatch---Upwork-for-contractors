@@ -35,6 +35,10 @@ import { AboutPage } from './pages/AboutPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { ContractReviewPage } from './pages/ContractReviewPage';
 import { ScopeEstimatorPage } from './pages/ScopeEstimatorPage';
+import { DisputesListPage } from './pages/settings/DisputesListPage';
+import { DisputeDetailPage } from './pages/settings/DisputeDetailPage';
+import { FileDisputePage } from './pages/settings/FileDisputePage';
+import { SettingsLayout } from './components/layout/SettingsLayout';
 
 const queryClient = new QueryClient();
 
@@ -67,6 +71,19 @@ export default function App() {
                 }
               />
 
+              {/* Standalone dispute settings — no DashboardLayout sidebar, accessible from public pages */}
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <SettingsLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/settings/disputes"              element={<DisputesListPage />} />
+                <Route path="/settings/disputes/new"          element={<FileDisputePage />} />
+                <Route path="/settings/disputes/:disputeId"   element={<DisputeDetailPage />} />
+              </Route>
+
               {/* Protected dashboard shell — all nested pages rendered via Outlet */}
               <Route
                 element={
@@ -78,11 +95,17 @@ export default function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/profile" element={<UserProfilePage />} />
                 <Route path="/dashboard/profile/edit" element={<ProfileEditPage />} />
-                <Route path="/dashboard/settings" element={<SettingsPage />} />
-                <Route path="/dashboard/settings/personal"     element={<SettingsPersonalPage />} />
-                <Route path="/dashboard/settings/security"     element={<SettingsSecurityPage />} />
-                <Route path="/dashboard/settings/notifications" element={<SettingsNotificationsPage />} />
-                <Route path="/dashboard/settings/verification" element={<SettingsVerificationPage />} />
+                {/* Settings shell — provides the settings sidebar */}
+                <Route element={<SettingsLayout />}>
+                  <Route path="/dashboard/settings"                           element={<SettingsPage />} />
+                  <Route path="/dashboard/settings/personal"                  element={<SettingsPersonalPage />} />
+                  <Route path="/dashboard/settings/security"                  element={<SettingsSecurityPage />} />
+                  <Route path="/dashboard/settings/notifications"             element={<SettingsNotificationsPage />} />
+                  <Route path="/dashboard/settings/verification"              element={<SettingsVerificationPage />} />
+                  <Route path="/dashboard/settings/disputes"                  element={<DisputesListPage />} />
+                  <Route path="/dashboard/settings/disputes/new"              element={<FileDisputePage />} />
+                  <Route path="/dashboard/settings/disputes/:disputeId"       element={<DisputeDetailPage />} />
+                </Route>
                 <Route path="/dashboard/messages" element={<MessagesPage />} />
                 <Route path="/dashboard/messages/:conversationId" element={<MessagesPage />} />
                 <Route

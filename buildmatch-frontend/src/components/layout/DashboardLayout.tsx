@@ -3,9 +3,10 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   Home, Search, Briefcase, PlusCircle,
   FileText, Menu, X,
-  HelpCircle, Bell, Settings, ChevronUp, MessageSquare, Sparkles,
+  HelpCircle, Bell, Settings, ChevronUp, MessageSquare, Sparkles, ShieldAlert,
 } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { getDisputeSummary } from '../../services/dispute.service';
 import { getConversations } from '../../services/message.service';
 import { useUnreadCount } from '../../hooks/useUnreadCount';
 import { useMessageNotifications } from '../../hooks/useMessageNotifications';
@@ -33,6 +34,14 @@ export function DashboardLayout() {
   const unreadCount = useNotificationCount();
   const { totalUnread } = useUnreadCount();
   useMessageNotifications();
+
+  const { data: disputeSummary } = useQuery({
+    queryKey:        ['disputes', 'summary'],
+    queryFn:         getDisputeSummary,
+    refetchInterval: 2 * 60 * 1000,
+    staleTime:       2 * 60 * 1000,
+  });
+  const openDisputeCount = (disputeSummary?.open ?? 0) + (disputeSummary?.underReview ?? 0);
 
   // Prefetch conversations on layout mount so the Messages tab loads instantly
   useEffect(() => {
@@ -115,6 +124,24 @@ export function DashboardLayout() {
               )}
             </NavLink>
           ))}
+
+          <div className={styles.navSectionDivider} />
+
+          <NavLink
+            to="/dashboard/settings/disputes"
+            onClick={closeSidebar}
+            className={({ isActive }) =>
+              `${styles.navItem} ${isActive ? styles.navItemActive : ''}`
+            }
+          >
+            <ShieldAlert size={17} strokeWidth={1.75} />
+            Disputes
+            {openDisputeCount > 0 && (
+              <span className={`${styles.navBadge} ${styles.navBadgeDanger}`}>
+                {openDisputeCount > 99 ? '99+' : openDisputeCount}
+              </span>
+            )}
+          </NavLink>
         </nav>
 
         {/* Utility icons */}

@@ -59,15 +59,27 @@ src/
 | `ContractorsPage.tsx` | `/contractors` | public | Browse contractors with filter sidebar |
 | `ContractorProfilePage.tsx` | `/contractors/:id` | public | Full contractor profile |
 | `JobsPage.tsx` | `/jobs` | public | Browse jobs with filter sidebar + URL-synced params |
-| `JobDetailPage.tsx` | `/jobs/:id` | public | Job detail + polymorphic sidebar |
+| `JobDetailPage.tsx` | `/jobs/:id` | public | Job detail + polymorphic sidebar; "Having an issue?" link (IN_PROGRESS only) → `/settings/disputes/new?jobId=` |
 | `DashboardPage.tsx` | `/dashboard` | auth | Greeting + stats overview |
 | `InvestorJobsPage.tsx` | `/dashboard/jobs` | INVESTOR | Job management table with tabs + kebab actions |
 | `PostJobPage.tsx` | `/dashboard/post-job` | INVESTOR | Create job form with live preview |
 | `ProfileSetupPage.tsx` | `/dashboard/profile/setup` | CONTRACTOR | 4-step profile wizard |
 | `MessagesPage.tsx` | `/dashboard/messages` | auth | Full inbox: conversation list + message thread + job context panel |
 | `MessagesPage.tsx` | `/dashboard/messages/:conversationId` | auth | Same page — URL param activates the conversation thread |
+| `SettingsPage.tsx` | `/dashboard/settings` | auth | Settings overview grid; includes Dispute Centre card |
+| `SettingsPersonalPage.tsx` | `/dashboard/settings/personal` | auth | Profile/personal info editing |
+| `SettingsSecurityPage.tsx` | `/dashboard/settings/security` | auth | Password change |
+| `SettingsNotificationsPage.tsx` | `/dashboard/settings/notifications` | auth | Notification preferences |
+| `SettingsVerificationPage.tsx` | `/dashboard/settings/verification` | auth | ID / licence verification |
+| `DisputesListPage.tsx` | `/dashboard/settings/disputes` **and** `/settings/disputes` | auth | Dispute list with summary stats and status tabs |
+| `FileDisputePage.tsx` | `/dashboard/settings/disputes/new` **and** `/settings/disputes/new` | auth | 3-step dispute wizard; `?jobId=` pre-selects job + skips to Step 2 |
+| `DisputeDetailPage.tsx` | `/dashboard/settings/disputes/:disputeId` **and** `/settings/disputes/:disputeId` | auth | Full dispute thread; live Realtime messages + evidence upload |
 
-All `/dashboard/*` routes render inside `DashboardLayout` (which provides the sidebar shell via `<Outlet />`).
+**Route layout rules:**
+- All `/dashboard/*` routes render inside `DashboardLayout` (240px role-aware sidebar + `<Outlet />`).
+- `/dashboard/settings/*` routes additionally render inside `SettingsLayout` (220px settings sidebar + `<Outlet />`), creating a dual-sidebar layout.
+- `/settings/disputes/*` routes render inside `SettingsLayout` **without** `DashboardLayout` — used as the entry point from public pages (e.g. `JobDetailPage`). SettingsLayout sidebar links go back to `/dashboard/settings/*` paths.
+- Static segment `disputes/new` is declared before `disputes/:disputeId` to prevent param capture.
 
 ## Component Hierarchy
 
@@ -209,6 +221,25 @@ getTotalUnreadCount()                             // GET  /messages/conversation
 | `useUnreadCount()` | `hooks/useUnreadCount.ts` | Polls every 30s + Realtime `conversations` UPDATE. Returns `{ totalUnread: number }`. |
 | `useMessageNotifications()` | `hooks/useMessageNotifications.ts` | Global Realtime `messages` INSERT subscription. Shows an 'info' toast with "View" action button when a message arrives for a conversation the user is NOT currently viewing. Mount once in `DashboardLayout`. |
 
+### Dispute Hooks
+
+| Hook | File | Description |
+|------|------|-------------|
+| `useDisputeMessages(disputeId, dispute?)` | `hooks/useDisputeMessages.ts` | Initial fetch (`queryKey: ['dispute-messages', id]`, 15s poll fallback), Supabase Realtime INSERT subscription on `dispute_messages`, auto-scroll via `messagesEndRef`, `sendMessage(content)` with optimistic update. Returns `{ messages, isLoading, sendMessage, messagesEndRef }`. |
+
+### `src/services/dispute.service.ts`
+```ts
+getDisputeSummary()                          // GET  /disputes/summary
+getMyDisputes(params?)                       // GET  /disputes
+getDisputeById(id)                           // GET  /disputes/:id
+getDisputeMessages(id)                       // GET  /disputes/:id/messages
+getDisputeEvidence(id)                       // GET  /disputes/:id/evidence
+fileDispute(payload)                         // POST /disputes
+addDisputeMessage(id, content)               // POST /disputes/:id/messages
+submitEvidence(id, payload)                  // POST /disputes/:id/evidence
+withdrawDispute(id, reason)                  // POST /disputes/:id/withdraw
+```
+
 ### Supabase Realtime Channels
 
 | Channel name | Table | Event | Used by |
@@ -216,6 +247,7 @@ getTotalUnreadCount()                             // GET  /messages/conversation
 | `conversation-{id}` | `messages` | INSERT | `useMessaging` — live chat updates |
 | `conversations-unread` | `conversations` | UPDATE | `useUnreadCount` — sidebar badge |
 | `global-messages-notifications` | `messages` | INSERT | `useMessageNotifications` — toast alerts |
+| `dispute-messages:{id}` | `dispute_messages` | INSERT | `useDisputeMessages` — live dispute thread |
 
 **Important:** `useMessageNotifications` must **not** be mounted multiple times — it is called exactly once in `DashboardLayout`.
 

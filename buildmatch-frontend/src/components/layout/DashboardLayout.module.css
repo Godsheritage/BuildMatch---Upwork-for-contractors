@@ -112,6 +112,21 @@
   color: #1B3A5C;
 }
 
+.navBadgeDanger {
+  background: #DC2626;
+}
+
+.navItemActive .navBadgeDanger {
+  background: #fff;
+  color: #DC2626;
+}
+
+.navSectionDivider {
+  height: 1px;
+  background: #EBEBEB;
+  margin: 6px 8px;
+}
+
 /* ── Sidebar footer ──────────────────────────────────── */
 .sidebarFooter {
   padding: 10px 14px;

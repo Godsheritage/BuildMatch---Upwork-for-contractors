@@ -371,7 +371,7 @@ function BidFormCard({ job, onSuccess }: { job: JobPost; onSuccess: () => void }
 
 // ── Sidebar: My bid (contractor, already bid) ──────────────────────────────────
 
-function MyBidCard({ jobId, investorId }: { jobId: string; investorId: string }) {
+function MyBidCard({ jobId, investorId, jobStatus }: { jobId: string; investorId: string; jobStatus?: string }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -483,6 +483,15 @@ function MyBidCard({ jobId, investorId }: { jobId: string; investorId: string })
             Withdraw Bid
           </button>
         )
+      )}
+
+      {isAccepted && jobStatus === 'IN_PROGRESS' && (
+        <div className={styles.issueSection}>
+          <p className={styles.issueText}>Having an issue with this job?</p>
+          <Link to={`/settings/disputes/new?jobId=${jobId}`} className={styles.disputeLink}>
+            File a Dispute
+          </Link>
+        </div>
       )}
     </div>
   );
@@ -600,6 +609,15 @@ function InvestorCard({
             Cancel Job
           </button>
         )
+      )}
+
+      {job.status === 'IN_PROGRESS' && (
+        <div className={styles.issueSection}>
+          <p className={styles.issueText}>Having an issue with this job?</p>
+          <Link to={`/settings/disputes/new?jobId=${job.id}`} className={styles.disputeLink}>
+            File a Dispute
+          </Link>
+        </div>
       )}
     </div>
   );
@@ -1364,7 +1382,7 @@ export function JobDetailPage() {
                 </p>
               </div>
             )}
-            {sidebarVariant === 'my-bid' && <MyBidCard jobId={job.id} investorId={job.investorId} />}
+            {sidebarVariant === 'my-bid' && <MyBidCard jobId={job.id} investorId={job.investorId} jobStatus={job.status} />}
             {sidebarVariant === 'investor' && (
               <InvestorCard
                 job={job}
