@@ -46,6 +46,8 @@ src/
   controllers/  # Request handlers — call service, send response
   middleware/   # auth, validate, error
   services/     # All business logic and Prisma calls
+    dispute.service.ts              # All user-facing dispute logic; uses Supabase service client for dispute tables, Prisma for User/Job/Bid
+    dispute-notifications.service.ts # Provider-agnostic email notifications for disputes (filed, status change, new message, withdrawn)
     ai/         # One file per AI feature + shared singleton
       anthropic.client.ts          # Shared Anthropic SDK singleton (import Anthropic from '@anthropic-ai/sdk')
       matching.service.ts          # Contractor–job matching          [claude-opus-4-5]
@@ -115,6 +117,31 @@ src/
 | POST | `/api/messages/conversations/:id/messages` | `authenticate` | Send a message; content is **always** run through `filterMessageContent()` before save |
 
 **Route ordering:** `/unread-count` declared before `/:id` to prevent param capture.
+
+### Disputes — `/api/disputes`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/disputes/summary` | `authenticate` | Returns `{ open, underReview, awaitingEvidence, pendingRuling, resolved, total }` counts for the current user |
+| GET | `/api/disputes` | `authenticate` | Paginated list of the user's disputes (query: `status`, `page`, `limit`) |
+| POST | `/api/disputes` | `authenticate` | File a new dispute; validates job ownership/bid acceptance, creates dispute + system message, notifies the other party |
+| GET | `/api/disputes/:id` | `authenticate` | Dispute detail (parties, messages, evidence); enforces party-only access |
+| GET | `/api/disputes/:id/messages` | `authenticate` | Paginated dispute messages |
+| POST | `/api/disputes/:id/messages` | `authenticate` | Add a message to the dispute thread; notifies the other party (30-min debounce) |
+| GET | `/api/disputes/:id/evidence` | `authenticate` | List evidence items for the dispute |
+| POST | `/api/disputes/:id/evidence` | `authenticate` | Submit an evidence item (type, url, description) |
+| POST | `/api/disputes/:id/withdraw` | `authenticate` | Withdraw dispute (filer only, active statuses only); notifies other party |
+
+**Route ordering:** `/summary` declared before `/:id` to prevent param capture. Mounted at `app.use('/api/disputes', disputeRoutes)`.
+
+**Access control:** `assertParty(disputeId, userId)` enforces that only the two named parties can read or write to a dispute. Admin routes bypass this via `adminGetDispute()`.
+
+### Admin Disputes — `/api/admin/disputes`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/admin/disputes/:id/ruling` | `authenticate` + `requireRole('ADMIN')` | Record ruling + resolve dispute; notifies both parties |
+| PUT | `/api/admin/disputes/:id/status` | `authenticate` + `requireRole('ADMIN')` | Update status (UNDER_REVIEW / AWAITING_EVIDENCE / PENDING_RULING / CLOSED); inserts system message; notifies parties per spec |
+
+**Audit log:** every admin action inserts a row into `audit_log` (non-fatal — failure is logged but does not block the response).
 
 ### Health
 | Method | Path | Auth | Description |
@@ -279,6 +306,15 @@ Static segments must be declared before dynamic params in every router:
 - `/my-jobs` before `/:id`
 - `/:jobId/bids/my-bid` before `/:jobId/bids/:bidId/...`
 - `/unread-count` before `/:id` (messages router)
+- `/summary` before `/:id` (disputes router)
+
+### Dispute system architecture
+Dispute tables (`disputes`, `dispute_messages`, `dispute_evidence`) are raw SQL (created via Supabase migrations), **not** Prisma models. All dispute reads/writes use `getServiceClient()` (Supabase JS with service role key) to bypass RLS. User, Job, and Bid lookups within dispute operations use Prisma as normal.
+
+- **Party enforcement:** `assertParty(disputeId, userId)` in `dispute.service.ts` fetches the dispute and throws `AppError 403` if the caller is neither `filed_by_id` nor `against_id`. Every user-facing dispute endpoint calls this before returning data.
+- **Admin bypass:** `adminGetDispute(disputeId)` skips the party check — import from `dispute.service.ts` in admin routes only.
+- **Notifications:** All outbound emails go through `dispute-notifications.service.ts`. The `deliverEmail()` function currently logs to console; swap in Resend/SendGrid/Postmark by replacing its body. Notification calls are always fire-and-forget (`.catch(console.error)`) so they never block the API response.
+- **Audit log:** Admin actions write to the `audit_log` table via a non-fatal async IIFE pattern.
 
 ### Message content filtering
 `src/utils/message-filter.ts` exports `filterMessageContent(content: string)` which returns `{ filtered: string; wasFiltered: boolean; reason?: string }`.
