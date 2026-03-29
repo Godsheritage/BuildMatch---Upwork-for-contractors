@@ -82,12 +82,88 @@
   padding: 0 40px;
 }
 
+/* ── Hero animations ─────────────────────────────────── */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+@keyframes dotPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(94, 203, 161, 0.55); }
+  60%       { box-shadow: 0 0 0 7px rgba(94, 203, 161, 0); }
+}
+
+@keyframes orbDrift1 {
+  0%,  100% { transform: translate(0px,    0px)   scale(1);    }
+  33%        { transform: translate(60px,  -50px)  scale(1.06); }
+  66%        { transform: translate(-30px,  35px)  scale(0.94); }
+}
+
+@keyframes orbDrift2 {
+  0%,  100% { transform: translate(0px,   0px)   scale(1);    }
+  40%        { transform: translate(-70px, 55px)  scale(1.08); }
+  80%        { transform: translate(45px, -40px)  scale(0.92); }
+}
+
+@keyframes orbDrift3 {
+  0%,  100% { transform: translate(0px,   0px); }
+  50%        { transform: translate(50px, -60px); }
+}
+
+@keyframes cityReveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Hero ────────────────────────────────────────────── */
 .hero {
   background: var(--color-primary);
-  padding: 96px 40px 80px;
+  padding: 200px 40px 180px;
   overflow: hidden;
   position: relative;
+}
+
+/* Ambient background orbs */
+.heroOrb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.heroOrb1 {
+  width: 520px;
+  height: 520px;
+  top: -180px;
+  right: -60px;
+  background: radial-gradient(circle, rgba(15, 110, 86, 0.28) 0%, transparent 70%);
+  filter: blur(60px);
+  animation: orbDrift1 18s ease-in-out infinite;
+}
+
+.heroOrb2 {
+  width: 400px;
+  height: 400px;
+  bottom: -120px;
+  left: 10%;
+  background: radial-gradient(circle, rgba(94, 203, 161, 0.16) 0%, transparent 70%);
+  filter: blur(70px);
+  animation: orbDrift2 22s ease-in-out infinite;
+}
+
+.heroOrb3 {
+  width: 280px;
+  height: 280px;
+  top: 40%;
+  left: 40%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+  filter: blur(50px);
+  animation: orbDrift3 14s ease-in-out infinite;
 }
 
 .heroInner {
@@ -96,6 +172,8 @@
   display: flex;
   align-items: center;
   gap: 64px;
+  position: relative; /* sit above orbs */
+  z-index: 1;
 }
 
 .heroLeft {
@@ -113,6 +191,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 20px;
+  animation: heroFadeUp 0.6s ease both;
 }
 
 .heroDot {
@@ -120,6 +199,7 @@
   height: 6px;
   border-radius: 50%;
   background: var(--color-accent);
+  animation: dotPulse 2.4s ease-in-out infinite;
 }
 
 .heroH1 {
@@ -129,18 +209,32 @@
   letter-spacing: -0.03em;
   line-height: 1.08;
   margin-bottom: 20px;
+  animation: heroFadeUp 0.6s 0.1s ease both;
 }
 
 .heroHighlight {
   color: #5ECBA1; /* tinted accent visible on navy */
 }
 
+.heroCity {
+  display: inline;
+  color: rgba(255, 255, 255, 0.75);
+  animation: cityReveal 0.5s ease both;
+}
+
 .heroSub {
-  font-size: 17px;
-  color: rgba(255,255,255,0.65);
-  line-height: 1.65;
-  margin-bottom: 36px;
-  max-width: 480px;
+  font-size: 19px;
+  color: rgba(255,255,255,0.58);
+  line-height: 1.7;
+  margin-bottom: 40px;
+  max-width: 100%;
+  animation: heroFadeUp 0.6s 0.2s ease both;
+  letter-spacing: -0.01em;
+}
+
+.heroSub strong {
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: var(--font-weight-medium);
 }
 
 .heroCtaRow {
@@ -148,6 +242,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  animation: heroFadeUp 0.6s 0.45s ease both;
 }
 
 .heroCtaPrimary {
@@ -188,61 +283,149 @@
   margin-top: 16px;
   font-size: 12px;
   color: rgba(255,255,255,0.4);
+  animation: heroFadeUp 0.6s 0.55s ease both;
 }
 
 /* ── AI Search bar ───────────────────────────────────── */
 .searchRow {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: var(--radius-sm);
-  padding: 4px 4px 4px 12px;
-  gap: var(--space-2);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 8px 8px 8px 24px;
+  gap: 12px;
   margin-bottom: var(--space-4);
+  animation: heroFadeUp 0.6s 0.32s ease both;
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+  backdrop-filter: blur(12px);
+}
+
+.searchRow:focus-within {
+  border-color: rgba(94, 203, 161, 0.6);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 4px rgba(94, 203, 161, 0.12), 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .searchIcon {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.45);
   flex-shrink: 0;
 }
 
-.searchInput {
+.searchInputWrap {
+  position: relative;
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 100%;
   background: transparent;
   border: none;
   outline: none;
-  font-size: 14px;
+  font-size: 16px;
   color: #fff;
   font-family: var(--font-family);
   min-width: 0;
+  padding: 10px 0;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
 }
 
-.searchInput::placeholder {
-  color: rgba(255, 255, 255, 0.45);
+.searchPlaceholder {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.38);
+  white-space: nowrap;
+  overflow: hidden;
+  z-index: 0;
+  font-family: var(--font-family);
+}
+
+.searchPlaceholderLabel {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: var(--font-weight-medium);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.searchCursor {
+  display: inline-block;
+  width: 1.5px;
+  height: 0.9em;
+  background: rgba(94, 203, 161, 0.8);
+  margin-left: 1px;
+  vertical-align: middle;
+  border-radius: 1px;
+  animation: blink 0.85s step-end infinite;
+}
+
+.searchBtnWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.searchAiBadge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: #5ECBA1;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  padding-right: 4px;
+  opacity: 0.85;
+}
+
+.searchAiDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #5ECBA1;
+  animation: dotPulse 2.4s ease-in-out infinite;
 }
 
 .searchBtn {
   background: var(--color-accent);
   color: #fff;
   border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 13px;
+  border-radius: 10px;
+  padding: 13px 28px;
+  font-size: 15px;
   font-weight: var(--font-weight-semibold);
   font-family: var(--font-family);
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  letter-spacing: -0.01em;
 }
 
 .searchBtn:hover:not(:disabled) {
   background: #0a5a45;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(15, 110, 86, 0.4);
+}
+
+.searchBtn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .searchBtn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -250,6 +433,7 @@
 .heroRight {
   width: 340px;
   flex-shrink: 0;
+  animation: heroFadeUp 0.7s 0.25s ease both;
 }
 
 .heroCard {
@@ -257,6 +441,7 @@
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+  animation: heroFloat 5s ease-in-out infinite;
 }
 
 .heroCardLabel {
@@ -848,7 +1033,7 @@
 @media (max-width: 768px) {
   .nav { padding: 0 16px; gap: 16px; }
   .navLinks { display: none; }
-  .hero { padding: 64px 20px 56px; }
+  .hero { padding: 90px 20px 80px; }
   .heroInner { padding: 0; }
   .container,
   .stats,

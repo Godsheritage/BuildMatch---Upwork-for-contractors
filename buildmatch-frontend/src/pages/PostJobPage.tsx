@@ -9,7 +9,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Button } from '../components/ui/Button';
 import { Spinner } from '../components/ui/Spinner';
 import { createJob } from '../services/job.service';
-import { classifyPreview } from '../services/ai.service';
+import { classifyPreview, parseJobDescription } from '../services/ai.service';
 import { useToast } from '../context/ToastContext';
 import { useLang } from '../context/LanguageContext';
 import JobMediaUploader from '../components/job/JobMediaUploader';
@@ -341,6 +341,46 @@ export function PostJobPage() {
   const navigate   = useNavigate();
   const { toast }  = useToast();
   const { t }      = useLang();
+
+  // ── Stage management ────────────────────────────────────────────────────────
+  const [stage, setStage]                   = useState<'describe' | 'form'>('describe');
+  const [rawDescription, setRawDescription] = useState('');
+  const [parseError, setParseError]         = useState<string | null>(null);
+
+  const parseMutation = useMutation({
+    mutationFn: (text: string) => parseJobDescription(text),
+    onSuccess: (data) => {
+      setForm({
+        title:       data.title       ?? '',
+        tradeType:   data.tradeType   ?? '',
+        description: data.description ?? rawDescription,
+        budgetMin:   data.budgetMin   != null ? String(Math.round(data.budgetMin)) : '',
+        budgetMax:   data.budgetMax   != null ? String(Math.round(data.budgetMax)) : '',
+        city:        data.city        ?? '',
+        state:       data.state       ?? '',
+        zipCode:     data.zipCode     ?? '',
+      });
+      setAiAssisted(true);
+      setParseError(null);
+      setStage('form');
+    },
+    onError: () => {
+      setParseError('AI parsing failed — you can still fill in the form manually.');
+      setStage('form');
+    },
+  });
+
+  function handleAnalyze() {
+    const text = rawDescription.trim();
+    if (text.length < 20) {
+      setParseError('Please describe your project in at least 20 characters.');
+      return;
+    }
+    setParseError(null);
+    parseMutation.mutate(text);
+  }
+
+  // ── Form state ──────────────────────────────────────────────────────────────
   const [form, setForm]     = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
@@ -440,12 +480,135 @@ export function PostJobPage() {
     : null;
   const budgetRange  = form.tradeType ? BUDGET_GUIDE[form.tradeType as TradeType] : null;
 
+  // ── Stage 1: Describe ────────────────────────────────────────────────────────
+  if (stage === 'describe') {
+    return (
+      <div className={styles.page}>
+        <div className={styles.describeContainer}>
+          <div className={styles.describeCard}>
+            <div className={styles.describeAiBadge}>
+              <span className={styles.describeAiDot} />
+              AI-powered
+            </div>
+            <h1 className={styles.describeHeading}>What do you need done?</h1>
+            <p className={styles.describeSub}>
+              Describe your project in plain language. AI will read it and pre-fill the job form for you.
+            </p>
+
+            <div className={styles.tipPanel}>
+              <p className={styles.tipPanelHeading}>Tips for a better result</p>
+              <div className={styles.tipGrid}>
+                <div className={styles.tip}>
+                  <span className={styles.tipIcon}>📍</span>
+                  <div>
+                    <p className={styles.tipLabel}>Location</p>
+                    <p className={styles.tipText}>Include the city and state — e.g. <em>"in Dallas, TX"</em></p>
+                  </div>
+                </div>
+                <div className={styles.tip}>
+                  <span className={styles.tipIcon}>🔨</span>
+                  <div>
+                    <p className={styles.tipLabel}>Type of work</p>
+                    <p className={styles.tipText}>Name the trade — e.g. <em>"roof repair"</em>, <em>"HVAC install"</em>, <em>"kitchen remodel"</em></p>
+                  </div>
+                </div>
+                <div className={styles.tip}>
+                  <span className={styles.tipIcon}>💰</span>
+                  <div>
+                    <p className={styles.tipLabel}>Budget</p>
+                    <p className={styles.tipText}>Give a range or estimate — e.g. <em>"around $10,000–$15,000"</em></p>
+                  </div>
+                </div>
+                <div className={styles.tip}>
+                  <span className={styles.tipIcon}>🏠</span>
+                  <div>
+                    <p className={styles.tipLabel}>Property type</p>
+                    <p className={styles.tipText}>Mention the property — e.g. <em>"3-bed rental"</em>, <em>"commercial unit"</em></p>
+                  </div>
+                </div>
+                <div className={styles.tip}>
+                  <span className={styles.tipIcon}>📋</span>
+                  <div>
+                    <p className={styles.tipLabel}>Scope of work</p>
+                    <p className={styles.tipText}>List what needs doing — e.g. <em>"replace cabinets, countertops, and flooring"</em></p>
+                  </div>
+                </div>
+                <div className={styles.tip}>
+                  <span className={styles.tipIcon}>📅</span>
+                  <div>
+                    <p className={styles.tipLabel}>Timeline</p>
+                    <p className={styles.tipText}>Add urgency if relevant — e.g. <em>"needs to start within 2 weeks"</em></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <textarea
+              className={styles.describeTextarea}
+              rows={6}
+              placeholder="e.g. I need to remodel a kitchen in my rental property in Austin, TX. Looking to replace cabinets, countertops, and flooring. Budget is around $15,000–$20,000."
+              value={rawDescription}
+              onChange={(e) => { setRawDescription(e.target.value); setParseError(null); }}
+              autoFocus
+            />
+
+            <div className={styles.describeCharCount}>
+              {rawDescription.length} / 1000
+            </div>
+
+            {parseError && (
+              <p className={styles.describeError}>{parseError}</p>
+            )}
+
+            <div className={styles.describeActions}>
+              <button
+                className={styles.describeSkip}
+                type="button"
+                onClick={() => setStage('form')}
+              >
+                Skip — fill in manually
+              </button>
+              <button
+                className={styles.describeBtn}
+                type="button"
+                onClick={handleAnalyze}
+                disabled={parseMutation.isPending || rawDescription.trim().length < 20}
+              >
+                {parseMutation.isPending ? (
+                  <>
+                    <Spinner size="sm" />
+                    Analyzing…
+                  </>
+                ) : (
+                  <>✦ Analyze &amp; Pre-fill Form</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Stage 2: Form ─────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
       <div className={styles.container}>
 
         {/* ── Page header ── */}
         <div className={styles.pageHeader}>
+          <div className={styles.pageHeaderTop}>
+            <button
+              type="button"
+              className={styles.backToDescribe}
+              onClick={() => { setStage('describe'); setErrors({}); }}
+            >
+              ← Edit description
+            </button>
+            {aiAssisted && (
+              <span className={styles.aiPrefilledBadge}>✦ Pre-filled by AI</span>
+            )}
+          </div>
           <h1 className={styles.heading}>{t.postJob.title}</h1>
           <p className={styles.subheading}>{t.postJob.subtitle}</p>
         </div>

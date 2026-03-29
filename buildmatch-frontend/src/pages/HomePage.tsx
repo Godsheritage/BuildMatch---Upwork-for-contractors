@@ -1,11 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   Zap, Droplets, Wind, Home, Layers, Paintbrush,
   Trees, Hammer, Wrench, Building2,
-  ShieldCheck, DollarSign, Star, Clock, ArrowRight,
-  MapPin, CheckCircle2, Search,
+  ArrowRight, Search,
 } from 'lucide-react';
 import { useContractorSearch } from '../hooks/useContractorSearch';
 import { ContractorSearchResults } from '../components/contractor/ContractorSearchResults';
@@ -56,100 +55,24 @@ const HOW_CONTRACTOR = [
   },
 ];
 
-const BENEFITS = [
-  {
-    icon: ShieldCheck,
-    title: 'Verified credentials',
-    desc: 'Every contractor\'s license and insurance are reviewed before they can bid on projects. Hire with confidence.',
-  },
-  {
-    icon: DollarSign,
-    title: 'Competitive bids',
-    desc: 'Post once, get multiple quotes. Compare proposals side-by-side to find the best fit for your budget.',
-  },
-  {
-    icon: Star,
-    title: 'Ratings you can trust',
-    desc: 'Transparent reviews from real investors after every completed project — no fake ratings, ever.',
-  },
-];
-
-const FEATURED_CONTRACTORS = [
-  {
-    initials: 'MJ',
-    color: { bg: '#DBEAFE', text: '#1E40AF' },
-    name: 'Marcus Johnson',
-    location: 'San Francisco, CA',
-    rating: 4.9,
-    reviews: 47,
-    bio: 'Licensed master electrician with 12 years of experience in residential and commercial wiring, panel upgrades, and smart home installs.',
-    tags: ['Electrician', 'Licensed', 'Insured'],
-    rate: '$85–120/hr',
-    jobs: 34,
-  },
-  {
-    initials: 'SR',
-    color: { bg: '#D1FAE5', text: '#065F46' },
-    name: 'Sofia Ramirez',
-    location: 'Austin, TX',
-    rating: 4.8,
-    reviews: 31,
-    bio: 'General contractor specializing in kitchen and bathroom renovations. Known for clean timelines and transparent communication.',
-    tags: ['General Contractor', 'Remodeling'],
-    rate: '$65–90/hr',
-    jobs: 28,
-  },
-  {
-    initials: 'DW',
-    color: { bg: '#EDE9FE', text: '#5B21B6' },
-    name: 'Derek Williams',
-    location: 'Denver, CO',
-    rating: 4.7,
-    reviews: 22,
-    bio: 'HVAC technician certified in installation, maintenance, and repair of residential and light commercial systems.',
-    tags: ['HVAC', 'Licensed', 'Certified'],
-    rate: '$70–95/hr',
-    jobs: 19,
-  },
-];
-
 const TRUST_LOGOS = ['Greystar', 'Lincoln Property', 'Tricon', 'Aimco', 'Essex Property'];
 
-// ── Hero preview card ──────────────────────────────────────────────────────
-
-function HeroPreviewCard() {
-  const items = [
-    { initials: 'MJ', color: { bg: '#DBEAFE', text: '#1E40AF' }, name: 'Marcus Johnson', meta: 'Electrician · San Francisco', rate: '$85/hr' },
-    { initials: 'SR', color: { bg: '#D1FAE5', text: '#065F46' }, name: 'Sofia Ramirez',  meta: 'General Contractor · Austin',  rate: '$70/hr' },
-    { initials: 'DW', color: { bg: '#EDE9FE', text: '#5B21B6' }, name: 'Derek Williams', meta: 'HVAC · Denver',                rate: '$80/hr' },
-  ];
-  return (
-    <div className={styles.heroCard}>
-      <p className={styles.heroCardLabel}>Top contractors near you</p>
-      {items.map((c) => (
-        <div key={c.name} className={styles.heroCardItem}>
-          <div
-            className={styles.heroCardAvatar}
-            style={{ background: c.color.bg, color: c.color.text }}
-          >
-            {c.initials}
-          </div>
-          <div className={styles.heroCardInfo}>
-            <p className={styles.heroCardName}>{c.name}</p>
-            <p className={styles.heroCardMeta}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                <Star size={10} fill="#F59E0B" color="#F59E0B" />
-                <span>4.9</span>
-                <span style={{ marginLeft: 4 }}>{c.meta}</span>
-              </span>
-            </p>
-          </div>
-          <span className={styles.heroCardRate}>{c.rate}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+const SEARCH_EXAMPLES = [
+  'rehab a kitchen in Austin',
+  'fix a leaking roof in Denver',
+  'remodel a master bathroom in Chicago',
+  'install an HVAC system in Phoenix',
+  'replace flooring in a condo in Miami',
+  'rewire an electrical panel in Dallas',
+  'build a deck addition in Nashville',
+  'paint a 3-bedroom home in Seattle',
+  'repair foundation cracks in Houston',
+  'gut and renovate a basement in Detroit',
+  'replace windows in a duplex in Atlanta',
+  'build a garage in Portland',
+  'install hardwood floors in Boston',
+  'landscape a backyard in San Diego',
+];
 
 // ── Main page ──────────────────────────────────────────────────────────────
 
@@ -159,6 +82,58 @@ export function HomePage() {
   const [inputValue, setInputValue] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const resultsRef = useRef<HTMLDivElement>(null);
+  const [userCity, setUserCity] = useState<string | null>(null);
+
+  // Typewriter effect for search placeholder
+  const [typedText, setTypedText]     = useState('');
+  const [exampleIdx, setExampleIdx]   = useState(0);
+  const [isDeleting, setIsDeleting]   = useState(false);
+
+  useEffect(() => {
+    const current = SEARCH_EXAMPLES[exampleIdx];
+
+    if (!isDeleting && typedText === current) {
+      const pause = setTimeout(() => setIsDeleting(true), 2800);
+      return () => clearTimeout(pause);
+    }
+
+    if (isDeleting && typedText === '') {
+      setIsDeleting(false);
+      setExampleIdx((i) => (i + 1) % SEARCH_EXAMPLES.length);
+      return;
+    }
+
+    const speed = isDeleting ? 30 : 52;
+    const timer = setTimeout(() => {
+      setTypedText(isDeleting
+        ? current.slice(0, typedText.length - 1)
+        : current.slice(0, typedText.length + 1)
+      );
+    }, speed);
+
+    return () => clearTimeout(timer);
+  }, [typedText, isDeleting, exampleIdx]);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          const data = await res.json();
+          const city = data.city || data.locality || null;
+          if (city) setUserCity(city);
+        } catch {
+          // silently ignore — headline falls back to generic text
+        }
+      },
+      () => { /* permission denied — silently ignore */ },
+      { timeout: 8000 }
+    );
+  }, []);
 
   function handleSearch() {
     const q = inputValue.trim();
@@ -201,6 +176,11 @@ export function HomePage() {
 
       {/* ── HERO ───────────────────────────────────────── */}
       <section className={styles.hero}>
+        {/* Ambient background orbs */}
+        <div className={`${styles.heroOrb} ${styles.heroOrb1}`} />
+        <div className={`${styles.heroOrb} ${styles.heroOrb2}`} />
+        <div className={`${styles.heroOrb} ${styles.heroOrb3}`} />
+
         <div className={styles.heroInner}>
           <div className={styles.heroLeft}>
             <div className={styles.heroEyebrow}>
@@ -208,46 +188,49 @@ export function HomePage() {
               Built for the construction industry
             </div>
             <h1 className={styles.heroH1}>
-              Find trusted contractors{' '}
-              <span className={styles.heroHighlight}>for any build</span>
+              Find contractors{' '}
+              <span className={styles.heroHighlight}>for every specialty</span>
+              {userCity && (
+                <span className={styles.heroCity}> in {userCity}</span>
+              )}
             </h1>
             <p className={styles.heroSub}>
-              Connect with licensed, insured, and vetted contractors across every
-              trade — from electrical and plumbing to roofing and renovations.
+              Connect with <strong>licensed, insured, and vetted</strong> contractors across every
+              trade — from <strong>electrical</strong> and <strong>plumbing</strong> to <strong>roofing</strong> and <strong>renovations</strong>.
             </p>
             <div className={styles.searchRow}>
-              <Search size={16} className={styles.searchIcon} />
-              <input
-                className={styles.searchInput}
-                type="text"
-                placeholder="Describe your project — e.g. rehab a kitchen in Austin"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
-              />
-              <button
-                className={styles.searchBtn}
-                onClick={handleSearch}
-                disabled={isPending || inputValue.trim().length < 10}
-                type="button"
-              >
-                {isPending ? 'Searching…' : 'Find Contractors'}
-              </button>
+              <Search size={18} className={styles.searchIcon} />
+              <div className={styles.searchInputWrap}>
+                <input
+                  className={styles.searchInput}
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
+                />
+                {inputValue === '' && (
+                  <span className={styles.searchPlaceholder} aria-hidden>
+                    <span className={styles.searchPlaceholderLabel}>Describe your project: </span>
+                    {typedText}
+                    <span className={styles.searchCursor} />
+                  </span>
+                )}
+              </div>
+              <div className={styles.searchBtnWrap}>
+                <span className={styles.searchAiBadge}>
+                  <span className={styles.searchAiDot} />
+                  AI-powered
+                </span>
+                <button
+                  className={styles.searchBtn}
+                  onClick={handleSearch}
+                  disabled={isPending || inputValue.trim().length < 10}
+                  type="button"
+                >
+                  {isPending ? 'Searching…' : 'Find Contractors'}
+                </button>
+              </div>
             </div>
-            <div className={styles.heroCtaRow}>
-              <Link to="/contractors" className={styles.heroCtaPrimary}>
-                Browse All <ArrowRight size={16} strokeWidth={2.5} />
-              </Link>
-              <Link to="/register?role=CONTRACTOR" className={styles.heroCtaSecondary}>
-                I'm a Contractor
-              </Link>
-            </div>
-            <p className={styles.heroNote}>
-              Free to post. No subscription required.
-            </p>
-          </div>
-          <div className={styles.heroRight}>
-            <HeroPreviewCard />
           </div>
         </div>
       </section>
@@ -388,94 +371,6 @@ export function HomePage() {
               </Link>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ── BENEFITS ───────────────────────────────────── */}
-      <section className={styles.benefits}>
-        <div className={styles.benefitsHeader}>
-          <p className={styles.sectionEyebrow}>Why BuildMatch</p>
-          <h2 className={styles.sectionHeading}>Hire smarter, build faster</h2>
-        </div>
-        <div className={styles.benefitsGrid}>
-          {BENEFITS.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className={styles.benefitCard}>
-              <div className={styles.benefitIcon}>
-                <Icon size={22} color="var(--color-accent)" strokeWidth={1.75} />
-              </div>
-              <p className={styles.benefitTitle}>{title}</p>
-              <p className={styles.benefitDesc}>{desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── FEATURED CONTRACTORS ───────────────────────── */}
-      <section className={styles.featured}>
-        <div className={styles.featuredHeader}>
-          <div>
-            <p className={styles.sectionEyebrow}>Top talent</p>
-            <h2 className={styles.sectionHeading} style={{ marginBottom: 0 }}>
-              Meet our top-rated contractors
-            </h2>
-          </div>
-          <Link to="/contractors" className={styles.featuredViewAll}>
-            View all contractors →
-          </Link>
-        </div>
-        <div className={styles.featuredGrid}>
-          {FEATURED_CONTRACTORS.map((c) => (
-            <div key={c.name} className={styles.featuredCard}>
-              <div className={styles.featuredCardTop}>
-                <div
-                  className={styles.featuredAvatar}
-                  style={{ background: c.color.bg, color: c.color.text }}
-                >
-                  {c.initials}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p className={styles.featuredName}>{c.name}</p>
-                  <p className={styles.featuredMeta}>
-                    <MapPin size={11} strokeWidth={2} />
-                    {c.location}
-                  </p>
-                </div>
-                <div
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 4,
-                    fontSize: 12, fontWeight: 500, color: 'var(--color-text-primary)',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Star size={12} fill="#F59E0B" color="#F59E0B" />
-                  {c.rating}
-                  <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}>
-                    ({c.reviews})
-                  </span>
-                </div>
-              </div>
-
-              <p className={styles.featuredBio}>{c.bio}</p>
-
-              <div className={styles.featuredTags}>
-                {c.tags.map((tag) => (
-                  <span key={tag} className={styles.featuredTag}>{tag}</span>
-                ))}
-              </div>
-
-              <div className={styles.featuredFooter}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <CheckCircle2 size={12} color="var(--color-accent)" strokeWidth={2.5} />
-                  {c.jobs} jobs done
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Clock size={11} strokeWidth={2} />
-                  Responds in &lt;1 day
-                </span>
-                <span className={styles.featuredRateVal}>{c.rate}</span>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 

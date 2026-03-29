@@ -40,6 +40,22 @@ export async function summarizeThread(
   return res.data;
 }
 
+export interface ParsedJob {
+  title:       string | null;
+  tradeType:   string | null;
+  budgetMin:   number | null;
+  budgetMax:   number | null;
+  city:        string | null;
+  state:       string | null;
+  zipCode:     string | null;
+  description: string | null;
+}
+
+export async function parseJobDescription(text: string): Promise<ParsedJob> {
+  const { data: res } = await api.post<ApiResponse<ParsedJob>>('/ai/parse-job', { text });
+  return res.data;
+}
+
 export async function classifyPreview(
   title: string,
   description: string,
