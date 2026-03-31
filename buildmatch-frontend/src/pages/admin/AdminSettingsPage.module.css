@@ -1,0 +1,274 @@
+/* ── Section ─────────────────────────────────────────────────────────────── */
+
+.section {
+  margin-bottom: var(--space-10);
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-4);
+}
+
+/* ── Config card ─────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.configRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.configRow:last-child {
+  border-bottom: none;
+}
+
+.configLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.configLabelMain {
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.configLabelDesc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.configControl {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+/* ── Number input + save ─────────────────────────────────────────────────── */
+
+.numberInput {
+  width: 90px;
+  padding: 6px var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  outline: none;
+  text-align: right;
+}
+
+.numberInput:focus {
+  border-color: var(--color-primary);
+}
+
+.saveBtn {
+  min-width: 60px;
+}
+
+/* ── Toggle switch ───────────────────────────────────────────────────────── */
+
+.toggle {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background 180ms;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.toggleOff  { background: var(--color-border); }
+.toggleOn   { background: var(--color-accent); }
+.toggleDanger { background: var(--color-danger); }
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 180ms;
+  pointer-events: none;
+}
+
+.toggleOn .toggleThumb,
+.toggleDanger .toggleThumb {
+  transform: translateX(18px);
+}
+
+/* danger badge */
+.dangerBadge {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-danger);
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-pill);
+  padding: 2px 6px;
+  letter-spacing: var(--tracking-wide);
+}
+
+/* ── Feature Flags ───────────────────────────────────────────────────────── */
+
+.flagKey {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12px;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.rolloutCell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rolloutInput {
+  width: 56px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  outline: none;
+  text-align: right;
+}
+
+.rolloutInput:focus { border-color: var(--color-primary); }
+.rolloutInput:disabled { opacity: 0.5; }
+
+.rolloutPct {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ── Filter Patterns ─────────────────────────────────────────────────────── */
+
+.callout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: #92400E;
+  margin-bottom: var(--space-4);
+}
+
+.callout::before {
+  content: '⚠';
+  flex-shrink: 0;
+}
+
+.patternCode {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12px;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: 4px;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Type badges */
+.typeBadge_phone   { background: #EFF6FF; color: #1E40AF; }
+.typeBadge_email   { background: #F0FDF9; color: #065F46; }
+.typeBadge_social  { background: #FDF4FF; color: #7C3AED; }
+.typeBadge_payment { background: #FEF9C3; color: #854D0E; }
+.typeBadge_url     { background: #FEE2E2; color: #991B1B; }
+.typeBadgeDefault  { background: var(--color-surface); color: var(--color-text-muted); }
+
+/* ── Add Pattern Modal ───────────────────────────────────────────────────── */
+
+.addPatternModal {
+  max-width: 520px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin-bottom: var(--space-1);
+}
+
+.patternInput {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace !important;
+  margin-bottom: var(--space-3);
+}
+
+.inputError {
+  border-color: var(--color-danger) !important;
+}
+
+.errorText {
+  font-size: 12px;
+  color: var(--color-danger);
+  margin: 0 0 var(--space-3);
+}
+
+.testRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.testPass {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: #166534;
+  background: #DCFCE7;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  margin: 0 0 var(--space-3);
+  display: inline-block;
+}
+
+.testFail {
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: #991B1B;
+  background: #FEE2E2;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  margin: 0 0 var(--space-3);
+  display: inline-block;
+}

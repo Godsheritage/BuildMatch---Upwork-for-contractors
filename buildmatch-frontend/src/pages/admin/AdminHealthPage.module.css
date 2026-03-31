@@ -1,48 +1,289 @@
-.summary {
-  margin-bottom: var(--space-6);
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--space-4);
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+
+.page {
+  max-width: 1100px;
 }
 
-.serviceGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--space-4);
+/* ── Section ──────────────────────────────────────────────────────────────── */
+
+.section {
+  margin-bottom: var(--space-10);
 }
 
-.serviceCard {
+.sectionTitle {
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-4);
+}
+
+/* ── Service status row ───────────────────────────────────────────────────── */
+
+.statusRow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+@media (max-width: 900px) {
+  .statusRow { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .statusRow { grid-template-columns: 1fr 1fr; }
+}
+
+.statusCard {
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-5) var(--space-6);
-  box-shadow: var(--shadow-card);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.serviceCard.serviceErr {
-  border-color: #FCA5A5;
+.statusCardDown {
+  border-color: #FECACA;
   background: #FFF5F5;
 }
 
-.serviceName {
-  font-size: 13px;
+.statusCardDegraded {
+  border-color: #FDE68A;
+  background: #FFFBEB;
+}
+
+.statusCardName {
+  font-size: 11px;
   font-weight: var(--font-weight-medium);
   color: var(--color-text-muted);
-  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
 }
 
-.serviceStatus {
-  font-size: 22px;
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: var(--tracking-tight);
-}
-
-.ok      { color: #166534; }
-.err     { color: var(--color-danger); }
-.pending { color: var(--color-text-muted); }
-
-.serviceLatency {
+.statusCardMetric {
   font-size: 12px;
   color: var(--color-text-muted);
-  margin-top: var(--space-1);
+}
+
+/* ── Status badge ─────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  width: fit-content;
+  text-transform: capitalize;
+}
+
+.badgeHealthy  { background: #DCFCE7; color: #166534; }
+.badgeDegraded { background: #FEF3C7; color: #92400E; }
+.badgeDown     { background: #FEE2E2; color: #991B1B; }
+
+.badgeIcon {
+  flex-shrink: 0;
+}
+
+/* ── Chart ────────────────────────────────────────────────────────────────── */
+
+.chartSkeleton {
+  width: 100%;
+  height: 240px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1;   }
+  50%       { opacity: 0.4; }
+}
+
+.emptyChart {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+  padding: var(--space-8) 0;
+  text-align: center;
+}
+
+/* ── Tooltip ──────────────────────────────────────────────────────────────── */
+
+.tooltip {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.tooltipLabel {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 4px;
+}
+
+.tooltipRow {
+  margin: 2px 0;
+  color: var(--color-text-primary);
+}
+
+.tooltipWarn {
+  color: #DC2626;
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── Error log specifics ──────────────────────────────────────────────────── */
+
+.clearBtn {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clearBtn:hover { color: var(--color-danger); }
+
+.totalCount {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.errorRow td { vertical-align: middle; }
+
+.endpointCode {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12px;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.methodBadge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  font-family: 'SF Mono', monospace;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.methodGET    { background: #EFF6FF; color: #1E40AF; border-color: #BFDBFE; }
+.methodPOST   { background: #F0FDF9; color: #065F46; border-color: #A7F3D0; }
+.methodPUT    { background: #FEF9C3; color: #854D0E; border-color: #FDE68A; }
+.methodDELETE { background: #FEE2E2; color: #991B1B; border-color: #FECACA; }
+.methodPATCH  { background: #FDF4FF; color: #7C3AED; border-color: #E9D5FF; }
+
+.errorMsg {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  max-width: 320px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.repeatBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  background: #FEE2E2;
+  color: #991B1B;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.userId {
+  font-family: 'SF Mono', monospace;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* ── Empty healthy state ──────────────────────────────────────────────────── */
+
+.emptyHealthy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) 0;
+}
+
+.emptyCheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #DCFCE7;
+  color: #166534;
+  font-size: 20px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.emptyMsg {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* ── Background jobs ──────────────────────────────────────────────────────── */
+
+.jobName {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12px;
+  color: var(--color-text-primary);
+}
+
+.jobFailedRow td {
+  background: #FFF5F5;
+}
+
+.jobErrorRow td {
+  background: #FFF5F5;
+  padding-top: 0;
+  padding-bottom: var(--space-3);
+}
+
+.jobErrorMsg {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  color: var(--color-danger);
+  padding-left: var(--space-4);
+}
+
+.jobErrorIcon {
+  flex-shrink: 0;
+  color: var(--color-danger);
+}
+
+.failCount {
+  color: var(--color-danger);
+  font-size: 11px;
 }

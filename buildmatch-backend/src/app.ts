@@ -27,6 +27,7 @@ import disputeRoutes from './routes/dispute.routes';
 import adminRouter from './routes/admin/index';
 import savedRoutes from './routes/saved.routes';
 import { errorHandler } from './middleware/error.middleware';
+import { requestTimer } from './middleware/requestTimer.middleware';
 import { authenticate, requireRole } from './middleware/auth.middleware';
 import { sendSuccess, sendError } from './utils/response.utils';
 import { computeAllReliabilityScores } from './services/ai/reliability-score.service';
@@ -34,6 +35,9 @@ import { computeAllReliabilityScores } from './services/ai/reliability-score.ser
 dotenv.config();
 
 const app = express();
+
+// Request timer — must be first so the clock starts before any other middleware
+app.use(requestTimer);
 
 // Security headers
 app.use(helmet());

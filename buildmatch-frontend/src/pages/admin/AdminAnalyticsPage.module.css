@@ -1,0 +1,211 @@
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+
+.page {
+  max-width: 1100px;
+}
+
+/* ── Period pill selector ─────────────────────────────────────────────────── */
+
+.periodPills {
+  display: flex;
+  gap: 2px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+
+.periodPill {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 80ms, color 80ms;
+}
+
+.periodPill:hover {
+  color: var(--color-text-primary);
+}
+
+.periodPillActive {
+  background: var(--color-bg);
+  color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Section ──────────────────────────────────────────────────────────────── */
+
+.section {
+  margin-bottom: var(--space-10);
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-4);
+}
+
+.sectionDesc {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-3);
+}
+
+/* ── Stat row (mini cards below charts) ───────────────────────────────────── */
+
+.statRow {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+
+.statCard {
+  flex: 1;
+  min-width: 120px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.statValue {
+  font-size: 22px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── Chart skeleton ───────────────────────────────────────────────────────── */
+
+.chartSkeleton {
+  width: 100%;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1;   }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Custom tooltip ───────────────────────────────────────────────────────── */
+
+.tooltip {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.tooltipLabel {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 4px;
+}
+
+.tooltipRow {
+  margin: 2px 0;
+}
+
+/* ── Funnel ───────────────────────────────────────────────────────────────── */
+
+.funnel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.funnelRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 60px 80px;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.funnelLabel {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.funnelBarWrap {
+  background: var(--color-surface);
+  border-radius: var(--radius-pill);
+  height: 16px;
+  overflow: hidden;
+}
+
+.funnelBar {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 400ms ease;
+  min-width: 4px;
+}
+
+.funnelCount {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-align: right;
+}
+
+.funnelPct {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+/* ── Geographic ───────────────────────────────────────────────────────────── */
+
+.supplyGapRow td {
+  background: #FFFBEB;
+}
+
+.gapBadge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  background: #FEF3C7;
+  color: #92400E;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.gapNote {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: var(--space-2) 0 0;
+}
+
+/* ── Search gaps ──────────────────────────────────────────────────────────── */
+
+.queryCode {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 12px;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: 4px;
+}

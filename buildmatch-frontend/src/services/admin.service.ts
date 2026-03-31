@@ -88,30 +88,112 @@ export interface AdminContractor {
 export interface AdminJob {
   id: string; title: string; tradeType: string; status: string;
   city: string; state: string; budgetMin: number; budgetMax: number;
-  bidCount: number; investorId: string; investorName: string; createdAt: string;
-  // detail only:
-  description?: string; zipCode?: string;
-  bids?: { id: string; contractorId: string; contractorName: string; amount: number; status: string; createdAt: string }[];
+  bidCount: number; photoCount: number; videoCount: number;
+  investorId: string; investorName: string;
+  disputeCount: number; isFeatured: boolean; isFlagged: boolean;
+  createdAt: string;
 }
 
+export interface AdminJobBid {
+  id: string; contractorId: string; contractorName: string; contractorAvatar: string | null;
+  amount: number; status: string; createdAt: string;
+}
+
+export interface AdminJobConversationPreview {
+  id: string; contractorId: string; contractorName: string;
+  lastMessageAt: string | null; messageCount: number; lastMessage: string | null;
+}
+
+export interface AdminJobEscrow {
+  id: string; totalAmount: number; platformFeeAmount: number;
+  status: string; stripePaymentIntentId: string | null;
+  milestones: {
+    id: string; title: string; amount: number; percentage: number;
+    order: number; status: string; releasedAt: string | null; approvedAt: string | null;
+  }[];
+  createdAt: string;
+}
+
+export interface AdminJobDetail extends AdminJob {
+  description: string; zipCode: string; photos: string[]; flaggedReason: string | null;
+  bids: AdminJobBid[];
+  conversations: AdminJobConversationPreview[];
+  disputes: { id: string; status: string; category: string; filedById: string; againstId: string; createdAt: string }[];
+  escrow: AdminJobEscrow | null;
+  statusTimeline: { action: string; adminId: string | null; note: string | null; payload: Record<string, unknown>; createdAt: string }[];
+}
+
+export interface ContentQueueItem {
+  id: string; title: string; tradeType: string; status: string;
+  city: string; state: string; investorId: string; investorName: string;
+  flaggedReason: string | null; bidCount: number; createdAt: string;
+}
+
+// v2 dispute schema (disputes table in Supabase)
 export interface AdminDispute {
-  id: string; jobId: string; jobTitle: string; filedById: string; filedByName: string;
-  againstId: string; againstName: string; status: string; category: string;
-  amountDisputed: number; createdAt: string; lastActivityAt: string;
+  id: string; jobId: string; jobTitle: string;
+  filedById: string; filedByName: string;
+  otherPartyId: string | null; otherPartyName: string;
+  milestoneDraw: number; amountDisputed: number;
+  status: string; daysOpen: number; noteCount: number;
+  createdAt: string; updatedAt: string;
+}
+
+interface DisputeParty {
+  id: string; firstName: string; lastName: string;
+  email: string; avatarUrl: string | null; joinedAt: string;
+  profile: {
+    id: string; specialties: string[]; averageRating: number; completedJobs: number;
+    yearsExperience?: number; isLicenseVerified?: boolean; reliabilityScore?: number;
+  } | null;
+}
+
+interface DisputeMessage {
+  id: string; senderId: string; senderName: string;
+  content: string; isFiltered: boolean; createdAt: string;
+}
+
+interface DisputeNote {
+  id: string; adminId: string; adminName: string;
+  content: string; createdAt: string;
+}
+
+interface DisputeMilestone {
+  id: string; order: number; title: string; description: string | null;
+  amount: number; percentage: number; status: string;
+  completionNotes: string | null; disputeReason: string | null;
+  approvedAt: string | null; releasedAt: string | null;
+}
+
+interface DisputeEscrow {
+  id: string; totalAmount: number; platformFee: number;
+  status: string; stripePaymentId: string;
+  milestones: { id: string; order: number; title: string; amount: number; percentage: number; status: string }[];
 }
 
 export interface AdminDisputeDetail {
-  id: string; jobId: string; jobTitle: string; filedById: string; againstId: string;
-  status: string; ruling: string | null; rulingNote: string | null;
-  amountDisputed: number; category: string; description: string; desiredOutcome: string;
-  resolvedAt: string | null; lastActivityAt: string; createdAt: string;
-  filedBy: { id: string; firstName: string; lastName: string; avatarUrl: string | null; role: string };
-  against: { id: string; firstName: string; lastName: string; avatarUrl: string | null; role: string };
-  evidenceCount: number; messageCount: number;
+  dispute: {
+    id: string; jobId: string; filedById: string; milestoneDraw: number;
+    amountDisputed: number; reason: string; status: string;
+    ruling: string | null; rulingNote: string | null;
+    rulingBy: string | null; rulingAt: string | null;
+    daysOpen: number; createdAt: string; updatedAt: string;
+  };
+  job: {
+    id: string; title: string; description: string; tradeType: string;
+    budgetMin: number; budgetMax: number; city: string; state: string;
+    status: string; photos: string[]; createdAt: string;
+  } | null;
+  investor:   DisputeParty | null;
+  contractor: DisputeParty | null;
+  messages:   DisputeMessage[];
+  milestone:  DisputeMilestone | null;
+  notes:      DisputeNote[];
+  escrow:     DisputeEscrow | null;
 }
 
 export interface AuditLogEntry {
-  id: string; adminId: string; action: string;
+  id: string; adminId: string; adminName: string | null; action: string;
   targetType: string; targetId: string;
   payload: Record<string, unknown> | null;
   ipAddress: string | null; note: string | null;
@@ -223,11 +305,29 @@ export const setAvailability = (profileId: string, isAvailable: boolean) =>
 export const getJobs = (params: Record<string, unknown>) =>
   api.get('/admin/jobs', { params }).then(data<PageResponse<AdminJob>>);
 
-export const getJobById   = (id: string) =>
+export const getJobById = (id: string) =>
   api.get(`/admin/jobs/${id}`).then(data<AdminJob>);
+
+export const getJobFull = (id: string) =>
+  api.get(`/admin/jobs/${id}`).then(data<AdminJobDetail>);
+
+export const getJobContentQueue = () =>
+  api.get('/admin/jobs/content-queue').then(data<ContentQueueItem[]>);
 
 export const forceCloseJob = (id: string, note?: string) =>
   api.put(`/admin/jobs/${id}/force-close`, { note });
+
+export const removeJob = (id: string, reason: string) =>
+  api.post(`/admin/jobs/${id}/remove`, { reason });
+
+export const toggleFeatureJob = (id: string) =>
+  api.post(`/admin/jobs/${id}/feature`);
+
+export const changeJobStatus = (id: string, newStatus: string, reason: string) =>
+  api.post(`/admin/jobs/${id}/change-status`, { newStatus, reason });
+
+export const flagJob = (id: string, reason: string) =>
+  api.post(`/admin/jobs/${id}/flag`, { reason });
 
 // ── Disputes ──────────────────────────────────────────────────────────────────
 
@@ -237,11 +337,77 @@ export const getAdminDisputes = (params: Record<string, unknown>) =>
 export const getAdminDisputeById = (id: string) =>
   api.get(`/admin/disputes/${id}`).then(data<AdminDisputeDetail>);
 
-export const recordRuling = (id: string, ruling: string, note?: string) =>
-  api.post(`/admin/disputes/${id}/ruling`, { ruling, note });
+export const submitDisputeRuling = (
+  id: string,
+  payload: { ruling: string; rulingNote: string; splitPct?: number },
+) => api.post(`/admin/disputes/${id}/ruling`, payload);
+
+export const addDisputeNote = (id: string, content: string) =>
+  api.post(`/admin/disputes/${id}/note`, { content });
+
+export const requestDisputeInfo = (
+  id: string,
+  targetUserId: string,
+  message: string,
+) => api.post(`/admin/disputes/${id}/request-info`, { targetUserId, message });
 
 export const updateDisputeStatus = (id: string, status: string, note?: string) =>
   api.put(`/admin/disputes/${id}/status`, { status, note });
+
+// ── Moderation ────────────────────────────────────────────────────────────────
+
+export interface FilteredMessage {
+  id: string; conversationId: string; jobId: string; jobTitle: string;
+  sender:    { id: string; name: string; email: string; role: string };
+  recipient: { id: string; name: string; email: string; role: string } | null;
+  filteredContent: string;
+  filterReason: string | null;
+  createdAt: string;
+  senderFilterCount: number;
+}
+
+export interface ModerationContentQueueItem {
+  type: 'job' | 'review';
+  id: string;
+  contentPreview: string;
+  reason: string | null;
+  reporter: { id: string; name: string; email: string } | null;
+  createdAt: string;
+}
+
+export interface ModerationFlaggedUser {
+  id: string; email: string; firstName: string; lastName: string;
+  role: string; isActive: boolean; isBanned: boolean; avatarUrl: string | null;
+  flaggedForReview: boolean;
+  filterCount: number; warningCount: number; disputeLossCount: number;
+  severityScore: number; createdAt: string;
+}
+
+export const getFilteredMessages = (params: Record<string, unknown>) =>
+  api.get('/admin/moderation/filtered-messages', { params }).then(data<PageResponse<FilteredMessage>>);
+
+export const getModerationContentQueue = () =>
+  api.get('/admin/moderation/content-queue').then(data<{ queue: ModerationContentQueueItem[]; total: number }>);
+
+export const getModerationFlaggedUsers = () =>
+  api.get('/admin/moderation/flagged-users').then(data<{ users: ModerationFlaggedUser[] }>);
+
+export const warnMessageUser = (messageId: string) =>
+  api.post(`/admin/moderation/messages/${messageId}/warn-user`);
+
+export const escalateMessageUser = (messageId: string) =>
+  api.post(`/admin/moderation/messages/${messageId}/escalate`).then(
+    data<{ escalated: boolean; totalFlags: number; suggestedAction: string | null }>
+  );
+
+export const warnUserDirectly = (userId: string, reason: string) =>
+  api.post(`/admin/moderation/users/${userId}/warn`, { reason });
+
+export const approveModerationContent = (type: string, id: string) =>
+  api.post(`/admin/moderation/content/${type}/${id}/approve`);
+
+export const removeModerationContent = (type: string, id: string, reason: string) =>
+  api.post(`/admin/moderation/content/${type}/${id}/remove`, { reason });
 
 // ── Audit Log ─────────────────────────────────────────────────────────────────
 
@@ -274,3 +440,349 @@ export const banEmail   = (email: string, reason?: string) =>
 
 export const unbanEmail = (email: string) =>
   api.delete(`/admin/banned-emails/${encodeURIComponent(email)}`);
+
+// ── Finance ───────────────────────────────────────────────────────────────────
+
+export type TransactionType = 'escrow_deposit' | 'milestone_release' | 'fee' | 'refund' | 'payout';
+
+export interface FinanceSummary {
+  totalGmvAllTime:         number;
+  totalGmvThisMonth:       number;
+  totalGmvLastMonth:       number;
+  totalRevenueAllTime:     number;
+  totalRevenueThisMonth:   number;
+  totalRevenueLastMonth:   number;
+  fundsCurrentlyInEscrow:  number;
+  avgJobValue:             number;
+  totalTransactions:       number;
+  failedTransactions:      number;
+  pendingPayouts:          number;
+  failedPayouts:           number;
+}
+
+export interface FinanceTransaction {
+  id:             string;
+  jobId:          string;
+  jobTitle:       string;
+  investorName:   string;
+  contractorName: string;
+  type:           TransactionType;
+  amount:         number;
+  platformFee:    number;
+  netAmount:      number;
+  status:         string;
+  stripeId:       string | null;
+  createdAt:      string;
+}
+
+export interface FinanceTransactionPage {
+  data:       FinanceTransaction[];
+  total:      number;
+  page:       number;
+  totalPages: number;
+  limit:      number;
+}
+
+export interface FinancePayout {
+  id:              string;
+  contractorId:    string;
+  contractorName:  string;
+  jobId:           string;
+  jobTitle:        string;
+  amount:          number;
+  stripePayoutId:  string | null;
+  status:          string;
+  createdAt:       string;
+}
+
+export interface FailedItem {
+  id:          string;
+  type:        'failed_deposit' | 'failed_payout';
+  jobId:       string | null;
+  jobTitle:    string | null;
+  partyName:   string;
+  amount:      number;
+  stripeId:    string | null;
+  status:      string;
+  createdAt:   string;
+}
+
+export const getFinanceSummary = () =>
+  api.get('/admin/finance/summary').then(data<FinanceSummary>);
+
+export const getFinanceTransactions = (params: Record<string, unknown>) =>
+  api.get('/admin/finance/transactions', { params }).then(data<FinanceTransactionPage>);
+
+export const getFinancePayouts = (params: Record<string, unknown>) =>
+  api.get('/admin/finance/payouts', { params }).then(data<{ payouts: FinancePayout[] }>);
+
+export const retryPayout = (payoutId: string) =>
+  api.post(`/admin/finance/payouts/${payoutId}/retry`).then(data<{ stripeTransferId: string }>);
+
+export const getFailedTransactions = () =>
+  api.get('/admin/finance/failed-transactions').then(data<{ items: FailedItem[] }>);
+
+export const issueRefund = (jobId: string, amount: number, reason: string) =>
+  api.post('/admin/finance/refund', { jobId, amount, reason }).then(data<{ stripeRefundId: string }>);
+
+// ── Reviews ───────────────────────────────────────────────────────────────────
+
+export interface AdminReviewListItem {
+  id:                  string;
+  title:               string;
+  contentPreview:      string;
+  body:                string;
+  rating:              number;
+  reviewerRole:        string;
+  reviewerId:          string;
+  reviewerName:        string;
+  reviewerEmail:       string;
+  contractorName:      string;
+  contractorProfileId: string | null;
+  jobId:               string;
+  isFlagged:           boolean;
+  isDeleted:           boolean;
+  createdAt:           string;
+}
+
+export interface ReviewAnomalies {
+  ratingDrops:          { type: 'rating_drop'; contractorId: string; contractorProfileId: string; name: string; oldAvg: number; currentAvg: number; drop: number }[];
+  potentialFakeSeeding: { type: 'potential_fake_seeding'; contractorId: string; contractorProfileId: string; name: string; averageRating: number; totalReviews: number }[];
+  duplicateContent:     { type: 'duplicate_content'; reviewerId: string; name: string; email: string; body: string; contractorCount: number }[];
+}
+
+export const getAdminReviews = (params: Record<string, unknown>) =>
+  api.get('/admin/reviews', { params }).then(data<PageResponse<AdminReviewListItem>>);
+
+export const getAdminReviewAnomalies = () =>
+  api.get('/admin/reviews/anomalies').then(data<ReviewAnomalies>);
+
+export const approveReview  = (id: string) => api.post(`/admin/reviews/${id}/approve`);
+export const removeReview   = (id: string, reason: string) => api.post(`/admin/reviews/${id}/remove`, { reason });
+export const editReview     = (id: string, newContent: string) => api.post(`/admin/reviews/${id}/edit`, { newContent });
+export const flagReview     = (id: string) => api.post(`/admin/reviews/${id}/flag`);
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+
+export interface UserGrowthData {
+  labels:      string[];
+  investors:   number[];
+  contractors: number[];
+  total:       number[];
+}
+
+export interface JobFunnelData {
+  posted:                 number;
+  received_bids:          number;
+  awarded:                number;
+  in_progress:            number;
+  completed:              number;
+  completion_rate:        number;
+  avg_bids_per_job:       number;
+  avg_time_to_award_days: number;
+}
+
+export interface RevenueData {
+  labels:         string[];
+  gmv:            number[];
+  revenue:        number[];
+  jobs_completed: number[];
+}
+
+export interface GeographicEntry {
+  state:            string;
+  investor_count:   number;
+  contractor_count: number;
+  job_count:        number;
+  gmv:              number;
+}
+
+export interface GeographicGap {
+  state:            string;
+  investor_count:   number;
+  contractor_count: number;
+  job_count:        number;
+  gap_score:        number;
+}
+
+export interface GeographicData {
+  states: GeographicEntry[];
+  gaps:   GeographicGap[];
+}
+
+export interface RetentionData {
+  investor_repeat_rate:      number;
+  contractor_active_90d:     number;
+  avg_jobs_per_investor:     number;
+  avg_bids_per_contractor:   number;
+}
+
+export interface SearchGapQuery {
+  query:        string;
+  count:        number;
+  last_searched: string;
+}
+
+export interface SearchGapsData {
+  queries:                    SearchGapQuery[];
+  period:                     string;
+  total_zero_result_searches: number;
+}
+
+export const getUserGrowth      = (params: Record<string, unknown>) =>
+  api.get('/admin/analytics/user-growth', { params }).then(data<UserGrowthData>);
+
+export const getJobFunnel       = () =>
+  api.get('/admin/analytics/job-funnel').then(data<JobFunnelData>);
+
+export const getRevenueOverTime = (params: Record<string, unknown>) =>
+  api.get('/admin/analytics/revenue-over-time', { params }).then(data<RevenueData>);
+
+export const getGeographic      = () =>
+  api.get('/admin/analytics/geographic').then(data<GeographicData>);
+
+export const getRetention       = () =>
+  api.get('/admin/analytics/retention').then(data<RetentionData>);
+
+export const getSearchGaps      = () =>
+  api.get('/admin/analytics/search-gaps').then(data<SearchGapsData>);
+
+// ── Health ────────────────────────────────────────────────────────────────────
+
+export type ServiceHealthStatus = 'healthy' | 'degraded' | 'down';
+
+export interface HourlyPerf {
+  hour:  string;
+  avgMs: number;
+  p95Ms: number;
+  count: number;
+}
+
+export interface HealthStatusData {
+  api: {
+    status:             ServiceHealthStatus;
+    avgResponseMs:      number;
+    p95ResponseMs:      number;
+    hourlyPerformance:  HourlyPerf[];
+  };
+  database: {
+    status:             ServiceHealthStatus;
+    queryAvgMs:         number;
+    connectionPoolUsed: number;
+  };
+  storage: {
+    status:             ServiceHealthStatus;
+    avatarsBucketMb:    number;
+    jobPhotosBucketMb:  number;
+    jobVideosBucketMb:  number;
+  };
+  stripe: {
+    status:                ServiceHealthStatus;
+    lastWebhookReceivedAt: string | null;
+  };
+  supabaseRealtime: {
+    status:            ServiceHealthStatus;
+    activeConnections: number;
+  };
+}
+
+export interface ApiErrorEntry {
+  id:          string;
+  endpoint:    string;
+  method:      string;
+  status_code: number;
+  error_msg:   string | null;
+  user_id:     string | null;
+  created_at:  string;
+}
+
+export interface BackgroundJobRun {
+  id:          string;
+  job_name:    string;
+  status:      string;
+  error_msg:   string | null;
+  duration_ms: number | null;
+  created_at:  string;
+}
+
+export interface BackgroundJobSummary {
+  job_name:    string;
+  last_run_at: string | null;
+  status:      string;
+  error_msg:   string | null;
+  run_count:   number;
+  fail_count:  number;
+}
+
+export interface BackgroundJobsData {
+  jobs:    BackgroundJobSummary[];
+  since:   string;
+  rawRuns: BackgroundJobRun[];
+}
+
+export const getHealthStatus    = () =>
+  api.get('/admin/health/status').then(data<HealthStatusData>);
+
+export const getHealthErrors    = (params: Record<string, unknown>) =>
+  api.get('/admin/health/errors', { params }).then(data<PageResponse<ApiErrorEntry>>);
+
+export const getBackgroundJobs  = () =>
+  api.get('/admin/health/background-jobs').then(data<BackgroundJobsData>);
+
+export const triggerBackgroundJob = (jobName: string) =>
+  api.post(`/admin/health/jobs/${encodeURIComponent(jobName)}/trigger`)
+     .then(data<{ triggered: boolean; jobName: string; runId: string }>);
+
+// ── Settings v2 (combined settings + flags) ───────────────────────────────────
+
+export interface FilterPattern {
+  id:          string;
+  pattern:     string;
+  type:        string;
+  description: string;
+  addedAt:     string;
+}
+
+export interface SettingsAndFlags {
+  settings: PlatformSetting[];
+  flags:    FeatureFlag[];
+}
+
+export const getAdminSettingsAll = () =>
+  api.get('/admin/settings').then(data<SettingsAndFlags>);
+
+export const updateSettingWithNote = (key: string, value: unknown, note?: string) =>
+  api.put(`/admin/settings/${encodeURIComponent(key)}`, { value, note })
+     .then(data<PlatformSetting>);
+
+export const updateFeatureFlagViaSettings = (key: string, enabled: boolean, rolloutPct?: number) =>
+  api.put(`/admin/settings/flags/${encodeURIComponent(key)}`, { enabled, rolloutPct })
+     .then(data<FeatureFlag>);
+
+export const getFilterPatterns = () =>
+  api.get('/admin/settings/filter-patterns').then(data<{ patterns: FilterPattern[] }>);
+
+export const addFilterPattern = (pattern: string, type: string, description: string) =>
+  api.post('/admin/settings/filter-patterns', { pattern, type, description })
+     .then(data<{ pattern: FilterPattern }>);
+
+export const deleteFilterPattern = (patternId: string) =>
+  api.delete(`/admin/settings/filter-patterns/${encodeURIComponent(patternId)}`);
+
+// ── Audit log export ──────────────────────────────────────────────────────────
+
+export async function exportAuditLog(params: Record<string, unknown>): Promise<void> {
+  const res = await api.get('/admin/audit/export', {
+    params:       { ...params, format: 'csv' },
+    responseType: 'blob',
+  });
+  const blob      = new Blob([res.data as BlobPart], { type: 'text/csv' });
+  const url       = URL.createObjectURL(blob);
+  const a         = document.createElement('a');
+  a.href          = url;
+  a.download      = `audit-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

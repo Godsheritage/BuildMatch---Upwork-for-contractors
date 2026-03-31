@@ -30,6 +30,26 @@ export async function getSettings(): Promise<PlatformSetting[]> {
   }));
 }
 
+// ── getSetting ────────────────────────────────────────────────────────────────
+
+export async function getSetting(key: string): Promise<PlatformSetting | null> {
+  const { data, error } = await getServiceClient()
+    .from('platform_settings')
+    .select('*')
+    .eq('key', key)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    key:         data.key as string,
+    value:       data.value,
+    description: data.description as string | null,
+    updatedBy:   data.updated_by as string | null,
+    updatedAt:   data.updated_at as string,
+  };
+}
+
 // ── updateSetting ─────────────────────────────────────────────────────────────
 
 export async function updateSetting(
