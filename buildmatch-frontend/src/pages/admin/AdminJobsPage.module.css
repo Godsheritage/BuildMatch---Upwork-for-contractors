@@ -1,0 +1,268 @@
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 100ms;
+  white-space: nowrap;
+}
+
+.tab:hover { color: var(--color-text-primary); }
+
+.tabActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.tabCountAmber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+/* ── Filter bar ───────────────────────────────────────────────────────────── */
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+  max-width: 280px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+/* ── Pill group ───────────────────────────────────────────────────────────── */
+
+.pillGroup {
+  display: flex;
+  gap: 2px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 100ms, color 100ms;
+  white-space: nowrap;
+}
+
+.pill:hover {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.pillActive {
+  background: var(--color-bg);
+  color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.pillFeatured {
+  background: #FFFBEB;
+  color: #92400E;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Clear button ─────────────────────────────────────────────────────────── */
+
+.clearBtn {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  margin-left: auto;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clearBtn:hover { color: var(--color-danger); }
+
+/* ── Title cell ───────────────────────────────────────────────────────────── */
+
+.titleCell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 220px;
+}
+
+.titleSub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Icons ────────────────────────────────────────────────────────────────── */
+
+.starIcon {
+  color: #F59E0B;
+  flex-shrink: 0;
+}
+
+.flagIcon {
+  color: #BA7517;
+  flex-shrink: 0;
+}
+
+/* ── Dispute pill ─────────────────────────────────────────────────────────── */
+
+.disputePill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  font-size: 9px;
+  font-weight: var(--font-weight-semibold);
+  background: #FEE2E2;
+  color: #991B1B;
+  flex-shrink: 0;
+}
+
+/* ── Flag reason text ─────────────────────────────────────────────────────── */
+
+.flagReasonText {
+  font-size: 12px;
+  color: #92400E;
+  max-width: 200px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Kebab row actions ────────────────────────────────────────────────────── */
+
+.kebab {
+  position: relative;
+}
+
+.kebabTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  letter-spacing: 0;
+  transition: background 100ms;
+}
+
+.kebabTrigger:hover {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.kebabMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  min-width: 148px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.kebabItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 80ms;
+}
+
+.kebabItem:hover { background: var(--color-surface); }
+
+.kebabDanger { color: var(--color-danger); }
+.kebabDanger:hover { background: #FEF2F2; }
+
+/* ── Remove modal ─────────────────────────────────────────────────────────── */
+
+.modalDanger { color: var(--color-danger); }
+
+.modalLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.modalRequired { color: var(--color-danger); }
+
+.phraseInput {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.phraseInput:focus { border-color: var(--color-danger); }

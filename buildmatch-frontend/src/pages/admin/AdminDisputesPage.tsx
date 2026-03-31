@@ -1,200 +1,179 @@
 import { useState } from 'react';
-import {
-  useAdminDisputes, useAdminDispute, useRecordRuling, useUpdateDisputeStatus,
-} from '../../hooks/useAdmin';
+import { useNavigate } from 'react-router-dom';
+import { useAdminDisputes } from '../../hooks/useAdmin';
 import sh from './admin-shared.module.css';
+import s from './AdminDisputesPage.module.css';
 
-const DISPUTE_STATUSES = ['OPEN','UNDER_REVIEW','AWAITING_EVIDENCE','PENDING_RULING','RESOLVED','CLOSED','WITHDRAWN'] as const;
-const RULING_OPTIONS   = ['INVESTOR_WINS','CONTRACTOR_WINS','SPLIT','NO_ACTION'] as const;
-const ADMIN_STATUSES   = ['UNDER_REVIEW','AWAITING_EVIDENCE','PENDING_RULING','CLOSED'] as const;
-
-function statusBadge(s: string) {
-  const map: Record<string, string> = {
-    OPEN: sh.badgeOpen, UNDER_REVIEW: sh.badgeInProgress, AWAITING_EVIDENCE: sh.badgeInProgress,
-    PENDING_RULING: sh.badgeAmber ?? sh.badgeInProgress, RESOLVED: sh.badgeCompleted,
-    CLOSED: sh.badgeCompleted, WITHDRAWN: sh.badgeWithdrawn,
-  };
-  return <span className={`${sh.badge} ${map[s] ?? ''}`}>{s.replace(/_/g, ' ')}</span>;
-}
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(date: string) {
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  });
 }
 
-function fmtCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+function fmtUsd(n: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', maximumFractionDigits: 0,
+  }).format(n);
 }
 
-// ── Detail Drawer ─────────────────────────────────────────────────────────────
-
-function DisputeDetailDrawer({ id, onClose }: { id: string; onClose: () => void }) {
-  const { data: dispute, isLoading } = useAdminDispute(id);
-  const [ruling,   setRuling]   = useState('');
-  const [rulingNote, setRulingNote] = useState('');
-  const [newStatus, setNewStatus]   = useState('');
-  const [statusNote, setStatusNote] = useState('');
-
-  const { mutate: recordRuling,  isPending: rulingPending  } = useRecordRuling();
-  const { mutate: updateStatus,  isPending: statusPending  } = useUpdateDisputeStatus();
-
-  const canRule   = dispute && !['RESOLVED','CLOSED','WITHDRAWN'].includes(dispute.status);
-  const canStatus = dispute && !['RESOLVED','CLOSED','WITHDRAWN'].includes(dispute.status);
-
+function statusBadge(status: string) {
+  const map: Record<string, string> = {
+    OPEN:         sh.badgeOpen,
+    UNDER_REVIEW: sh.badgeInProgress,
+    RESOLVED:     sh.badgeCompleted,
+    CLOSED:       sh.badgeWithdrawn,
+  };
   return (
-    <div className={sh.backdrop} onClick={onClose}>
-      <div className={sh.modal} style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
-        <h3 className={sh.modalTitle}>Dispute Detail</h3>
+    <span className={`${sh.badge} ${map[status] ?? ''}`}>
+      {status.replace(/_/g, ' ')}
+    </span>
+  );
+}
 
-        {isLoading ? (
-          <p className={sh.modalBody}>Loading…</p>
-        ) : dispute ? (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: 13, marginBottom: 16 }}>
-              <div><span style={{ color: 'var(--color-text-muted)' }}>Job</span><br /><strong>{dispute.jobTitle}</strong></div>
-              <div><span style={{ color: 'var(--color-text-muted)' }}>Amount</span><br /><strong>{fmtCurrency(dispute.amountDisputed)}</strong></div>
-              <div><span style={{ color: 'var(--color-text-muted)' }}>Filed by</span><br />{dispute.filedBy.firstName} {dispute.filedBy.lastName}</div>
-              <div><span style={{ color: 'var(--color-text-muted)' }}>Against</span><br />{dispute.against.firstName} {dispute.against.lastName}</div>
-              <div><span style={{ color: 'var(--color-text-muted)' }}>Category</span><br />{dispute.category.replace(/_/g, ' ')}</div>
-              <div><span style={{ color: 'var(--color-text-muted)' }}>Status</span><br />{statusBadge(dispute.status)}</div>
-            </div>
+function DaysOpenBadge({ days }: { days: number }) {
+  const cls = days > 7 ? s.daysRed : days >= 3 ? s.daysAmber : s.daysGreen;
+  return <span className={`${s.daysBadge} ${cls}`}>{days}d</span>;
+}
 
-            <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 16, lineHeight: '1.5' }}>
-              {dispute.description}
-            </p>
+// ── Tab configuration ─────────────────────────────────────────────────────────
 
-            {canStatus && (
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-muted)', display: 'block', marginBottom: 6 }}>
-                  CHANGE STATUS
-                </label>
-                <select className={sh.modalSelect} style={{ marginBottom: 8 }} value={newStatus} onChange={e => setNewStatus(e.target.value)}>
-                  <option value="">Select status…</option>
-                  {ADMIN_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-                </select>
-                <textarea className={sh.modalNote} style={{ minHeight: 56 }} placeholder="Optional note…" value={statusNote} onChange={e => setStatusNote(e.target.value)} />
-                <button
-                  className={`${sh.actionBtn} ${sh.actionBtnAmber}`}
-                  disabled={!newStatus || statusPending}
-                  onClick={() => updateStatus({ id, status: newStatus, note: statusNote || undefined }, { onSuccess: onClose })}
-                >
-                  {statusPending ? 'Saving…' : 'Update Status'}
-                </button>
-              </div>
-            )}
+type Tab = 'OPEN' | 'UNDER_REVIEW' | 'RESOLVED' | 'ALL';
 
-            {canRule && (
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-muted)', display: 'block', marginBottom: 6 }}>
-                  RECORD RULING
-                </label>
-                <select className={sh.modalSelect} style={{ marginBottom: 8 }} value={ruling} onChange={e => setRuling(e.target.value)}>
-                  <option value="">Select ruling…</option>
-                  {RULING_OPTIONS.map(r => <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>)}
-                </select>
-                <textarea className={sh.modalNote} style={{ minHeight: 56 }} placeholder="Ruling note (optional)…" value={rulingNote} onChange={e => setRulingNote(e.target.value)} />
-                <button
-                  className={`${sh.actionBtn} ${sh.actionBtnNavy}`}
-                  disabled={!ruling || rulingPending}
-                  onClick={() => recordRuling({ id, ruling, note: rulingNote || undefined }, { onSuccess: onClose })}
-                >
-                  {rulingPending ? 'Saving…' : 'Record Ruling'}
-                </button>
-              </div>
-            )}
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'OPEN',         label: 'Open' },
+  { key: 'UNDER_REVIEW', label: 'Under Review' },
+  { key: 'RESOLVED',     label: 'Resolved' },
+  { key: 'ALL',          label: 'All' },
+];
 
-            {dispute.ruling && (
-              <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--color-surface)', borderRadius: 8, fontSize: 13 }}>
-                <strong>Ruling:</strong> {dispute.ruling.replace(/_/g, ' ')}
-                {dispute.rulingNote && <> — {dispute.rulingNote}</>}
-              </div>
-            )}
-          </>
-        ) : (
-          <p className={sh.modalBody}>Dispute not found.</p>
-        )}
+// ── Row skeleton ──────────────────────────────────────────────────────────────
 
-        <div className={sh.modalActions} style={{ marginTop: 16 }}>
-          <button className={`${sh.actionBtn} ${sh.actionBtnGhost}`} onClick={onClose}>Close</button>
-        </div>
-      </div>
-    </div>
+function SkeletonRows() {
+  return (
+    <>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <tr key={i} className={sh.skeletonRow}>
+          {[180, 120, 120, 72, 56, 72, 64].map((w, j) => (
+            <td key={j}><div className={sh.skeletonLine} style={{ width: w }} /></td>
+          ))}
+        </tr>
+      ))}
+    </>
   );
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function AdminDisputesPage() {
-  const [status,     setStatus]     = useState('');
-  const [page,       setPage]       = useState(1);
-  const [detailId,   setDetailId]   = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<Tab>('OPEN');
+  const [page, setPage]           = useState(1);
+  const LIMIT = 25;
 
-  const params = { page, limit: 25, status: status || undefined };
+  const params = {
+    page,
+    limit: LIMIT,
+    status: activeTab === 'ALL' ? undefined : activeTab,
+  };
+
   const { data, isLoading } = useAdminDisputes(params);
+
+  // Parallel count queries for tab badges
+  const { data: openData }   = useAdminDisputes({ page: 1, limit: 1, status: 'OPEN' });
+  const { data: reviewData } = useAdminDisputes({ page: 1, limit: 1, status: 'UNDER_REVIEW' });
 
   const disputes   = data?.data       ?? [];
   const total      = data?.total      ?? 0;
   const totalPages = data?.totalPages ?? 1;
+  const openCount  = openData?.total   ?? 0;
+  const reviewCount = reviewData?.total ?? 0;
+
+  function handleTabChange(tab: Tab) {
+    setActiveTab(tab);
+    setPage(1);
+  }
+
+  const subtitle = `${openCount} open • ${reviewCount} under review`;
 
   return (
     <div className={sh.page}>
+      {/* Header */}
       <div className={sh.pageHeader}>
         <div>
           <h1 className={sh.pageTitle}>Disputes</h1>
-          <p className={sh.pageSubtitle}>{total} total disputes</p>
+          <p className={sh.pageSubtitle}>{subtitle}</p>
         </div>
       </div>
 
-      <div className={sh.filters}>
-        <select className={sh.filterSelect} value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
-          <option value="">All statuses</option>
-          {DISPUTE_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-        </select>
+      {/* Tabs */}
+      <div className={s.tabs}>
+        {TABS.map(t => {
+          const count = t.key === 'OPEN' ? openCount : t.key === 'UNDER_REVIEW' ? reviewCount : null;
+          return (
+            <button
+              key={t.key}
+              className={`${s.tab} ${activeTab === t.key ? s.tabActive : ''}`}
+              onClick={() => handleTabChange(t.key)}
+            >
+              {t.label}
+              {count !== null && count > 0 && (
+                <span className={s.tabCount}>{count}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
+      {/* Table */}
       <div className={sh.tableWrap}>
         <table className={sh.table}>
           <thead>
             <tr>
               <th>Job</th>
               <th>Filed By</th>
-              <th>Against</th>
-              <th>Category</th>
+              <th>Other Party</th>
               <th>Amount</th>
+              <th>Days Open</th>
               <th>Status</th>
-              <th>Filed</th>
-              <th>Actions</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <tr key={i} className={sh.skeletonRow}>
-                  {Array.from({ length: 8 }).map((_, j) => (
-                    <td key={j}><div className={sh.skeletonLine} style={{ width: j === 0 ? 160 : 80 }} /></td>
-                  ))}
-                </tr>
-              ))
+              <SkeletonRows />
             ) : disputes.length === 0 ? (
-              <tr className={sh.emptyRow}><td colSpan={8}>No disputes found</td></tr>
+              <tr className={sh.emptyRow}>
+                <td colSpan={7}>
+                  No {activeTab === 'ALL' ? '' : activeTab.replace(/_/g, ' ').toLowerCase() + ' '}disputes found
+                </td>
+              </tr>
             ) : disputes.map(d => (
               <tr key={d.id}>
                 <td>
-                  <div className={sh.nameMain} style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {d.jobTitle || '—'}
+                  <div className={s.jobCell}>
+                    <span className={s.jobTitle}>{d.jobTitle || '—'}</span>
+                    <span className={s.jobMeta}>Milestone #{d.milestoneDraw}</span>
                   </div>
                 </td>
-                <td style={{ color: 'var(--color-text-muted)' }}>{d.filedByName}</td>
-                <td style={{ color: 'var(--color-text-muted)' }}>{d.againstName}</td>
-                <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{d.category.replace(/_/g, ' ')}</td>
-                <td style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(d.amountDisputed)}
+                <td>
+                  <div className={s.partyName}>{d.filedByName || '—'}</div>
+                </td>
+                <td>
+                  <div className={s.partyName}>{d.otherPartyName || '—'}</div>
+                </td>
+                <td>
+                  <span className={s.amount}>{fmtUsd(d.amountDisputed)}</span>
+                </td>
+                <td>
+                  <DaysOpenBadge days={d.daysOpen} />
                 </td>
                 <td>{statusBadge(d.status)}</td>
-                <td style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{fmt(d.createdAt)}</td>
                 <td>
                   <button
                     className={`${sh.actionBtn} ${sh.actionBtnNavy}`}
-                    onClick={() => setDetailId(d.id)}
+                    onClick={() => navigate(`/admin/disputes/${d.id}`)}
                   >
                     Review
                   </button>
@@ -204,17 +183,24 @@ export function AdminDisputesPage() {
           </tbody>
         </table>
 
-        <div className={sh.pagination}>
-          <span>Showing {disputes.length ? ((page - 1) * 25) + 1 : 0}–{Math.min(page * 25, total)} of {total}</span>
-          <div className={sh.paginationBtns}>
-            <button className={sh.pageBtn} disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← Prev</button>
-            <button className={`${sh.pageBtn} ${sh.pageBtnActive}`}>{page}</button>
-            <button className={sh.pageBtn} disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next →</button>
+        {/* Pagination */}
+        {!isLoading && total > 0 && (
+          <div className={sh.pagination}>
+            <span>
+              Showing {disputes.length ? (page - 1) * LIMIT + 1 : 0}–{Math.min(page * LIMIT, total)} of {total}
+            </span>
+            <div className={sh.paginationBtns}>
+              <button className={sh.pageBtn} disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                ← Prev
+              </button>
+              <button className={`${sh.pageBtn} ${sh.pageBtnActive}`}>{page}</button>
+              <button className={sh.pageBtn} disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                Next →
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
-
-      {detailId && <DisputeDetailDrawer id={detailId} onClose={() => setDetailId(null)} />}
     </div>
   );
 }

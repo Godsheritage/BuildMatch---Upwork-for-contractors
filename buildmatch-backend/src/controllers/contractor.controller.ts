@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import * as contractorService from '../services/contractor.service';
 import { sendSuccess, sendError } from '../utils/response.utils';
 import { AppError } from '../utils/app-error';
+import { getServiceClient } from '../lib/supabase';
 
 function parsePositiveFloat(val: unknown): number | undefined {
   const n = parseFloat(val as string);
@@ -39,6 +40,32 @@ export async function getAll(req: Request, res: Response): Promise<void> {
       available: parseBoolean(req.query.available),
       search:    req.query.search as string | undefined,
     });
+
+    // Fire-and-forget: log text searches so /admin/analytics/search-gaps can
+    // surface unmet demand.  Only fires when a `search` param is present.
+    // Never blocks the response — errors are silently discarded.
+    const searchText = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    if (searchText) {
+      getServiceClient()
+        .from('search_log')
+        .insert({
+          query:        searchText.toLowerCase(),
+          filters:      {
+            state:     req.query.state     ?? null,
+            city:      req.query.city      ?? null,
+            specialty: req.query.specialty ?? null,
+            minRating: req.query.minRating ?? null,
+            available: req.query.available ?? null,
+          },
+          result_count: result.total,
+          user_id:      req.user?.userId ?? null,
+        })
+        .then(
+          () => { /* ok */ },
+          () => { /* non-fatal — never block the response */ },
+        );
+    }
+
     sendSuccess(res, result);
   } catch (err) {
     handleError(res, err);

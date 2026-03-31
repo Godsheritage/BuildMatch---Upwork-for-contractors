@@ -306,3 +306,22 @@
 }
 
 .modalSelect:focus { border-color: var(--color-primary); }
+
+/* ── Shared link + cell helpers ─────────────────────────────────────────── */
+
+.nameLink {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nameLink:hover { text-decoration: underline; }
+
+.mutedCell {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}

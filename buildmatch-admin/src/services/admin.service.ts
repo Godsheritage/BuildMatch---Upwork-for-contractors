@@ -88,10 +88,45 @@ export interface AdminContractor {
 export interface AdminJob {
   id: string; title: string; tradeType: string; status: string;
   city: string; state: string; budgetMin: number; budgetMax: number;
-  bidCount: number; investorId: string; investorName: string; createdAt: string;
-  // detail only:
-  description?: string; zipCode?: string;
-  bids?: { id: string; contractorId: string; contractorName: string; amount: number; status: string; createdAt: string }[];
+  bidCount: number; photoCount: number; videoCount: number;
+  investorId: string; investorName: string;
+  disputeCount: number; isFeatured: boolean; isFlagged: boolean;
+  createdAt: string;
+}
+
+export interface AdminJobBid {
+  id: string; contractorId: string; contractorName: string; contractorAvatar: string | null;
+  amount: number; status: string; createdAt: string;
+}
+
+export interface AdminJobConversationPreview {
+  id: string; contractorId: string; contractorName: string;
+  lastMessageAt: string | null; messageCount: number; lastMessage: string | null;
+}
+
+export interface AdminJobEscrow {
+  id: string; totalAmount: number; platformFeeAmount: number;
+  status: string; stripePaymentIntentId: string | null;
+  milestones: {
+    id: string; title: string; amount: number; percentage: number;
+    order: number; status: string; releasedAt: string | null; approvedAt: string | null;
+  }[];
+  createdAt: string;
+}
+
+export interface AdminJobDetail extends AdminJob {
+  description: string; zipCode: string; photos: string[]; flaggedReason: string | null;
+  bids: AdminJobBid[];
+  conversations: AdminJobConversationPreview[];
+  disputes: { id: string; status: string; category: string; filedById: string; againstId: string; createdAt: string }[];
+  escrow: AdminJobEscrow | null;
+  statusTimeline: { action: string; adminId: string | null; note: string | null; payload: Record<string, unknown>; createdAt: string }[];
+}
+
+export interface ContentQueueItem {
+  id: string; title: string; tradeType: string; status: string;
+  city: string; state: string; investorId: string; investorName: string;
+  flaggedReason: string | null; bidCount: number; createdAt: string;
 }
 
 export interface AdminDispute {
@@ -223,11 +258,29 @@ export const setAvailability = (profileId: string, isAvailable: boolean) =>
 export const getJobs = (params: Record<string, unknown>) =>
   api.get('/admin/jobs', { params }).then(data<PageResponse<AdminJob>>);
 
-export const getJobById   = (id: string) =>
+export const getJobById = (id: string) =>
   api.get(`/admin/jobs/${id}`).then(data<AdminJob>);
+
+export const getJobFull = (id: string) =>
+  api.get(`/admin/jobs/${id}`).then(data<AdminJobDetail>);
+
+export const getJobContentQueue = () =>
+  api.get('/admin/jobs/content-queue').then(data<ContentQueueItem[]>);
 
 export const forceCloseJob = (id: string, note?: string) =>
   api.put(`/admin/jobs/${id}/force-close`, { note });
+
+export const removeJob = (id: string, reason: string) =>
+  api.post(`/admin/jobs/${id}/remove`, { reason });
+
+export const toggleFeatureJob = (id: string) =>
+  api.post(`/admin/jobs/${id}/feature`);
+
+export const changeJobStatus = (id: string, newStatus: string, reason: string) =>
+  api.post(`/admin/jobs/${id}/change-status`, { newStatus, reason });
+
+export const flagJob = (id: string, reason: string) =>
+  api.post(`/admin/jobs/${id}/flag`, { reason });
 
 // ── Disputes ──────────────────────────────────────────────────────────────────
 

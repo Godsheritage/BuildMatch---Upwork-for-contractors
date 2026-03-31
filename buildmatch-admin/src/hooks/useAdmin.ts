@@ -245,6 +245,23 @@ export function useAdminJob(id: string | null) {
   });
 }
 
+export function useAdminJobFull(id: string | null) {
+  return useQuery({
+    queryKey:  qk('jobs', 'full', id),
+    queryFn:   () => adminService.getJobFull(id!),
+    enabled:   !!id,
+    staleTime: 30_000,
+  });
+}
+
+export function useAdminJobsContentQueue() {
+  return useQuery({
+    queryKey:  qk('jobs', 'content-queue'),
+    queryFn:   adminService.getJobContentQueue,
+    staleTime: 30_000,
+  });
+}
+
 export function useForceCloseJob() {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -253,6 +270,49 @@ export function useForceCloseJob() {
       adminService.forceCloseJob(id, note),
     onSuccess:  () => { qc.invalidateQueries({ queryKey: qk('jobs') }); toast('Job force-closed', 'success'); },
     onError:    () => toast('Failed to close job', 'error'),
+  });
+}
+
+export function useRemoveJob() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      adminService.removeJob(id, reason),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk('jobs') }); toast('Job removed', 'success'); },
+    onError:   () => toast('Failed to remove job', 'error'),
+  });
+}
+
+export function useToggleFeatureJob() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (id: string) => adminService.toggleFeatureJob(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk('jobs') }); toast('Feature updated', 'success'); },
+    onError:   () => toast('Failed to update feature', 'error'),
+  });
+}
+
+export function useChangeJobStatus() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ id, newStatus, reason }: { id: string; newStatus: string; reason: string }) =>
+      adminService.changeJobStatus(id, newStatus, reason),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk('jobs') }); toast('Status updated', 'success'); },
+    onError:   () => toast('Failed to change status', 'error'),
+  });
+}
+
+export function useFlagJob() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      adminService.flagJob(id, reason),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: qk('jobs') }); toast('Job flagged', 'success'); },
+    onError:   () => toast('Failed to flag job', 'error'),
   });
 }
 

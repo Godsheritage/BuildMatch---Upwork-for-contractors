@@ -1,0 +1,458 @@
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 100ms;
+  white-space: nowrap;
+}
+
+.tab:hover { color: var(--color-text-primary); }
+
+.tabActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.tabCountBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  background: #DBEAFE;
+  color: #1E40AF;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.tabCountBadgeDanger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  background: #FEE2E2;
+  color: #991B1B;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ── Queue cards ──────────────────────────────────────────────────────────── */
+
+.queueCard {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.queueCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.queueCardMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.queueCardDate {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.queueCardRole {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.queueCardParties {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.partyLink {
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.partyLink:hover { color: var(--color-accent); }
+
+.partyArrow {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.queueCardRating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.ratingNum {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.reviewTitle {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin-left: var(--space-2);
+}
+
+.queueCardBody {
+  font-size: 14px;
+  color: var(--color-text-primary);
+  line-height: var(--leading-body);
+  margin: 0 0 var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+}
+
+.queueCardActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+}
+
+/* ── Approve button ───────────────────────────────────────────────────────── */
+
+.approveBtn {
+  background: #DCFCE7;
+  color: #166534;
+  border-color: #BBF7D0 !important;
+}
+
+.approveBtn:hover { opacity: 0.85; }
+
+/* ── Inline edit block ────────────────────────────────────────────────────── */
+
+.editBlock {
+  margin-bottom: var(--space-4);
+}
+
+.editLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.editArea {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  line-height: var(--leading-body);
+  resize: vertical;
+  min-height: 120px;
+  outline: none;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  box-sizing: border-box;
+}
+
+/* ── All reviews table cell helpers ──────────────────────────────────────── */
+
+.userCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.userLink {
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.userLink:hover { color: var(--color-accent); }
+
+.userEmail {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.previewText {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  max-width: 260px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobLink {
+  font-size: 12px;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-family: monospace;
+}
+
+.dateCell {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.flaggedRow td { background: #FFF5F5; }
+
+/* ── Badges ───────────────────────────────────────────────────────────────── */
+
+.flaggedBadge {
+  display: inline-block;
+  padding: 1px 7px;
+  background: #FEE2E2;
+  color: #991B1B;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ── Filter helpers ───────────────────────────────────────────────────────── */
+
+.clearBtn {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clearBtn:hover { color: var(--color-danger); }
+
+.totalCount {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+/* ── Empty / healthy states ───────────────────────────────────────────────── */
+
+.emptyHealthy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-10) 0;
+}
+
+.emptyCheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #DCFCE7;
+  color: #166534;
+  font-size: 22px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.emptyMsg {
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.emptySub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ── Modal label ──────────────────────────────────────────────────────────── */
+
+.modalLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+  margin-top: 12px;
+}
+
+/* ── Anomaly sections ─────────────────────────────────────────────────────── */
+
+.anomalySection {
+  margin-bottom: var(--space-8);
+}
+
+.anomalySectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+.anomalySectionDesc {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-4);
+}
+
+.anomalyCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.anomalyEmpty {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin: 0;
+}
+
+.anomalyCard {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-3);
+}
+
+.anomalyCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-1);
+}
+
+.anomalyName {
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.anomalyCardMeta {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
+.anomalyBodyPreview {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin: var(--space-2) 0 var(--space-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 600px;
+}
+
+.anomalyDropBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #FEE2E2;
+  color: #991B1B;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.anomalyPerfectBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #FEF3C7;
+  color: #92400E;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.anomalyDupeBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #DBEAFE;
+  color: #1E40AF;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.investigateLink {
+  font-size: 12px;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: var(--font-weight-medium);
+}
+
+.investigateLink:hover { color: var(--color-accent); }

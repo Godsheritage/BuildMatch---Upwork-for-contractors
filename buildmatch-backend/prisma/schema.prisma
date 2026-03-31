@@ -155,6 +155,9 @@ model Job {
   status                 JobStatus  @default(OPEN)
   isCompleted            Boolean    @default(false)
   reviewsUnlocked        Boolean    @default(false)
+  isFeatured             Boolean    @default(false)
+  isFlagged              Boolean    @default(false)
+  flaggedReason          String?
   aiSuggestedTradeType   TradeType?
   investorId             String
   investor               User       @relation("InvestorJobs", fields: [investorId], references: [id])

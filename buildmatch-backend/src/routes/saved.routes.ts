@@ -39,8 +39,8 @@ const toggleRateLimiter = rateLimit({
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
 const toggleSchema = z.object({
-  contractorProfileId: z.string().uuid(),
-  listId:              z.string().uuid().optional(),
+  contractorProfileId: z.string().min(1),
+  listId:              z.string().min(1).optional(),
 });
 
 const listNameSchema = z.object({
@@ -48,7 +48,7 @@ const listNameSchema = z.object({
 });
 
 const moveSchema = z.object({
-  targetListId: z.string().uuid(),
+  targetListId: z.string().min(1),
 });
 
 const noteSchema = z.object({
