@@ -74,7 +74,7 @@ const EVIDENCE_TYPES = [
 const EVIDENCE_URL_REQUIRED: (typeof EVIDENCE_TYPES)[number][] = ['PHOTO', 'VIDEO', 'DOCUMENT'];
 
 const fileDisputeSchema = z.object({
-  jobId:          z.string().uuid('jobId must be a valid UUID'),
+  jobId:          z.string().min(1, 'jobId is required'),
   milestoneDraw:  z.number().int().min(1).optional(),
   amountDisputed: z.number().positive('amountDisputed must be a positive number'),
   category:       z.enum(DISPUTE_CATEGORIES),

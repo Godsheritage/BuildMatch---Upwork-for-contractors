@@ -18,12 +18,16 @@ function fmtUsd(n: number) {
   }).format(n);
 }
 
-function statusBadge(status: string) {
+function statusBadge(status: string | undefined | null) {
+  if (!status) return null;
   const map: Record<string, string> = {
-    OPEN:         sh.badgeOpen,
-    UNDER_REVIEW: sh.badgeInProgress,
-    RESOLVED:     sh.badgeCompleted,
-    CLOSED:       sh.badgeWithdrawn,
+    OPEN:              sh.badgeOpen,
+    UNDER_REVIEW:      sh.badgeInProgress,
+    AWAITING_EVIDENCE: sh.badgeInProgress,
+    PENDING_RULING:    sh.badgeInProgress,
+    RESOLVED:          sh.badgeCompleted,
+    CLOSED:            sh.badgeWithdrawn,
+    WITHDRAWN:         sh.badgeWithdrawn,
   };
   return (
     <span className={`${sh.badge} ${map[status] ?? ''}`}>

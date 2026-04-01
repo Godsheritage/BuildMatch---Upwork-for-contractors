@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { getSupabaseClient } from '../lib/supabase';
 import { useAuth } from './useAuth';
+import api from '../services/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -114,15 +115,17 @@ export function useDisputeEvidenceUpload(): UseDisputeEvidenceUpload {
     }, 1000);
 
     try {
-      const supabase = getSupabaseClient();
+      // ── 4. Get presigned URL from backend (bypasses RLS) ──────────────────
+      const { data: presignData } = await api.post<{
+        data: { signedUrl: string; token: string; path: string };
+      }>('/upload/presign', { bucket: 'dispute-evidence', path });
+      const { token, path: confirmedPath } = presignData.data;
 
-      // ── 4. Upload ──────────────────────────────────────────────────────────
+      // ── 5. Upload via signed URL ───────────────────────────────────────────
+      const supabase = getSupabaseClient();
       const { error: uploadError } = await supabase.storage
         .from('dispute-evidence')
-        .upload(path, file, {
-          upsert:      false,
-          contentType: file.type,
-        });
+        .uploadToSignedUrl(confirmedPath, token, file, { contentType: file.type });
 
       if (uploadError) {
         throw new Error(uploadError.message ?? 'Upload failed');
@@ -130,14 +133,14 @@ export function useDisputeEvidenceUpload(): UseDisputeEvidenceUpload {
 
       setUploadProgress(100);
 
-      // ── 5. Get public URL ──────────────────────────────────────────────────
+      // ── 6. Get public URL ──────────────────────────────────────────────────
       const { data: urlData } = supabase.storage
         .from('dispute-evidence')
-        .getPublicUrl(path);
+        .getPublicUrl(confirmedPath);
 
       const publicUrl = urlData.publicUrl;
 
-      // ── 6. Update derived state ────────────────────────────────────────────
+      // ── 7. Update derived state ────────────────────────────────────────────
       setEvidenceType(getEvidenceType(file.type));
 
       return publicUrl;

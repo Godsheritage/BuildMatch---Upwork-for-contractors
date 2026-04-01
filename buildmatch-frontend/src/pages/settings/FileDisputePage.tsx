@@ -262,8 +262,9 @@ export function FileDisputePage() {
       toast('Dispute filed successfully');
       navigate(`/dashboard/settings/disputes/${dispute.id}`);
     },
-    onError: () => {
-      toast('Failed to file dispute — please try again', 'error');
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast(msg ?? 'Failed to file dispute — please try again', 'error');
     },
   });
 

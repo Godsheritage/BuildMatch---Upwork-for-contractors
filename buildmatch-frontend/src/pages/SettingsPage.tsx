@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom';
-import { User, UserCog, Lock, Bell, BadgeCheck, ChevronRight, ShieldAlert } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { getDisputeSummary } from '../services/dispute.service';
+import { User, UserCog, Lock, Bell, BadgeCheck, ChevronRight } from 'lucide-react';
 import styles from './SettingsPage.module.css';
 
 const STATIC_CARDS = [
@@ -38,16 +36,6 @@ const STATIC_CARDS = [
 ] as const;
 
 export function SettingsPage() {
-  const { data: summary } = useQuery({
-    queryKey:        ['disputes', 'summary'],
-    queryFn:         getDisputeSummary,
-    refetchInterval: 120_000,
-    staleTime:       60_000,
-  });
-
-  const openCount = (summary?.open ?? 0) + (summary?.underReview ?? 0);
-  const hasOpen   = openCount > 0;
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -70,25 +58,6 @@ export function SettingsPage() {
             <ChevronRight size={15} className={styles.cardChevron} strokeWidth={1.75} />
           </Link>
         ))}
-
-        {/* Dispute Centre card */}
-        <Link to="/dashboard/settings/disputes" className={styles.card}>
-          <div
-            className={styles.cardIcon}
-            style={{ color: hasOpen ? 'var(--color-danger)' : 'var(--color-accent)' }}
-          >
-            <ShieldAlert size={20} strokeWidth={1.5} />
-          </div>
-          <div>
-            <p className={styles.cardTitle}>Dispute Centre</p>
-            <p className={styles.cardDesc}>
-              {hasOpen
-                ? `You have ${openCount} open dispute${openCount !== 1 ? 's' : ''} requiring attention`
-                : 'No active disputes'}
-            </p>
-          </div>
-          <ChevronRight size={15} className={styles.cardChevron} strokeWidth={1.75} />
-        </Link>
       </div>
     </div>
   );

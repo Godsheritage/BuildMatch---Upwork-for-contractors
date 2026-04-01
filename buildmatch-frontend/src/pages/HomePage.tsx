@@ -170,7 +170,7 @@ export function HomePage() {
 
       {/* ── NAVBAR ─────────────────────────────────────── */}
       <nav className={styles.nav}>
-        <Link to="/" className={styles.navWordmark}>BuildMatch</Link>
+        <Link to="/"><img src="/logo.svg" alt="BuildMatch" style={{ height: 40 }} /></Link>
         <div className={styles.navLinks}>
           <Link to="/contractors" className={styles.navLink}>Find Contractors</Link>
           <Link to="/post-job"    className={styles.navLink}>Post a Job</Link>

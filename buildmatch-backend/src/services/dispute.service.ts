@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import prisma from '../lib/prisma';
 import { getServiceClient } from '../lib/supabase';
 import { AppError } from '../utils/app-error';
@@ -168,6 +169,9 @@ export async function fileDispute(
   if (!isInvestor && !isContractor) {
     throw new AppError('You are not a party to this job', 403);
   }
+  if (isInvestor && contractorId === null) {
+    throw new AppError('No contractor has been assigned to this job yet', 400);
+  }
   const againstId = isInvestor ? contractorId! : job.investorId;
 
   // 4. Check for an existing open dispute by this user on this job
@@ -201,6 +205,7 @@ export async function fileDispute(
   const { data: inserted, error: insertErr } = await supabase
     .from('disputes')
     .insert({
+      id:              randomUUID(),
       job_id:          input.jobId,
       filed_by_id:     filedById,
       against_id:      againstId,
@@ -215,7 +220,8 @@ export async function fileDispute(
     .select()
     .single();
   if (insertErr || !inserted) {
-    throw new AppError('Failed to file dispute', 500);
+    console.error('[disputes] insert error:', insertErr);
+    throw new AppError(insertErr?.message ?? 'Failed to file dispute', 500);
   }
   const disputeRow = inserted as DisputeRow;
 
