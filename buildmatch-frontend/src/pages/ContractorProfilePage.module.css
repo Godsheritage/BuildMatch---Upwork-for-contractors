@@ -4,6 +4,46 @@
   background: var(--color-surface);
 }
 
+/* ── Preview banner ──────────────────────────────────── */
+.previewBanner {
+  background: var(--color-primary);
+  color: #fff;
+  padding: 10px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+}
+
+.previewBannerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.previewBannerBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.previewBannerBack:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
 /* ── Navbar ──────────────────────────────────────────── */
 .nav {
   position: sticky;

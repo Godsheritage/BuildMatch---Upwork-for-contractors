@@ -6,10 +6,6 @@ import { updateContractorProfileSchema } from '../schemas/contractor.schemas';
 
 const router = Router();
 
-// Public
-router.get('/', getAll);
-router.get('/:id', getById);
-
 // Authenticated routes — must come before /:id to avoid being swallowed by the param route
 router.get('/me', authenticate, requireRole('CONTRACTOR'), getMyProfile);
 router.put(
@@ -19,5 +15,9 @@ router.put(
   validate(updateContractorProfileSchema),
   updateMyProfile,
 );
+
+// Public
+router.get('/', getAll);
+router.get('/:id', getById);
 
 export default router;

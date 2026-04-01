@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   MapPin, Globe, Share2, Eye, Pencil, Plus,
-  Briefcase, Video, Award, Star, ChevronRight,
+  Briefcase, Video, Award, Star, ChevronRight, ChevronLeft,
   CheckCircle2, Shield,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -125,6 +125,8 @@ export function UserProfilePage() {
     retry:    false,
   });
 
+  const [showAllStrength, setShowAllStrength] = useState(false);
+
   if (!user) return null;
   if (isLoading) return <div className={styles.page}><ProfileSkeleton /></div>;
 
@@ -144,10 +146,15 @@ export function UserProfilePage() {
   const totalCount    = strengthItems.length;
   const strengthPct   = Math.round((doneCount / totalCount) * 100);
 
-  const visibleItems  = strengthItems.slice(0, 4);
+  const visibleItems  = showAllStrength ? strengthItems : strengthItems.slice(0, 4);
 
   return (
     <div className={styles.page}>
+      <Link to="/dashboard/settings" className={styles.back}>
+        <ChevronLeft size={15} strokeWidth={2} />
+        Account Settings
+      </Link>
+
       <div className={styles.layout}>
 
         {/* ── Left main content ── */}
@@ -155,6 +162,7 @@ export function UserProfilePage() {
 
           {/* Profile header card */}
           <div className={styles.card}>
+            <div className={styles.coverStrip} />
             <div className={styles.headerTop}>
               <div className={styles.avatarWrap}>
                 <div
@@ -218,10 +226,29 @@ export function UserProfilePage() {
                   <Share2 size={13} strokeWidth={2} />
                   Share
                 </button>
-                <Link to={profile ? `/contractors/${profile.id}` : '#'} className={styles.actionBtn}>
-                  <Eye size={13} strokeWidth={2} />
-                  Preview
-                </Link>
+                {isContractor && (
+                  profile ? (
+                    <a
+                      href={`/contractors/${profile.id}?preview=true`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.actionBtn}
+                      title="See how investors see your profile"
+                    >
+                      <Eye size={13} strokeWidth={2} />
+                      Preview
+                    </a>
+                  ) : (
+                    <Link
+                      to="/dashboard/profile/setup"
+                      className={styles.actionBtn}
+                      title="Set up your profile to preview it"
+                    >
+                      <Eye size={13} strokeWidth={2} />
+                      Preview
+                    </Link>
+                  )
+                )}
               </div>
             </div>
 
@@ -493,9 +520,9 @@ export function UserProfilePage() {
               ))}
             </div>
             {strengthItems.length > 4 && (
-              <Link to="/dashboard/profile/setup" className={styles.showAll}>
-                Show all ({strengthItems.length})
-              </Link>
+              <button className={styles.showAll} onClick={() => setShowAllStrength((v) => !v)}>
+                {showAllStrength ? 'Show less' : `Show all (${strengthItems.length})`}
+              </button>
             )}
           </div>
 

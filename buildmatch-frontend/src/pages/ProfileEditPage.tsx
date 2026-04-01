@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import { Input } from '../components/ui/Input';
@@ -50,10 +50,14 @@ export function ProfileEditPage() {
     title:     user?.title     ?? '',
     website:   user?.website   ?? '',
   });
-  const [errors,      setErrors]      = useState<FormErrors>({});
-  const [serverError, setServerError] = useState('');
-  const [isSaving,    setIsSaving]    = useState(false);
-  const [saved,       setSaved]       = useState(false);
+  const [errors,       setErrors]       = useState<FormErrors>({});
+  const [serverError,  setServerError]  = useState('');
+  const [isSaving,     setIsSaving]     = useState(false);
+  const [saved,        setSaved]        = useState(false);
+  const [showModal,    setShowModal]    = useState(false);
+  const redirectTimer                   = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (redirectTimer.current) clearTimeout(redirectTimer.current); }, []);
 
   if (!user) return null;
 
@@ -99,6 +103,10 @@ export function ProfileEditPage() {
       });
       updateUser(updated);
       setSaved(true);
+      setShowModal(true);
+      redirectTimer.current = setTimeout(() => {
+        navigate('/dashboard/settings');
+      }, 2200);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {
         setServerError(err.response.data.message as string);
@@ -111,6 +119,7 @@ export function ProfileEditPage() {
   };
 
   return (
+    <>
     <div className={styles.page}>
       <div className={styles.container}>
 
@@ -279,5 +288,28 @@ export function ProfileEditPage() {
 
       </div>
     </div>
+
+    {/* ── Success modal ── */}
+    {showModal && (
+      <div className={styles.modalOverlay}>
+        <div className={styles.modal}>
+          <div className={styles.modalIcon}>
+            <CheckCircle2 size={32} color="var(--color-accent)" strokeWidth={2} />
+          </div>
+          <h2 className={styles.modalTitle}>Changes saved</h2>
+          <p className={styles.modalDesc}>Your profile has been updated successfully. Redirecting you to account settings…</p>
+          <button
+            className={styles.modalBtn}
+            onClick={() => {
+              if (redirectTimer.current) clearTimeout(redirectTimer.current);
+              navigate('/dashboard/settings');
+            }}
+          >
+            Go to Account Settings
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

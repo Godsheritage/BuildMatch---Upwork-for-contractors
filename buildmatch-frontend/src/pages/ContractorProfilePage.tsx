@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, CheckCircle2, Briefcase, Clock, Shield, ChevronDown, X, ZoomIn, ChevronLeft, ChevronRight, Images, Star, CalendarDays, DollarSign, Timer, Quote, BookmarkCheck, FolderInput, Trash2 } from 'lucide-react';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, MapPin, CheckCircle2, Briefcase, Clock, Shield, ChevronDown, X, ZoomIn, ChevronLeft, ChevronRight, Images, Star, CalendarDays, DollarSign, Timer, Quote, BookmarkCheck, FolderInput, Trash2, Eye } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getContractorById } from '../services/contractor.service';
 import { getContractorReviews } from '../services/review.service';
@@ -1031,6 +1031,7 @@ function ReviewsSection({ contractorUserId, totalReviews }: { contractorUserId: 
 export function ContractorProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [contactModalOpen, setContactModalOpen] = useState(false);
 
   const { data: contractor, isLoading, isError } = useQuery({
@@ -1040,15 +1041,46 @@ export function ContractorProfilePage() {
     staleTime: 60_000,
   });
 
+  const isPreview = searchParams.get('preview') === 'true' && !!user && !!contractor && user.id === contractor.userId;
+
   return (
     <div className={styles.page}>
+      {/* Preview banner */}
+      {isPreview && (
+        <div className={styles.previewBanner}>
+          <div className={styles.previewBannerLeft}>
+            <Eye size={15} strokeWidth={2} />
+            <span>Preview mode — this is exactly how investors see your public profile</span>
+          </div>
+          <a
+            href="/dashboard/profile"
+            className={styles.previewBannerBack}
+            onClick={(e) => { e.preventDefault(); window.close(); }}
+          >
+            <ArrowLeft size={13} strokeWidth={2} />
+            Back to your profile
+          </a>
+        </div>
+      )}
+
       {/* Navbar */}
       <nav className={styles.nav}>
         <Link to="/" className={styles.navWordmark}>BuildMatch</Link>
-        <Link to="/contractors" className={styles.navBack}>
-          <ArrowLeft size={14} strokeWidth={2} />
-          All contractors
-        </Link>
+        {isPreview ? (
+          <a
+            href="/dashboard/profile"
+            className={styles.navBack}
+            onClick={(e) => { e.preventDefault(); window.close(); }}
+          >
+            <ArrowLeft size={14} strokeWidth={2} />
+            My profile
+          </a>
+        ) : (
+          <Link to="/contractors" className={styles.navBack}>
+            <ArrowLeft size={14} strokeWidth={2} />
+            All contractors
+          </Link>
+        )}
       </nav>
 
       {isLoading && <PageSkeleton />}
