@@ -5,6 +5,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getContractorById } from '../services/contractor.service';
 import { getContractorReviews } from '../services/review.service';
 import type { ReviewSort } from '../services/review.service';
+import { requestTestimonial, getContractorTestimonials } from '../services/testimonial.service';
+import type { Testimonial } from '../services/testimonial.service';
 import { getMyJobs } from '../services/job.service';
 import { getOrCreateConversation } from '../services/message.service';
 import { useAuth } from '../hooks/useAuth';
@@ -428,7 +430,17 @@ function SavedIndicator({ contractorProfileId }: { contractorProfileId: string }
   );
 }
 
-function ProfileSidebar({ contractor, onContactClick }: { contractor: ContractorProfile; onContactClick: () => void }) {
+function ProfileSidebar({
+  contractor,
+  onContactClick,
+  isOwnProfile,
+  onRequestTestimonial,
+}: {
+  contractor: ContractorProfile;
+  onContactClick: () => void;
+  isOwnProfile: boolean;
+  onRequestTestimonial: () => void;
+}) {
   const fullName = `${contractor.user.firstName} ${contractor.user.lastName}`;
   const location = [contractor.city, contractor.state].filter(Boolean).join(', ');
   const hasRate = contractor.hourlyRateMin != null || contractor.hourlyRateMax != null;
@@ -513,6 +525,25 @@ function ProfileSidebar({ contractor, onContactClick }: { contractor: Contractor
         >
           Message Contractor
         </Button>
+        {isOwnProfile && (
+          <button
+            onClick={onRequestTestimonial}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              width: '100%', padding: '9px 0',
+              background: 'none', border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-family)',
+              color: 'var(--color-text-primary)', cursor: 'pointer',
+              transition: 'background 0.13s, border-color 0.13s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-surface)'; e.currentTarget.style.borderColor = 'var(--color-text-muted)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'none';                  e.currentTarget.style.borderColor = 'var(--color-border)'; }}
+          >
+            <Quote size={14} strokeWidth={2} />
+            Request testimonial
+          </button>
+        )}
         <SavedIndicator contractorProfileId={contractor.id} />
         <BookmarkButton
           contractorProfileId={contractor.id}
@@ -1026,13 +1057,242 @@ function ReviewsSection({ contractorUserId, totalReviews }: { contractorUserId: 
   );
 }
 
+// ── Request Testimonial Modal ──────────────────────────────────────────────
+
+function RequestTestimonialModal({
+  open,
+  onClose,
+  contractorUserId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  contractorUserId: string;
+}) {
+  const { toast } = useToast();
+  const [email,        setEmail]        = useState('');
+  const [name,         setName]         = useState('');
+  const [message,      setMessage]      = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success,      setSuccess]      = useState(false);
+
+  if (!open) return null;
+
+  function handleClose() {
+    setEmail(''); setName(''); setMessage('');
+    setSuccess(false);
+    onClose();
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await requestTestimonial(contractorUserId, {
+        recipientEmail:  email.trim(),
+        recipientName:   name.trim(),
+        personalMessage: message.trim() || undefined,
+      });
+      setSuccess(true);
+    } catch {
+      toast('Could not send request. Please try again.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', boxSizing: 'border-box',
+    padding: '9px 12px', fontSize: 14,
+    fontFamily: 'var(--font-family)',
+    border: '1px solid var(--color-border)',
+    borderRadius: 'var(--radius-sm)',
+    outline: 'none',
+    color: 'var(--color-text-primary)',
+    background: 'var(--color-bg)',
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+      onClick={handleClose}
+    >
+      <div
+        style={{
+          background: '#fff', borderRadius: 'var(--radius-md)',
+          padding: 28, width: '100%', maxWidth: 420,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.16)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>
+            Request a testimonial
+          </h2>
+          <button
+            onClick={handleClose}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: 4, lineHeight: 0 }}
+          >
+            <X size={18} strokeWidth={2} />
+          </button>
+        </div>
+
+        {success ? (
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <CheckCircle2 size={40} color="var(--color-accent)" style={{ marginBottom: 12 }} />
+            <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 6 }}>Request sent!</p>
+            <p style={{ fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+              We've sent a testimonial request to <strong>{email}</strong>.<br />
+              It will appear on your profile once they submit it.
+            </p>
+            <button
+              onClick={handleClose}
+              style={{
+                marginTop: 20, padding: '8px 20px',
+                background: 'var(--color-primary)', color: '#fff',
+                border: 'none', borderRadius: 'var(--radius-sm)',
+                fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-family)', cursor: 'pointer',
+              }}
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+              Enter the email of someone you've worked with and we'll send them a link to leave a testimonial on your profile.
+            </p>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-muted)', display: 'block', marginBottom: 5 }}>
+                Their name <span style={{ color: 'var(--color-danger)' }}>*</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Jane Smith"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-muted)', display: 'block', marginBottom: 5 }}>
+                Their email <span style={{ color: 'var(--color-danger)' }}>*</span>
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="e.g. jane@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-muted)', display: 'block', marginBottom: 5 }}>
+                Personal message (optional)
+              </label>
+              <textarea
+                placeholder="Add a personal note to your request…"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={3}
+                maxLength={500}
+                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting || !email.trim() || !name.trim()}
+              style={{
+                padding: '10px 0',
+                background: 'var(--color-primary)', color: '#fff',
+                border: 'none', borderRadius: 'var(--radius-sm)',
+                fontSize: 14, fontWeight: 500, fontFamily: 'var(--font-family)',
+                cursor: isSubmitting || !email.trim() || !name.trim() ? 'not-allowed' : 'pointer',
+                opacity: isSubmitting || !email.trim() || !name.trim() ? 0.6 : 1,
+                transition: 'opacity 0.15s',
+              }}
+            >
+              {isSubmitting ? 'Sending…' : 'Send request'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Testimonials section ───────────────────────────────────────────────────
+
+function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
+  const color    = getAvatarColor(testimonial.authorName);
+  const initials = getInitials(testimonial.authorName);
+  const date     = new Date(testimonial.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+  return (
+    <div className={styles.reviewCard}>
+      <div className={styles.reviewHeader}>
+        <div className={styles.reviewerRow}>
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: color.bg, color: color.text,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, fontWeight: 600, flexShrink: 0,
+          }}>
+            {initials}
+          </div>
+          <div>
+            <p className={styles.reviewerName}>{testimonial.authorName}</p>
+            <p className={styles.reviewDate}>{date}</p>
+          </div>
+        </div>
+        <Quote size={16} color="var(--color-border)" strokeWidth={1.5} />
+      </div>
+      <p className={styles.reviewBody}>{testimonial.body}</p>
+    </div>
+  );
+}
+
+function TestimonialsSection({ contractorUserId }: { contractorUserId: string }) {
+  const { data: testimonials = [], isLoading } = useQuery({
+    queryKey: ['contractors', contractorUserId, 'testimonials'],
+    queryFn:  () => getContractorTestimonials(contractorUserId),
+    staleTime: 60_000,
+  });
+
+  if (!isLoading && testimonials.length === 0) return null;
+
+  return (
+    <section className={styles.section}>
+      <h2 className={styles.sectionTitle}>Testimonials</h2>
+      {isLoading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[0, 1].map((i) => (
+            <div key={i} style={{ height: 100, background: 'var(--color-surface)', borderRadius: 'var(--radius-sm)', animation: 'pulse 1.6s ease-in-out infinite' }} />
+          ))}
+        </div>
+      ) : (
+        <div className={styles.reviewList}>
+          {testimonials.map((t) => <TestimonialCard key={t.id} testimonial={t} />)}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────
 
 export function ContractorProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [contactModalOpen,      setContactModalOpen]      = useState(false);
+  const [testimonialModalOpen,  setTestimonialModalOpen]  = useState(false);
 
   const { data: contractor, isLoading, isError } = useQuery({
     queryKey: ['contractors', id],
@@ -1041,7 +1301,8 @@ export function ContractorProfilePage() {
     staleTime: 60_000,
   });
 
-  const isPreview = searchParams.get('preview') === 'true' && !!user && !!contractor && user.id === contractor.userId;
+  const isPreview    = searchParams.get('preview') === 'true' && !!user && !!contractor && user.id === contractor.userId;
+  const isOwnProfile = !!user && !!contractor && user.id === contractor.userId;
 
   return (
     <div className={styles.page}>
@@ -1093,6 +1354,13 @@ export function ContractorProfilePage() {
           contractorUserId={contractor.userId}
         />
       )}
+      {contractor && isOwnProfile && (
+        <RequestTestimonialModal
+          open={testimonialModalOpen}
+          onClose={() => setTestimonialModalOpen(false)}
+          contractorUserId={contractor.userId}
+        />
+      )}
 
       {contractor && (
         <div className={styles.wrap}>
@@ -1101,6 +1369,8 @@ export function ContractorProfilePage() {
             <ProfileSidebar
               contractor={contractor}
               onContactClick={() => setContactModalOpen(true)}
+              isOwnProfile={isOwnProfile}
+              onRequestTestimonial={() => setTestimonialModalOpen(true)}
             />
           </aside>
 
@@ -1266,6 +1536,9 @@ export function ContractorProfilePage() {
               contractorUserId={contractor.userId}
               totalReviews={contractor.totalReviews}
             />
+
+            {/* Testimonials */}
+            <TestimonialsSection contractorUserId={contractor.userId} />
 
           </div>
         </div>

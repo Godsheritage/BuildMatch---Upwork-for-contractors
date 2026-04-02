@@ -27,7 +27,8 @@ import adminModerationRouter   from './moderation.routes';
 import adminReviewsRouter      from './reviews.routes';
 import adminAnalyticsRouter    from './analytics.routes';
 import adminHealthRouter       from './health.routes';
-import adminOverviewRouter     from './overview.routes';
+import adminOverviewRouter        from './overview.routes';
+import adminTestimonialsRouter   from './testimonials.routes';
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
@@ -55,5 +56,6 @@ adminRouter.use('/reviews',       adminReviewsRouter);
 adminRouter.use('/analytics',     adminAnalyticsRouter);
 adminRouter.use('/health',        adminHealthRouter);
 adminRouter.use('/overview',      adminOverviewRouter);
+adminRouter.use('/testimonials',  adminTestimonialsRouter);
 
 export default adminRouter;

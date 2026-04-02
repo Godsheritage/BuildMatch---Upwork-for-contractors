@@ -769,6 +769,34 @@ export const addFilterPattern = (pattern: string, type: string, description: str
 export const deleteFilterPattern = (patternId: string) =>
   api.delete(`/admin/settings/filter-patterns/${encodeURIComponent(patternId)}`);
 
+// ── Testimonials ──────────────────────────────────────────────────────────────
+
+export interface AdminTestimonial {
+  id:                  string;
+  authorName:          string;
+  authorEmail:         string;
+  body:                string;
+  approved:            boolean;
+  approvedAt:          string | null;
+  createdAt:           string;
+  contractorProfileId: string;
+  contractorName:      string;
+  contractorUserId:    string;
+  contractorEmail:     string;
+}
+
+export const getAdminTestimonials = (params: Record<string, unknown>) =>
+  api.get('/admin/testimonials', { params }).then(data<PageResponse<AdminTestimonial>>);
+
+export const getTestimonialPendingCount = () =>
+  api.get('/admin/testimonials/pending-count').then(data<{ count: number }>);
+
+export const approveTestimonial = (id: string) =>
+  api.post(`/admin/testimonials/${id}/approve`);
+
+export const rejectTestimonial = (id: string, reason: string) =>
+  api.post(`/admin/testimonials/${id}/reject`, { reason });
+
 // ── Audit log export ──────────────────────────────────────────────────────────
 
 export async function exportAuditLog(params: Record<string, unknown>): Promise<void> {

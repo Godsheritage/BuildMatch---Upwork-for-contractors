@@ -133,6 +133,8 @@ model ContractorProfile {
   completedJobs        Int       @default(0)
   isAvailable          Boolean   @default(true)
   portfolioProjects    Json?     // PortfolioProject[]
+  testimonialRequests  TestimonialRequest[]
+  testimonials         Testimonial[]
   // AI matching signals
   responseTimeAvgHours Float     @default(24)
   bidWinRate           Float     @default(0)
@@ -256,6 +258,45 @@ model Review {
   updatedAt    DateTime @updatedAt
 
   @@unique([jobId, reviewerId])
+}
+
+enum TestimonialStatus {
+  PENDING
+  SUBMITTED
+  EXPIRED
+}
+
+model TestimonialRequest {
+  id                  String            @id @default(cuid())
+  contractorProfileId String
+  contractorProfile   ContractorProfile @relation(fields: [contractorProfileId], references: [id])
+  recipientEmail      String
+  recipientName       String
+  personalMessage     String?
+  token               String            @unique @default(cuid())
+  status              TestimonialStatus @default(PENDING)
+  expiresAt           DateTime
+  createdAt           DateTime          @default(now())
+
+  testimonial         Testimonial?
+
+  @@map("testimonial_requests")
+}
+
+model Testimonial {
+  id                  String             @id @default(cuid())
+  contractorProfileId String
+  contractorProfile   ContractorProfile  @relation(fields: [contractorProfileId], references: [id])
+  requestId           String             @unique
+  request             TestimonialRequest @relation(fields: [requestId], references: [id])
+  authorName          String
+  authorEmail         String
+  body                String
+  approved            Boolean            @default(false)
+  approvedAt          DateTime?
+  createdAt           DateTime           @default(now())
+
+  @@map("testimonials")
 }
 
 model Conversation {

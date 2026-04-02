@@ -31,6 +31,7 @@ import { SettingsSecurityPage } from './pages/SettingsSecurityPage';
 import { SettingsNotificationsPage } from './pages/SettingsNotificationsPage';
 import { SettingsVerificationPage } from './pages/SettingsVerificationPage';
 import { ProfileEditPage } from './pages/ProfileEditPage';
+import { TestimonialSubmitPage } from './pages/TestimonialSubmitPage';
 import { AboutPage } from './pages/AboutPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { ContractReviewPage } from './pages/ContractReviewPage';
@@ -59,6 +60,7 @@ import { AdminHealthPage } from './pages/admin/AdminHealthPage';
 import { AdminAuditLogPage } from './pages/admin/AdminAuditLogPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AdminFeatureFlagsPage } from './pages/admin/AdminFeatureFlagsPage';
+import { AdminTestimonialsPage } from './pages/admin/AdminTestimonialsPage';
 
 const queryClient = new QueryClient();
 
@@ -80,6 +82,7 @@ export default function App() {
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contractors/:id" element={<ContractorProfilePage />} />
+              <Route path="/testimonials/:token" element={<TestimonialSubmitPage />} />
               <Route path="/jobs/:id" element={<JobDetailPage />} />
 
               {/* Contract review — protected, party-only access enforced in page */}
@@ -125,6 +128,7 @@ export default function App() {
                   <Route path="audit"                   element={<AdminAuditLogPage />} />
                   <Route path="settings"                element={<AdminSettingsPage />} />
                   <Route path="flags"                   element={<AdminFeatureFlagsPage />} />
+                  <Route path="testimonials"            element={<AdminTestimonialsPage />} />
                 </Route>
               </Route>
 

@@ -15,9 +15,10 @@ import {
   Activity,
   MessageSquareWarning,
   Star,
+  Quote,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { getStats } from '../../services/admin.service';
+import { getStats, getTestimonialPendingCount } from '../../services/admin.service';
 import styles from './AdminLayout.module.css';
 
 // ── Nav definition ─────────────────────────────────────────────────────────
@@ -27,7 +28,7 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   end?: boolean;
-  badgeKey?: 'disputes' | 'moderation';
+  badgeKey?: 'disputes' | 'moderation' | 'testimonials';
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -39,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/finance',      icon: CreditCard,           label: 'Finance'                   },
   { to: '/admin/moderation',   icon: MessageSquareWarning, label: 'Moderation',     badgeKey: 'moderation' },
   { to: '/admin/reviews',      icon: Star,                 label: 'Reviews'                   },
+  { to: '/admin/testimonials', icon: Quote,                label: 'Testimonials', badgeKey: 'testimonials' },
   { to: '/admin/analytics',    icon: BarChart2,            label: 'Analytics'                 },
   { to: '/admin/health',       icon: Activity,             label: 'Health'                    },
   { to: '/admin/audit',        icon: FileSearch,           label: 'Audit Log'                 },
@@ -49,20 +51,25 @@ const NAV_ITEMS: NavItem[] = [
 // ── Badge counts ────────────────────────────────────────────────────────────
 
 interface BadgeCounts {
-  disputes: number;
-  moderation: number;
+  disputes:     number;
+  moderation:   number;
+  testimonials: number;
 }
 
 function useBadgeCounts(): BadgeCounts {
-  const [counts, setCounts] = useState<BadgeCounts>({ disputes: 0, moderation: 0 });
+  const [counts, setCounts] = useState<BadgeCounts>({ disputes: 0, moderation: 0, testimonials: 0 });
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function fetchCounts() {
     try {
-      const stats = await getStats();
+      const [stats, testimonialData] = await Promise.all([
+        getStats(),
+        getTestimonialPendingCount().catch(() => ({ count: 0 })),
+      ]);
       setCounts({
-        disputes:   stats.disputes?.open ?? 0,
-        moderation: 0, // no moderation endpoint yet
+        disputes:     stats.disputes?.open ?? 0,
+        moderation:   0, // no moderation endpoint yet
+        testimonials: testimonialData.count,
       });
     } catch {
       // non-fatal — counts just stay at last value

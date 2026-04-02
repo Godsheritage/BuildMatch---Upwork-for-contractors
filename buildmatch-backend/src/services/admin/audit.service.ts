@@ -15,7 +15,8 @@ export type AuditAction =
   | 'SETTING_CHANGE' | 'FEATURE_FLAG_CHANGE'
   | 'FILTER_PATTERN_ADD' | 'FILTER_PATTERN_REMOVE'
   | 'USER_WARN' | 'USER_ESCALATE'
-  | 'CONTENT_APPROVE' | 'CONTENT_REMOVE';
+  | 'CONTENT_APPROVE' | 'CONTENT_REMOVE'
+  | 'TESTIMONIAL_APPROVE' | 'TESTIMONIAL_REJECT';
 
 // ── Params ────────────────────────────────────────────────────────────────────
 
