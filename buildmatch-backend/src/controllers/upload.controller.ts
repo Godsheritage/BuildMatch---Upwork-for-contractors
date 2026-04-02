@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { getServiceClient } from '../lib/supabase';
 import { sendSuccess, sendError } from '../utils/response.utils';
 
-const ALLOWED_BUCKETS = new Set(['job-photos', 'job-videos', 'avatars', 'dispute-evidence']);
+const ALLOWED_BUCKETS = new Set(['job-photos', 'job-videos', 'avatars', 'dispute-evidence', 'draw-evidence']);
 
 export async function createPresignedUploadUrl(req: Request, res: Response): Promise<void> {
   const { bucket, path } = req.body as { bucket: string; path: string };

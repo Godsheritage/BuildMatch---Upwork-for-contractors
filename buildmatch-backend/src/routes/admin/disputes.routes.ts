@@ -764,6 +764,46 @@ router.post('/:id/ruling', async (req: Request, res: Response): Promise<void> =>
       .eq('id', id);
     if (updateErr) throw new AppError('Failed to update dispute', 500);
 
+    // 5b. Draw request callback — update DrawMilestone/DrawRequest if this
+    //     dispute is linked to one (non-fatal: never block the ruling response)
+    try {
+      const drawReq = await prisma.drawRequest.findFirst({
+        where:  { disputeId: id },
+        select: { id: true, milestoneId: true },
+      });
+      if (drawReq) {
+        if (ruling === 'CONTRACTOR' || ruling === 'SPLIT') {
+          await prisma.$transaction([
+            prisma.drawRequest.update({
+              where: { id: drawReq.id },
+              data:  { status: 'APPROVED' },
+            }),
+            prisma.drawMilestone.update({
+              where: { id: drawReq.milestoneId },
+              data:  { status: 'RELEASED', approvedAt: new Date(), releasedAt: new Date() },
+            }),
+          ]);
+        } else if (ruling === 'INVESTOR') {
+          await prisma.$transaction([
+            prisma.drawRequest.update({
+              where: { id: drawReq.id },
+              data:  {
+                status:          'REJECTED',
+                rejectionReason: rulingNote ?? 'Dispute resolved in investor\'s favor',
+              },
+            }),
+            prisma.drawMilestone.update({
+              where: { id: drawReq.milestoneId },
+              data:  { status: 'PENDING' },
+            }),
+          ]);
+        }
+        // WITHDRAWN: no draw state change
+      }
+    } catch (drawErr) {
+      console.error('[admin/disputes] draw request callback error:', drawErr);
+    }
+
     // 6. Audit log (non-fatal)
     void writeAuditLog({
       adminId,

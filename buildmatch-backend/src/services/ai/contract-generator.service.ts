@@ -24,7 +24,7 @@ Required sections:
 5. Timeline Estimate — start date expectations and realistic completion estimate
 6. Timeline Overage Clause — how delays are handled and communicated
 7. Dispute Resolution Process — steps: direct negotiation → BuildMatch mediation → arbitration
-8. Payment Schedule — milestone-based aligned with the escrow milestones provided
+8. Payment Schedule — use the draw schedule milestones provided EXACTLY (title, amount, percentage, and criteria unchanged)
 
 IMPORTANT REQUIREMENTS:
 - Include this exact BuildMatch clause in Dispute Resolution: \
@@ -34,7 +34,9 @@ shall be conducted in the jurisdiction of the project location."
 - Include this exact AI disclaimer at the bottom of the fullText: \
 "This contract was generated with AI assistance by BuildMatch. \
 Both parties should review all terms carefully before signing."
-- paymentSchedule must match the milestone structure provided exactly.
+- paymentSchedule must reproduce each milestone with the exact amount, percentage, and title from the input. Do NOT alter or combine them.
+- When drawScheduleLocked is true, label the Payment Schedule section as "Payment Schedule (locked by both parties)".
+- Each paymentSchedule item's description must include the completion criteria from the input when provided.
 - All monetary amounts must be in USD.
 
 Respond ONLY with valid JSON matching this exact schema. No markdown. No text outside the JSON.`;
@@ -118,7 +120,7 @@ function buildFallbackContract(params: {
   tradeType:       string;
   city:            string;
   state:           string;
-  milestones:      { title: string; amount: number; percentage: number }[];
+  milestones:      { title: string; amount: number; percentage: number; criteria?: string }[];
 }): GeneratedContract {
   const { jobTitle, investorName, contractorName, bidAmount, tradeType, city, state, milestones } = params;
 
@@ -126,7 +128,9 @@ function buildFallbackContract(params: {
     milestoneName: m.title,
     amount:        m.amount,
     percentage:    m.percentage,
-    description:   `Payment of $${m.amount.toLocaleString()} released upon completion and approval of: ${m.title}`,
+    description:   m.criteria
+      ? `Payment of $${m.amount.toLocaleString()} released upon: ${m.criteria}`
+      : `Payment of $${m.amount.toLocaleString()} released upon completion and approval of: ${m.title}`,
   }));
 
   const fullText = `
@@ -158,8 +162,8 @@ Timeline to be agreed in writing before work commences. Contractor shall provide
 DISPUTE RESOLUTION
 Any disputes not resolved within 14 days of written notice shall be submitted to BuildMatch mediation services. If mediation fails, binding arbitration shall be conducted in the jurisdiction of the project location.
 
-PAYMENT SCHEDULE
-${paymentSchedule.map((p, i) => `Milestone ${i + 1} — ${p.milestoneName}: $${p.amount.toLocaleString()} (${p.percentage}%)`).join('\n')}
+PAYMENT SCHEDULE (locked by both parties)
+${paymentSchedule.map((p, i) => `Draw ${i + 1} — ${p.milestoneName}: $${p.amount.toLocaleString()} (${p.percentage}%)\n  Completion criteria: ${p.description}`).join('\n')}
 
 This contract was generated with AI assistance by BuildMatch. Both parties should review all terms carefully before signing.
 `.trim();
@@ -227,15 +231,30 @@ export async function generateContract(params: {
     }),
   ]);
 
+  const drawSchedule = await prisma.drawSchedule.findUnique({
+    where:   { jobId },
+    include: { milestones: { orderBy: { drawNumber: 'asc' } } },
+  });
+
   const investorName   = `${job.investor.firstName} ${job.investor.lastName}`;
   const contractorName = contractorUser ? `${contractorUser.firstName} ${contractorUser.lastName}` : 'Contractor';
 
-  const milestones = escrowPayment?.milestones.map((m) => ({
-    title:      m.title,
-    amount:     m.amount,
-    percentage: m.percentage,
-    description: m.description ?? '',
-  })) ?? [];
+  // Prefer locked draw schedule milestones; fall back to escrow milestones
+  const milestones = drawSchedule?.milestones && drawSchedule.milestones.length > 0
+    ? drawSchedule.milestones.map((m) => ({
+        title:      m.title,
+        amount:     m.amount,
+        percentage: m.percentage,
+        description: '',
+        criteria:   m.completionCriteria,
+      }))
+    : escrowPayment?.milestones.map((m) => ({
+        title:      m.title,
+        amount:     m.amount,
+        percentage: m.percentage,
+        description: m.description ?? '',
+        criteria:   '',
+      })) ?? [];
 
   // Step 4 — Check no existing active contract
   const existingActive = await prisma.contract.findFirst({
@@ -268,11 +287,13 @@ export async function generateContract(params: {
       investorName,
       contractorName,
     },
+    drawScheduleLocked: drawSchedule?.status === 'LOCKED',
     milestones: milestones.length > 0 ? milestones : [{
       title:       'Project Completion',
       amount:      bid.amount,
       percentage:  100,
       description: 'Full payment upon satisfactory project completion',
+      criteria:    '',
     }],
   };
 

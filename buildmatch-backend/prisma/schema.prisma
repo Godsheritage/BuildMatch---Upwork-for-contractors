@@ -72,6 +72,29 @@ enum ContractStatus {
   VOIDED
 }
 
+enum DrawScheduleStatus {
+  DRAFT
+  NEGOTIATING
+  PENDING_APPROVAL
+  LOCKED
+}
+
+enum DrawMilestoneStatus {
+  PENDING
+  REQUESTED
+  UNDER_REVIEW
+  APPROVED
+  DISPUTED
+  RELEASED
+}
+
+enum DrawRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DISPUTED
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -98,6 +121,7 @@ model User {
 
   contractor              ContractorProfile?
   postedJobs              Job[]                    @relation("InvestorJobs")
+  contractorJobs          Job[]                    @relation("ContractorJobs")
   stripeAccount           ContractorStripeAccount?
   reviewsGiven            Review[]                 @relation("ReviewsGiven")
   reviewsReceived         Review[]                 @relation("ReviewsReceived")
@@ -108,6 +132,10 @@ model User {
   aiUsageLogs             AiUsageLog[]
   investorContracts       Contract[]               @relation("InvestorContracts")
   contractorContracts     Contract[]               @relation("ContractorContracts")
+  drawRequestsSubmitted   DrawRequest[]            @relation("DrawRequestsSubmitted")
+  drawRequestsReviewed    DrawRequest[]            @relation("DrawRequestsReviewed")
+  drawEvidenceUploads     DrawEvidence[]           @relation("DrawEvidenceUploads")
+  drawScheduleEdits       DrawScheduleEdit[]       @relation("DrawScheduleEdits")
 }
 
 model ContractorProfile {
@@ -163,6 +191,9 @@ model Job {
   aiSuggestedTradeType   TradeType?
   investorId             String
   investor               User       @relation("InvestorJobs", fields: [investorId], references: [id])
+  contractorId           String?
+  contractor             User?      @relation("ContractorJobs", fields: [contractorId], references: [id])
+  drawScheduleLocked     Boolean    @default(false)
   bids                   Bid[]
   escrowPayment          EscrowPayment?
   reviews                Review[]
@@ -170,6 +201,9 @@ model Job {
   conversations          Conversation[]
   matchingCache          MatchingCache?
   contracts              Contract[]
+  drawSchedule           DrawSchedule?
+  drawMilestones         DrawMilestone[]
+  drawRequests           DrawRequest[]
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
 }
@@ -417,4 +451,107 @@ model Contract {
   updatedAt                   DateTime       @updatedAt
 
   @@map("contracts")
+}
+
+// ─── Draw Schedule ─────────────────────────────────────────────────────────────
+
+model DrawSchedule {
+  id                   String             @id @default(cuid())
+  jobId                String             @unique
+  job                  Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status               DrawScheduleStatus @default(DRAFT)
+  totalAmount          Float
+  drawCount            Int
+  aiGenerated          Boolean            @default(true)
+  investorApprovedAt   DateTime?
+  contractorApprovedAt DateTime?
+  lockedAt             DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  milestones DrawMilestone[]
+  edits      DrawScheduleEdit[]
+
+  @@map("draw_schedules")
+}
+
+model DrawMilestone {
+  id                 String              @id @default(cuid())
+  scheduleId         String
+  schedule           DrawSchedule        @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  jobId              String
+  job                Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  drawNumber         Int
+  title              String
+  description        String
+  completionCriteria String
+  percentage         Float
+  amount             Float
+  status             DrawMilestoneStatus @default(PENDING)
+  requestedAt        DateTime?
+  approvedAt         DateTime?
+  releasedAt         DateTime?
+  dueDate            DateTime?
+  createdAt          DateTime            @default(now())
+
+  drawRequests DrawRequest[]
+  evidence     DrawEvidence[]
+  edits        DrawScheduleEdit[]
+
+  @@unique([scheduleId, drawNumber])
+  @@map("draw_milestones")
+}
+
+model DrawRequest {
+  id              String            @id @default(cuid())
+  milestoneId     String
+  milestone       DrawMilestone     @relation(fields: [milestoneId], references: [id])
+  jobId           String
+  job             Job               @relation(fields: [jobId], references: [id])
+  contractorId    String
+  contractor      User              @relation("DrawRequestsSubmitted", fields: [contractorId], references: [id])
+  amount          Float
+  note            String?
+  status          DrawRequestStatus @default(PENDING)
+  reviewedById    String?
+  reviewedBy      User?             @relation("DrawRequestsReviewed", fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+  rejectionReason String?
+  disputeId       String?           // Supabase dispute UUID (set when disputed)
+  createdAt       DateTime          @default(now())
+
+  evidence DrawEvidence[]
+
+  @@map("draw_requests")
+}
+
+model DrawEvidence {
+  id            String        @id @default(cuid())
+  drawRequestId String
+  drawRequest   DrawRequest   @relation(fields: [drawRequestId], references: [id], onDelete: Cascade)
+  milestoneId   String
+  milestone     DrawMilestone @relation(fields: [milestoneId], references: [id])
+  uploadedById  String
+  uploadedBy    User          @relation("DrawEvidenceUploads", fields: [uploadedById], references: [id])
+  url           String
+  caption       String?
+  createdAt     DateTime      @default(now())
+
+  @@map("draw_evidence")
+}
+
+model DrawScheduleEdit {
+  id          String        @id @default(cuid())
+  scheduleId  String
+  schedule    DrawSchedule  @relation(fields: [scheduleId], references: [id])
+  editedById  String
+  editedBy    User          @relation("DrawScheduleEdits", fields: [editedById], references: [id])
+  editType    String
+  milestoneId String?
+  milestone   DrawMilestone? @relation(fields: [milestoneId], references: [id])
+  oldValues   Json?
+  newValues   Json?
+  createdAt   DateTime      @default(now())
+
+  @@map("draw_schedule_edits")
 }

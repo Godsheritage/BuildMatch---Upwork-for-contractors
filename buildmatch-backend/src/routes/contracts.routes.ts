@@ -74,6 +74,16 @@ router.post(
     }
 
     try {
+      // Gate: draw schedule must be locked before a contract can be generated
+      const drawSchedule = await prisma.drawSchedule.findUnique({
+        where:  { jobId: parsed.data.jobId },
+        select: { status: true },
+      });
+      if (!drawSchedule || drawSchedule.status !== 'LOCKED') {
+        sendError(res, 'Draw schedule must be locked before a contract can be generated.', 400);
+        return;
+      }
+
       const contract = await generateContract({
         jobId:      parsed.data.jobId,
         bidId:      parsed.data.bidId,

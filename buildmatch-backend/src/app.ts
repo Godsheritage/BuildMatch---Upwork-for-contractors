@@ -25,6 +25,8 @@ import messageRoutes from './routes/message.routes';
 import uploadRoutes from './routes/upload.routes';
 import contractRoutes from './routes/contracts.routes';
 import disputeRoutes from './routes/dispute.routes';
+import drawRoutes         from './routes/draw.routes';
+import drawScheduleRoutes from './routes/draw-schedule.routes';
 import adminRouter from './routes/admin/index';
 import savedRoutes from './routes/saved.routes';
 import { errorHandler } from './middleware/error.middleware';
@@ -112,6 +114,8 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/disputes', disputeRoutes);
+app.use('/api/draws',                  drawRoutes);
+app.use('/api/jobs/:jobId/draws',      drawScheduleRoutes);
 // ── Admin routes ─────────────────────────────────────────────────────────────
 // authenticate + requireAdmin applied once in src/routes/admin/index.ts.
 // Sub-routers must NOT re-apply those middleware layers.
