@@ -23,6 +23,7 @@ import { PaymentsPage } from './pages/PaymentsPage';
 import { OnboardCompletePage } from './pages/OnboardCompletePage';
 import { OnboardRefreshPage } from './pages/OnboardRefreshPage';
 import { FundJobPage } from './pages/FundJobPage';
+import { DrawSchedulePage } from './pages/DrawSchedulePage';
 import { MyBidsPage } from './pages/MyBidsPage';
 import { BrowseJobsPage } from './pages/BrowseJobsPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -240,6 +241,14 @@ export default function App() {
                   element={
                     <ProtectedRoute roles={['INVESTOR']}>
                       <FundJobPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/jobs/:jobId/draw-schedule"
+                  element={
+                    <ProtectedRoute>
+                      <DrawSchedulePage />
                     </ProtectedRoute>
                   }
                 />

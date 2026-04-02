@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, Calendar, DollarSign, Briefcase,
   Users, AlertTriangle, CheckCircle2, Star, Camera, MessageSquare, FileText,
+  Lock, Clock,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
@@ -14,6 +15,7 @@ import {
 } from '../services/job.service';
 import { generateContract, getContractByJob } from '../services/contract.service';
 import { polishReply, summarizeThread } from '../services/ai.service';
+import api from '../services/api';
 import { ReviewModal } from '../components/review/ReviewModal';
 import { getOrCreateConversation } from '../services/message.service';
 import { StarRating } from '../components/ui/StarRating';
@@ -24,6 +26,7 @@ import styles from './JobDetailPage.module.css';
 import { getOptimizedUrl, JOB_PHOTO_FALLBACK } from '../utils/media';
 import { RecommendedContractors } from '../components/job/RecommendedContractors';
 import { BidAnalysisPanel, BidAnalysisPanelErrorBoundary } from '../components/job/BidAnalysisPanel';
+import { ActiveDrawTracker } from '../components/job/ActiveDrawTracker';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -65,6 +68,13 @@ const BID_STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   REJECTED:  { bg: '#F8F7F5', text: '#6B6B67' },
   WITHDRAWN: { bg: '#F8F7F5', text: '#6B6B67' },
 };
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+interface DrawScheduleSummary {
+  id:     string;
+  status: 'DRAFT' | 'NEGOTIATING' | 'PENDING_APPROVAL' | 'LOCKED';
+}
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
 
@@ -500,17 +510,31 @@ function MyBidCard({ jobId, investorId, jobStatus }: { jobId: string; investorId
 // ── Sidebar: Investor view (owns the job) ─────────────────────────────────────
 
 function InvestorCard({
-  job, bidsRef, acceptedBidId, contractId,
+  job, bidsRef, acceptedBidId, contractId, contractIsActive,
 }: {
-  job:           JobPost;
-  bidsRef:       React.RefObject<HTMLElement | null>;
-  acceptedBidId: string | undefined;
-  contractId:    string | null | undefined;
+  job:              JobPost;
+  bidsRef:          React.RefObject<HTMLElement | null>;
+  acceptedBidId:    string | undefined;
+  contractId:       string | null | undefined;
+  contractIsActive: boolean;
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [confirmCancel, setConfirmCancel] = useState(false);
+
+  const showScheduleCard = ['AWARDED', 'IN_PROGRESS'].includes(job.status);
+
+  const { data: schedule } = useQuery<DrawScheduleSummary | null>({
+    queryKey: ['draw-schedule', job.id],
+    queryFn:  () =>
+      api.get<{ data: { schedule: DrawScheduleSummary | null } }>(`/jobs/${job.id}/draws`)
+        .then((r) => r.data.data.schedule),
+    enabled:   showScheduleCard,
+    staleTime: 30_000,
+  });
+
+  const scheduleIsLocked = schedule?.status === 'LOCKED';
 
   const cancel = useMutation({
     mutationFn: () => cancelJob(job.id),
@@ -540,6 +564,27 @@ function InvestorCard({
     bidsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  // ── 4-step progression stepper (AWARDED) ────────────────────────────────────
+  const step1Done   = scheduleIsLocked;
+  const step2Done   = contractIsActive;
+  const step2Active = step1Done && !step2Done;
+  const step3Active = step2Done;
+
+  function StepCircle({ n, done, active }: { n: number; done: boolean; active: boolean }) {
+    const bg    = done ? 'var(--color-accent)' : active ? 'var(--color-primary)' : 'var(--color-border)';
+    const color = done || active ? '#fff' : 'var(--color-text-muted)';
+    return (
+      <div style={{
+        width: 24, height: 24, borderRadius: '50%', background: bg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 11, fontWeight: 'var(--font-weight-semibold)', color,
+        flexShrink: 0,
+      }}>
+        {done ? <CheckCircle2 size={13} strokeWidth={2.5} /> : n}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.sidebarCard}>
       <h3 className={styles.cardTitle}>Your Job</h3>
@@ -557,21 +602,111 @@ function InvestorCard({
         </button>
       )}
 
-      {/* Contract CTA — awarded, no contract yet */}
-      {job.status === 'AWARDED' && acceptedBidId && !contractId && (
-        <button
-          className={styles.generateContractBtn}
-          onClick={() => genContract.mutate()}
-          disabled={genContract.isPending}
-          type="button"
-        >
-          <FileText size={13} strokeWidth={2} />
-          {genContract.isPending ? 'Generating…' : 'Generate Contract'}
-        </button>
+      {/* 4-step progression stepper — AWARDED */}
+      {job.status === 'AWARDED' && (
+        <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <p style={{ fontSize: 11, fontWeight: 'var(--font-weight-medium)', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-muted)', marginBottom: 'var(--space-3)' }}>
+            Next Steps
+          </p>
+
+          {/* Step 1: Set up draw schedule */}
+          <div style={{ display: 'flex', gap: 'var(--space-3)', paddingBottom: 'var(--space-3)', borderLeft: step1Done ? '2px solid var(--color-accent)' : '2px solid var(--color-border)', marginLeft: 11, paddingLeft: 'var(--space-3)' }}>
+            <StepCircle n={1} done={step1Done} active={!step1Done} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 13, fontWeight: 'var(--font-weight-medium)', color: step1Done ? 'var(--color-text-muted)' : 'var(--color-text-primary)', margin: 0 }}>
+                Set up payment schedule
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>
+                {step1Done ? 'Locked by both parties' : 'Both parties must approve'}
+              </p>
+              {!step1Done && (
+                <Link
+                  to={`/jobs/${job.id}/draw-schedule`}
+                  style={{ fontSize: 12, color: 'var(--color-primary)', fontWeight: 'var(--font-weight-medium)', display: 'inline-block', marginTop: 4 }}
+                >
+                  {schedule ? 'Review schedule →' : 'Set up schedule →'}
+                </Link>
+              )}
+              {step1Done && (
+                <Link
+                  to={`/jobs/${job.id}/draw-schedule`}
+                  style={{ fontSize: 12, color: 'var(--color-text-muted)', display: 'inline-block', marginTop: 4 }}
+                >
+                  View →
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Step 2: Review & sign contract */}
+          <div style={{ display: 'flex', gap: 'var(--space-3)', paddingBottom: 'var(--space-3)', borderLeft: step2Done ? '2px solid var(--color-accent)' : '2px solid var(--color-border)', marginLeft: 11, paddingLeft: 'var(--space-3)' }}>
+            <StepCircle n={2} done={step2Done} active={step2Active} />
+            <div style={{ flex: 1, minWidth: 0, opacity: !step1Done ? 0.45 : 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 'var(--font-weight-medium)', color: step2Done ? 'var(--color-text-muted)' : 'var(--color-text-primary)', margin: 0 }}>
+                Review &amp; sign contract
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>
+                {step2Done ? 'Contract active' : step2Active ? 'Ready to generate' : 'Locked until step 1'}
+              </p>
+              {step2Active && acceptedBidId && !contractId && (
+                <button
+                  style={{ fontSize: 12, color: 'var(--color-primary)', fontWeight: 'var(--font-weight-medium)', background: 'none', border: 'none', padding: 0, cursor: genContract.isPending ? 'wait' : 'pointer', marginTop: 4, display: 'inline-block' }}
+                  onClick={() => genContract.mutate()}
+                  disabled={genContract.isPending}
+                  type="button"
+                >
+                  {genContract.isPending ? 'Generating…' : 'Generate contract →'}
+                </button>
+              )}
+              {contractId && (
+                <Link
+                  to={`/contracts/${contractId}`}
+                  style={{ fontSize: 12, color: step2Done ? 'var(--color-text-muted)' : 'var(--color-primary)', fontWeight: 'var(--font-weight-medium)', display: 'inline-block', marginTop: 4 }}
+                >
+                  {step2Done ? 'View →' : 'Review & sign →'}
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Step 3: Fund escrow */}
+          <div style={{ display: 'flex', gap: 'var(--space-3)', paddingBottom: 'var(--space-3)', borderLeft: '2px solid var(--color-border)', marginLeft: 11, paddingLeft: 'var(--space-3)' }}>
+            <StepCircle n={3} done={false} active={step3Active} />
+            <div style={{ flex: 1, minWidth: 0, opacity: !step2Done ? 0.45 : 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', margin: 0 }}>
+                Fund escrow
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>
+                {step3Active ? 'Funds held securely' : 'Locked until step 2'}
+              </p>
+              {step3Active && (
+                <Link
+                  to={`/dashboard/jobs/${job.id}/fund`}
+                  style={{ fontSize: 12, color: 'var(--color-primary)', fontWeight: 'var(--font-weight-medium)', display: 'inline-block', marginTop: 4 }}
+                >
+                  Fund escrow →
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Step 4: Project begins */}
+          <div style={{ display: 'flex', gap: 'var(--space-3)', marginLeft: 11, paddingLeft: 'var(--space-3)' }}>
+            <StepCircle n={4} done={false} active={false} />
+            <div style={{ flex: 1, minWidth: 0, opacity: 0.45 }}>
+              <p style={{ fontSize: 13, fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', margin: 0 }}>
+                Project begins
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '2px 0 0' }}>
+                Locked until escrow funded
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* View contract link — contract exists */}
-      {contractId && (
+      {/* View contract link for IN_PROGRESS — contract exists */}
+      {job.status !== 'AWARDED' && contractId && (
         <Link to={`/contracts/${contractId}`} className={styles.viewContractLink}>
           <FileText size={13} strokeWidth={2} />
           View Contract
@@ -899,9 +1034,10 @@ function BidsList({ jobId }: { jobId: string }) {
   const accept = useMutation({
     mutationFn: (bidId: string) => acceptBid(jobId, bidId),
     onSuccess: () => {
-      toast('Bid accepted! Job has been awarded.');
+      toast("Bid accepted! Let's set up the payment schedule.");
       qc.invalidateQueries({ queryKey: ['jobs', jobId] });
       qc.invalidateQueries({ queryKey: ['jobs', jobId, 'bids'] });
+      navigate(`/jobs/${jobId}/draw-schedule`);
     },
     onError: (err: Error) => {
       toast(err.message || 'Failed to accept bid', 'error');
@@ -1274,6 +1410,17 @@ export function JobDetailPage() {
               </section>
             )}
 
+            {/* Active draw tracker — IN_PROGRESS, parties only */}
+            {job.status === 'IN_PROGRESS' && isParty && user && (
+              <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>Payment Schedule</h2>
+                <ActiveDrawTracker
+                  jobId={job.id}
+                  userRole={user.role as 'INVESTOR' | 'CONTRACTOR'}
+                />
+              </section>
+            )}
+
             {/* Complete job callout (investor, IN_PROGRESS, not yet completed) */}
             {isOwner && job.status === 'IN_PROGRESS' && !job.isCompleted && (
               <section className={styles.section}>
@@ -1389,6 +1536,7 @@ export function JobDetailPage() {
                 bidsRef={bidsRef}
                 acceptedBidId={acceptedBid?.id}
                 contractId={contractId}
+                contractIsActive={existingContract?.status === 'ACTIVE'}
               />
             )}
             {sidebarVariant === 'guest' && <GuestCard />}
