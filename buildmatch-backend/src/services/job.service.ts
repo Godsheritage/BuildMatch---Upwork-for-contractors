@@ -262,8 +262,8 @@ export async function acceptBid(jobId: string, bidId: string, investorId: string
     }),
     // Accept the chosen bid
     prisma.bid.update({ where: { id: bidId }, data: { status: 'ACCEPTED' } }),
-    // Mark job as awarded
-    prisma.job.update({ where: { id: jobId }, data: { status: 'AWARDED' } }),
+    // Mark job as awarded and record the winning contractor
+    prisma.job.update({ where: { id: jobId }, data: { status: 'AWARDED', contractorId: bid.contractorId } }),
   ]);
 
   const acceptedBid = results[1];

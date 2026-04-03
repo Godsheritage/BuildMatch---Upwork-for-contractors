@@ -141,6 +141,41 @@ src/
 
 **Access control:** `assertParty(disputeId, userId)` enforces that only the two named parties can read or write to a dispute. Admin routes bypass this via `adminGetDispute()`.
 
+### Draw Schedule — `/api/jobs/:jobId/draws/*`
+
+Mounted at `app.use('/api/jobs/:jobId/draws', drawScheduleRoutes)`. All routes require `authenticate` + `requireJobParty` (investor or contractor on the job).
+
+**Status flow:** `DRAFT → NEGOTIATING → PENDING_APPROVAL → LOCKED`. Once LOCKED the `Job.drawScheduleLocked` flag is set to `true`.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/jobs/:jobId/draws` | party | Full schedule with milestones and draw requests (includes contractor data) |
+| POST | `/api/jobs/:jobId/draws/generate` | investor | AI-generate draw milestones from job scope (claude-opus-4-5); only if no schedule exists and job is AWARDED |
+| POST | `/api/jobs/:jobId/draws/approve` | party | Approve schedule; transitions to PENDING_APPROVAL or LOCKED when both approve |
+| POST | `/api/jobs/:jobId/draws/reset-approval` | party | Retract approval; transitions back to NEGOTIATING |
+| POST | `/api/jobs/:jobId/draws/milestones` | party | Add a milestone (max 8, must sum to 100%) |
+| PUT | `/api/jobs/:jobId/draws/milestones/:milestoneId` | party | Edit a milestone; resets approvals |
+| DELETE | `/api/jobs/:jobId/draws/milestones/:milestoneId` | party | Remove milestone; redistributes percentage; minimum 2 draws |
+| POST | `/api/jobs/:jobId/draws/milestones/:milestoneId/request` | contractor | Submit draw request with note + evidence URLs |
+| GET | `/api/jobs/:jobId/draws/milestones/:milestoneId/request` | party | Latest draw request for the milestone |
+| POST | `/api/jobs/:jobId/draws/requests/:requestId/approve` | investor | Approve draw; triggers best-effort Stripe escrow release |
+| POST | `/api/jobs/:jobId/draws/requests/:requestId/dispute` | investor | File dispute on draw; creates Dispute record, marks milestone DISPUTED |
+| POST | `/api/jobs/:jobId/draws/requests/:requestId/evidence` | contractor | Attach additional evidence to a PENDING/DISPUTED request |
+
+**Contract generation gate:** `POST /api/contracts/generate` reads `Job.drawScheduleLocked` and returns 400 if not locked.
+
+**Admin dispute ruling callback:** after `POST /api/admin/disputes/:id/ruling`, the route looks up `DrawRequest` by `disputeId`. CONTRACTOR/SPLIT ruling → DrawRequest APPROVED + DrawMilestone RELEASED. INVESTOR ruling → DrawRequest REJECTED + DrawMilestone PENDING.
+
+**Notifications** (`src/services/draw-notifications.service.ts`): 6 fire-and-forget functions (all `.catch(console.error)`):
+- `notifyScheduleReady` — after generate, notifies contractor
+- `notifyPartyApproved` — after single-party approve, notifies other party
+- `notifyScheduleLocked` — after both approve, notifies both
+- `notifyDrawRequested` — after contractor submits request, notifies investor
+- `notifyDrawApproved` — after investor approves request, notifies contractor
+- `notifyDrawDisputed` — after investor disputes, notifies contractor
+
+**AI service** (`src/services/ai/draw-schedule.service.ts`): `generateDrawSchedule({ jobId, jobTitle, jobDescription, tradeType, totalBudget, bidMessage? })` — uses claude-opus-4-5, generates 4-8 milestones as JSON, persists via Prisma. Falls back gracefully if AI fails.
+
 ### Admin API — `/api/admin/*`
 
 **Security:** Every admin router applies `router.use(authenticate, requireAdmin)` — two named middleware layers. `requireAdmin` is defined in `src/middleware/admin.middleware.ts`; it returns 403 if `req.user.role !== 'ADMIN'`. Never use `requireRole('ADMIN')` for admin routes.
@@ -327,6 +362,68 @@ model Message {
   filterReason   String?
   readAt         DateTime?
   createdAt      DateTime     @default(now())
+}
+
+// Draw schedule models (created in migrations 20260402000000 + 20260402100000)
+
+enum DrawScheduleStatus  { DRAFT NEGOTIATING PENDING_APPROVAL LOCKED }
+enum DrawMilestoneStatus { PENDING REQUESTED APPROVED RELEASED DISPUTED }
+enum DrawRequestStatus   { PENDING APPROVED REJECTED DISPUTED }
+
+model DrawSchedule {
+  id                   String              @id @default(cuid())
+  jobId                String              @unique
+  totalAmount          Float
+  status               DrawScheduleStatus  @default(DRAFT)
+  investorApprovedAt   DateTime?
+  contractorApprovedAt DateTime?
+  lockedAt             DateTime?
+  milestones           DrawMilestone[]
+  editHistory          DrawScheduleEdit[]
+}
+
+model DrawMilestone {
+  id                  String              @id @default(cuid())
+  scheduleId          String
+  jobId               String
+  drawNumber          Int
+  title               String
+  description         String?
+  completionCriteria  String
+  percentage          Float
+  amount              Float
+  status              DrawMilestoneStatus @default(PENDING)
+  dueDate             DateTime?
+  requestedAt         DateTime?
+  approvedAt          DateTime?
+  releasedAt          DateTime?
+  drawRequests        DrawRequest[]
+}
+
+model DrawRequest {
+  id             String            @id @default(cuid())
+  milestoneId    String
+  jobId          String
+  contractorId   String            // references User.id
+  amount         Float
+  note           String?
+  status         DrawRequestStatus @default(PENDING)
+  disputeId      String?           // Supabase dispute UUID (set when DISPUTED)
+  reviewedById   String?
+  reviewedAt     DateTime?
+  rejectionReason String?
+  evidence       DrawEvidence[]
+  milestone      DrawMilestone     @relation(...)
+  contractor     User              @relation(...)
+}
+
+model DrawEvidence {
+  id            String   @id @default(cuid())
+  drawRequestId String
+  milestoneId   String
+  uploadedById  String
+  url           String   // Supabase Storage public URL in dispute-evidence bucket
+  caption       String?
 }
 ```
 

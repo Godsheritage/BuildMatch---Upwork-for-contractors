@@ -86,7 +86,7 @@ export function DashboardLayout() {
         <button className={styles.hamburger} onClick={() => setSidebarOpen(true)} aria-label="Open menu">
           <Menu size={22} strokeWidth={2} />
         </button>
-        <img src="/logo.svg" alt="BuildMatch" style={{ height: 36 }} />
+        <img src="/logo.svg" alt="BuildMatch" style={{ height: 'clamp(2.7rem, 4.8vw, 4.8rem)' }} />
         <Link
           to="/dashboard/messages"
           className={styles.mobileMsgBtn}
@@ -104,7 +104,7 @@ export function DashboardLayout() {
       {/* Sidebar */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
         <div className={styles.sidebarHeader}>
-          <Link to="/"><img src="/logo.svg" alt="BuildMatch" style={{ height: 36 }} /></Link>
+          <Link to="/"><img src="/logo.svg" alt="BuildMatch" style={{ height: 'clamp(2.7rem, 4.8vw, 4.8rem)' }} /></Link>
           <button className={styles.closeBtn} onClick={closeSidebar} aria-label="Close menu">
             <X size={18} strokeWidth={2} />
           </button>

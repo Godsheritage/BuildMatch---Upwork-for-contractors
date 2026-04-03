@@ -59,7 +59,8 @@ src/
 | `ContractorsPage.tsx` | `/contractors` | public | Browse contractors with filter sidebar |
 | `ContractorProfilePage.tsx` | `/contractors/:id` | public | Full contractor profile |
 | `JobsPage.tsx` | `/jobs` | public | Browse jobs with filter sidebar + URL-synced params |
-| `JobDetailPage.tsx` | `/jobs/:id` | public | Job detail + polymorphic sidebar; "Having an issue?" link (IN_PROGRESS only) → `/settings/disputes/new?jobId=` |
+| `JobDetailPage.tsx` | `/jobs/:id` | public | Job detail + polymorphic sidebar; "Having an issue?" link (IN_PROGRESS only) → `/settings/disputes/new?jobId=`; `ActiveDrawTracker` shown for IN_PROGRESS jobs |
+| `DrawSchedulePage.tsx` | `/jobs/:jobId/draw-schedule` | auth (party) | Draw schedule negotiation: milestone editor, approval flow, edit history. Uses Supabase Realtime for live status. Bid acceptance redirects here. |
 | `DashboardPage.tsx` | `/dashboard` | auth | Greeting + stats overview |
 | `InvestorJobsPage.tsx` | `/dashboard/jobs` | INVESTOR | Job management table with tabs + kebab actions |
 | `PostJobPage.tsx` | `/dashboard/post-job` | INVESTOR | Create job form with live preview |
@@ -171,6 +172,7 @@ Calls `useMessageNotifications()` so the global Supabase Realtime subscription f
 | `['jobs', id]` | `GET /jobs/:id` | JobDetailPage |
 | `['jobs', id, 'bids']` | `GET /jobs/:id/bids` | JobDetailPage (investor, bids list) |
 | `['jobs', id, 'my-bid']` | `GET /jobs/:id/bids/my-bid` | JobDetailPage (contractor, existing bid) |
+| `['draw-schedule', id]` | `GET /jobs/:id/draws` | JobDetailPage AWARDED stepper, DrawSchedulePage |
 | `['jobs', 'my-jobs']` | `GET /jobs/my-jobs` | InvestorJobsPage |
 | `['conversations']` | `GET /messages/conversations` | MessagesPage, ConversationList |
 | `['conversations', id]` | `GET /messages/conversations/:id` | MessagesPage (marks read, invalidates unread) |
@@ -427,6 +429,31 @@ Public detail pages (`ContractorProfilePage`, `JobDetailPage`) use a `max-width:
 
 ### Debounced inputs
 Search, city, and budget fields use a local `setTimeout` / `clearTimeout` pattern (400ms) before updating the query params that trigger an API call.
+
+### Draw Schedule System
+
+**`DrawSchedulePage`** (`src/pages/DrawSchedulePage.tsx`) — full negotiation UI:
+- Investor generates AI schedule via `POST /api/jobs/:jobId/draws/generate`
+- Both parties edit milestones (add/edit/delete), view edit history
+- Either party can approve; both approvals → LOCKED
+- Supabase Realtime channel `draw-schedule:{jobId}` on `draw_schedules` UPDATE for live status
+- Navigate here on bid acceptance via `navigate(\`/jobs/${jobId}/draw-schedule\`)`
+
+**`ActiveDrawTracker`** (`src/components/job/ActiveDrawTracker.tsx`) — live draw progress:
+- Props: `{ jobId: string; userRole: 'INVESTOR' | 'CONTRACTOR' }`
+- Polls `GET /api/jobs/:jobId/draws` every 30 seconds (`refetchInterval: 30_000`)
+- Progress bar: `releasedAmount / totalAmount * 100`
+- Milestone card states: PENDING (gray) / REQUESTED (amber) / RELEASED (green) / DISPUTED (red)
+- `RequestDrawModal` (contractor): criteria checklist, evidence upload via `useDisputeEvidenceUpload`, `POST milestones/:id/request`
+- `ReviewDrawModal` (investor): criteria verify toggles, evidence gallery with Lightbox, approve/dispute actions
+- Dispute form posts to `POST requests/:id/dispute` with `category`, `description`, `desiredOutcome`
+
+**AWARDED progression stepper** (`InvestorCard` in `JobDetailPage`):
+- 4 steps rendered when `job.status === 'AWARDED'`: (1) Set up payment schedule, (2) Review & sign contract, (3) Fund escrow, (4) Project begins
+- Step 1 done → `scheduleIsLocked` (fetches `GET /api/jobs/:jobId/draws`)
+- Step 2 done → `contractIsActive` (`existingContract?.status === 'ACTIVE'`)
+- Contract generation button only active when step 1 done; locked state shown at 45% opacity
+- `draw-schedule` query key: `['draw-schedule', job.id]`, staleTime 30s
 
 ### Polymorphic sidebar (JobDetailPage)
 The right sidebar renders one of four variants based on the auth state:
