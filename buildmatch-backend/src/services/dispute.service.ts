@@ -180,7 +180,7 @@ export async function fileDispute(
     .select('id')
     .eq('job_id', input.jobId)
     .eq('filed_by_id', filedById)
-    .in('status', ['OPEN', 'UNDER_REVIEW'])
+    .in('status', ['UNDER_REVIEW', 'AWAITING_EVIDENCE', 'PENDING_RULING'])
     .maybeSingle();
   if (existing) {
     throw new AppError('You already have an open dispute on this job', 400);
@@ -497,9 +497,30 @@ export async function withdrawDispute(
     is_system:  true,
   });
 
-  // If funds were held against this dispute milestone, release to contractor
-  // TODO: call escrow service once escrow↔dispute linkage is defined
-  // e.g. if (row.milestone_draw) await releaseMilestone(row.job_id, row.milestone_draw, ...)
+  // If this dispute is linked to a draw request that is still in a disputable
+  // state, release the held milestone funds back to the contractor
+  // (withdrawing = filer drops their claim). Guarded against double-release if
+  // an admin already ruled or otherwise advanced the request.
+  try {
+    const drawReq = await prisma.drawRequest.findFirst({
+      where:  { disputeId },
+      select: { id: true, milestoneId: true, status: true },
+    });
+    if (drawReq && (drawReq.status === 'PENDING' || drawReq.status === 'DISPUTED')) {
+      await prisma.$transaction([
+        prisma.drawRequest.update({
+          where: { id: drawReq.id, status: drawReq.status },
+          data:  { status: 'APPROVED' },
+        }),
+        prisma.drawMilestone.update({
+          where: { id: drawReq.milestoneId },
+          data:  { status: 'RELEASED', approvedAt: new Date(), releasedAt: new Date() },
+        }),
+      ]);
+    }
+  } catch (drawErr) {
+    console.error('[disputes] draw release on withdraw skipped/failed:', drawErr);
+  }
 
   // Notify the other party — fire-and-forget
   const otherPartyId = row.filed_by_id === userId ? row.against_id : row.filed_by_id;
@@ -562,7 +583,17 @@ export async function adminGetDispute(disputeId: string): Promise<Dispute | null
 
 export async function getDisputeSummary(
   userId: string,
-): Promise<{ open: number; underReview: number; resolved: number; total: number }> {
+): Promise<{
+  open:              number;
+  underReview:       number;
+  awaitingEvidence:  number;
+  pendingRuling:     number;
+  resolved:          number;
+  closed:            number;
+  withdrawn:         number;
+  active:            number;  // OPEN + UNDER_REVIEW + AWAITING_EVIDENCE + PENDING_RULING
+  total:             number;
+}> {
   const supabase = getServiceClient();
 
   const { data, error } = await supabase
@@ -573,10 +604,20 @@ export async function getDisputeSummary(
   if (error) throw new AppError('Failed to fetch dispute summary', 500);
 
   const rows = (data ?? []) as { status: string }[];
+  const count = (s: string) => rows.filter((r) => r.status === s).length;
+  const open             = count('OPEN');
+  const underReview      = count('UNDER_REVIEW');
+  const awaitingEvidence = count('AWAITING_EVIDENCE');
+  const pendingRuling    = count('PENDING_RULING');
   return {
-    open:        rows.filter((r) => r.status === 'OPEN').length,
-    underReview: rows.filter((r) => ['UNDER_REVIEW', 'AWAITING_EVIDENCE', 'PENDING_RULING'].includes(r.status)).length,
-    resolved:    rows.filter((r) => ['RESOLVED', 'CLOSED'].includes(r.status)).length,
-    total:       rows.length,
+    open,
+    underReview,
+    awaitingEvidence,
+    pendingRuling,
+    resolved:  count('RESOLVED'),
+    closed:    count('CLOSED'),
+    withdrawn: count('WITHDRAWN'),
+    active:    open + underReview + awaitingEvidence + pendingRuling,
+    total:     rows.length,
   };
 }

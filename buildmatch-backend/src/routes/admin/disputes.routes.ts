@@ -115,10 +115,11 @@ async function sendRulingEmail(params: {
   if (!user?.email) return;
 
   const rulingLabels: Record<string, string> = {
-    INVESTOR:   'resolved in favour of the investor — funds have been returned',
-    CONTRACTOR: 'resolved in favour of the contractor — funds have been released',
-    SPLIT:      `resolved with a ${params.splitPct ?? 50}/${100 - (params.splitPct ?? 50)} split between parties`,
-    WITHDRAWN:  'closed as withdrawn',
+    INVESTOR_WINS:   'resolved in favour of the investor — funds have been returned',
+    CONTRACTOR_WINS: 'resolved in favour of the contractor — funds have been released',
+    SPLIT:           `resolved with a ${params.splitPct ?? 50}/${100 - (params.splitPct ?? 50)} split between parties`,
+    WITHDRAWN:       'closed as withdrawn',
+    NO_ACTION:       'closed with no action taken',
   };
   const label = rulingLabels[params.ruling] ?? params.ruling;
 
@@ -164,7 +165,8 @@ async function sendRequestInfoEmail(params: {
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
 const V2_STATUSES = [
-  'OPEN', 'UNDER_REVIEW', 'RESOLVED', 'CLOSED',
+  'OPEN', 'UNDER_REVIEW', 'AWAITING_EVIDENCE', 'PENDING_RULING',
+  'RESOLVED', 'CLOSED', 'WITHDRAWN',
 ] as const;
 
 const listQuerySchema = z.object({
@@ -181,7 +183,9 @@ const noteSchema = z.object({
   content: z.string().min(1).max(5000),
 });
 
-const RULING_VALUES = ['INVESTOR', 'CONTRACTOR', 'SPLIT', 'WITHDRAWN'] as const;
+const RULING_VALUES = [
+  'INVESTOR_WINS', 'CONTRACTOR_WINS', 'SPLIT', 'WITHDRAWN', 'NO_ACTION',
+] as const;
 
 const rulingSchema = z.object({
   ruling:     z.enum(RULING_VALUES),
@@ -198,7 +202,10 @@ const requestInfoSchema = z.object({
 });
 
 const adminStatusSchema = z.object({
-  status: z.enum(['UNDER_REVIEW', 'RESOLVED', 'CLOSED'] as const),
+  status: z.enum([
+    'UNDER_REVIEW', 'AWAITING_EVIDENCE', 'PENDING_RULING',
+    'RESOLVED', 'CLOSED',
+  ] as const),
   note:   z.string().max(2000).optional(),
 });
 
@@ -670,7 +677,7 @@ router.post('/:id/ruling', async (req: Request, res: Response): Promise<void> =>
     const { contractorId } = await deriveParties(row.job_id);
     const milestoneAmountCents = Math.round(milestone.amount * 100);
 
-    if (ruling === 'INVESTOR') {
+    if (ruling === 'INVESTOR_WINS') {
       // Full refund to investor
       await stripe.refunds.create({
         payment_intent: escrow.stripePaymentIntentId,
@@ -682,7 +689,7 @@ router.post('/:id/ruling', async (req: Request, res: Response): Promise<void> =>
         data:  { status: 'RELEASED', releasedAt: new Date(), disputeReason: null },
       });
 
-    } else if (ruling === 'CONTRACTOR') {
+    } else if (ruling === 'CONTRACTOR_WINS') {
       // Full release to contractor
       if (!contractorId) throw new AppError('No contractor found for this job', 422);
       const stripeAcctId = await contractorStripeAccountId(contractorId);
@@ -772,7 +779,7 @@ router.post('/:id/ruling', async (req: Request, res: Response): Promise<void> =>
         select: { id: true, milestoneId: true },
       });
       if (drawReq) {
-        if (ruling === 'CONTRACTOR' || ruling === 'SPLIT') {
+        if (ruling === 'CONTRACTOR_WINS' || ruling === 'SPLIT') {
           await prisma.$transaction([
             prisma.drawRequest.update({
               where: { id: drawReq.id },
@@ -783,7 +790,7 @@ router.post('/:id/ruling', async (req: Request, res: Response): Promise<void> =>
               data:  { status: 'RELEASED', approvedAt: new Date(), releasedAt: new Date() },
             }),
           ]);
-        } else if (ruling === 'INVESTOR') {
+        } else if (ruling === 'INVESTOR_WINS') {
           await prisma.$transaction([
             prisma.drawRequest.update({
               where: { id: drawReq.id },

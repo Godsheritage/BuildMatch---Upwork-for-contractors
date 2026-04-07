@@ -569,8 +569,8 @@ router.get('/flagged-users', async (req: Request, res: Response): Promise<void> 
     for (const d of (disputeRows ?? []) as { filed_by_id: string; ruling: string }[]) {
       const role = roleMap.get(d.filed_by_id) ?? '';
       const isLoss =
-        (role === 'INVESTOR'   && d.ruling === 'CONTRACTOR') ||
-        (role === 'CONTRACTOR' && d.ruling === 'INVESTOR');
+        (role === 'INVESTOR'   && d.ruling === 'CONTRACTOR_WINS') ||
+        (role === 'CONTRACTOR' && d.ruling === 'INVESTOR_WINS');
       if (isLoss) lossMap.set(d.filed_by_id, (lossMap.get(d.filed_by_id) ?? 0) + 1);
     }
 

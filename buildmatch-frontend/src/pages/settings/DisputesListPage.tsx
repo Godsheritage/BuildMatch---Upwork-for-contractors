@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { ShieldCheck, MessageSquare, FileText, Clock, CheckCircle2, Ban } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
 import { useAuth } from '../../hooks/useAuth';
-import { getDisputes } from '../../services/dispute.service';
+import { getDisputes, getDisputeSummary } from '../../services/dispute.service';
 import type { Dispute, DisputeStatus } from '../../types/dispute.types';
 import styles from './DisputesListPage.module.css';
 
@@ -64,7 +64,7 @@ function StatusBadge({ status }: { status: DisputeStatus }) {
 
 const TABS: { key: DisputeStatus | 'ALL'; label: string }[] = [
   { key: 'ALL',              label: 'All' },
-  { key: 'OPEN',             label: 'Open' },
+  { key: 'OPEN',             label: 'Active' },
   { key: 'UNDER_REVIEW',     label: 'Under Review' },
   { key: 'AWAITING_EVIDENCE',label: 'Awaiting Evidence' },
   { key: 'RESOLVED',         label: 'Resolved' },
@@ -177,23 +177,56 @@ export function DisputesListPage() {
   const { user }                         = useAuth();
   const [activeTab, setActiveTab]        = useState<DisputeStatus | 'ALL'>('ALL');
 
-  const { data, isLoading } = useQuery({
-    queryKey:       ['disputes', { status: undefined }],
-    queryFn:        () => getDisputes({ page: 1, limit: 25 }),
+  // Per-tab server filter. The "Active" tab (key 'OPEN') combines OPEN +
+  // UNDER_REVIEW client-side, so we fetch unfiltered for that tab and ALL.
+  const serverStatus: DisputeStatus | undefined =
+    activeTab === 'ALL' || activeTab === 'OPEN' ? undefined : activeTab;
+
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey:        ['disputes', 'list', serverStatus ?? 'all'],
+    queryFn:         ({ pageParam = 1 }) =>
+      getDisputes({ page: pageParam, limit: 25, status: serverStatus }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
     refetchInterval: 60_000,
   });
 
-  const allDisputes = data?.disputes ?? [];
-  const disputes    = activeTab === 'ALL'
-    ? allDisputes
-    : activeTab === 'OPEN'
-      ? allDisputes.filter((d) => d.status === 'OPEN' || d.status === 'UNDER_REVIEW')
-      : allDisputes.filter((d) => d.status === activeTab);
+  // Badge counts come from the dedicated summary endpoint so they reflect
+  // the user's full dataset, not just loaded pages.
+  const { data: summary } = useQuery({
+    queryKey:        ['disputes', 'summary'],
+    queryFn:         getDisputeSummary,
+    refetchInterval: 60_000,
+    staleTime:       30_000,
+  });
+
+  const fetched: Dispute[] = data?.pages.flatMap((p) => p.disputes) ?? [];
+
+  // For the OPEN ("Active") tab, narrow client-side to OPEN + UNDER_REVIEW.
+  const disputes: Dispute[] = activeTab === 'OPEN'
+    ? fetched.filter((d) => d.status === 'OPEN' || d.status === 'UNDER_REVIEW')
+    : fetched;
 
   function tabCount(key: DisputeStatus | 'ALL'): number | null {
-    if (key === 'ALL')  return allDisputes.length || null;
-    if (key === 'OPEN') return allDisputes.filter((d) => d.status === 'OPEN' || d.status === 'UNDER_REVIEW').length || null;
-    return allDisputes.filter((d) => d.status === key).length || null;
+    if (!summary) return null;
+    switch (key) {
+      case 'ALL':               return summary.total            || null;
+      case 'OPEN':              return summary.active           || null;
+      case 'UNDER_REVIEW':      return summary.underReview      || null;
+      case 'AWAITING_EVIDENCE': return summary.awaitingEvidence || null;
+      case 'PENDING_RULING':    return summary.pendingRuling    || null;
+      case 'RESOLVED':          return summary.resolved         || null;
+      case 'CLOSED':            return summary.closed           || null;
+      case 'WITHDRAWN':         return summary.withdrawn        || null;
+      default:                  return null;
+    }
   }
 
   return (
@@ -279,9 +312,22 @@ export function DisputesListPage() {
             </div>
           )
         ) : (
-          disputes.map((d) => (
-            <DisputeCard key={d.id} dispute={d} userId={user?.id ?? ''} />
-          ))
+          <>
+            {disputes.map((d) => (
+              <DisputeCard key={d.id} dispute={d} userId={user?.id ?? ''} />
+            ))}
+            {activeTab === 'ALL' && hasNextPage && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                <Button
+                  variant="secondary"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                >
+                  {isFetchingNextPage ? 'Loading…' : 'Load more'}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

@@ -79,6 +79,15 @@ async function deliverEmail(msg: EmailMessage): Promise<void> {
 // Key: `${disputeId}:${recipientId}` → last sent timestamp
 const lastNotifiedAt            = new Map<string, number>();
 const DEBOUNCE_MS               = 30 * 60 * 1_000; // 30 minutes
+const DEBOUNCE_TTL_MS           = 24 * 60 * 60 * 1_000; // evict entries older than 24h
+
+// Periodic sweep so the Map cannot grow unbounded on long-running servers.
+setInterval(() => {
+  const cutoff = Date.now() - DEBOUNCE_TTL_MS;
+  for (const [k, ts] of lastNotifiedAt.entries()) {
+    if (ts < cutoff) lastNotifiedAt.delete(k);
+  }
+}, 60 * 60 * 1_000).unref?.();
 
 // ── HTML email builder ────────────────────────────────────────────────────────
 

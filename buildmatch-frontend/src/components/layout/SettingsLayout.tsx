@@ -31,7 +31,7 @@ export function SettingsLayout() {
     staleTime:       60_000,
   });
 
-  const openCount = (summary?.open ?? 0) + (summary?.underReview ?? 0);
+  const openCount = summary?.active ?? 0;
 
   return (
     <div className={styles.wrapper}>

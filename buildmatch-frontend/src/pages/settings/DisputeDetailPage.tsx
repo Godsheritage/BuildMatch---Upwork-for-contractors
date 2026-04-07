@@ -414,7 +414,8 @@ export function DisputeDetailPage() {
     mutationFn: (reason: string) => withdrawDispute(disputeId!, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dispute', disputeId] });
-      queryClient.invalidateQueries({ queryKey: ['disputes'] });
+      queryClient.invalidateQueries({ queryKey: ['disputes', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['disputes', 'summary'] });
       toast('Dispute withdrawn successfully');
       setShowWithdrawModal(false);
     },

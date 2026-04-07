@@ -42,7 +42,7 @@ export function DashboardLayout() {
     refetchInterval: 2 * 60 * 1000,
     staleTime:       2 * 60 * 1000,
   });
-  const openDisputeCount = (disputeSummary?.open ?? 0) + (disputeSummary?.underReview ?? 0);
+  const openDisputeCount = disputeSummary?.active ?? 0;
 
   // Prefetch conversations on layout mount so the Messages tab loads instantly
   useEffect(() => {
