@@ -177,11 +177,8 @@ export function DisputesListPage() {
   const { user }                         = useAuth();
   const [activeTab, setActiveTab]        = useState<DisputeStatus | 'ALL'>('ALL');
 
-  // Per-tab server filter. The "Active" tab (key 'OPEN') combines OPEN +
-  // UNDER_REVIEW client-side, so we fetch unfiltered for that tab and ALL.
-  const serverStatus: DisputeStatus | undefined =
-    activeTab === 'ALL' || activeTab === 'OPEN' ? undefined : activeTab;
-
+  // One unfiltered fetch on mount — every tab filters the same dataset
+  // client-side so switching tabs is instant.
   const {
     data,
     isLoading,
@@ -189,9 +186,9 @@ export function DisputesListPage() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey:        ['disputes', 'list', serverStatus ?? 'all'],
+    queryKey:        ['disputes', 'list', 'all'],
     queryFn:         ({ pageParam = 1 }) =>
-      getDisputes({ page: pageParam, limit: 25, status: serverStatus }),
+      getDisputes({ page: pageParam, limit: 25 }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
@@ -209,10 +206,11 @@ export function DisputesListPage() {
 
   const fetched: Dispute[] = data?.pages.flatMap((p) => p.disputes) ?? [];
 
-  // For the OPEN ("Active") tab, narrow client-side to OPEN + UNDER_REVIEW.
-  const disputes: Dispute[] = activeTab === 'OPEN'
-    ? fetched.filter((d) => d.status === 'OPEN' || d.status === 'UNDER_REVIEW')
-    : fetched;
+  const disputes: Dispute[] = activeTab === 'ALL'
+    ? fetched
+    : activeTab === 'OPEN'
+      ? fetched.filter((d) => d.status === 'OPEN' || d.status === 'UNDER_REVIEW')
+      : fetched.filter((d) => d.status === activeTab);
 
   function tabCount(key: DisputeStatus | 'ALL'): number | null {
     if (!summary) return null;
