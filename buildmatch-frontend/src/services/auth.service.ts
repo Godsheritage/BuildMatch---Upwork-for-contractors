@@ -55,6 +55,14 @@ export interface UpdateProfilePayload {
   company?:   string | null;
   title?:     string | null;
   website?:   string | null;
+  displayName?:     string | null;
+  pronouns?:        string | null;
+  timezone?:        string | null;
+  locale?:          string | null;
+  dateFormat?:      'MDY' | 'DMY' | 'YMD' | 'LONG' | null;
+  numberFormat?:    'EN' | 'EU' | null;
+  quietHoursStart?: string | null;
+  quietHoursEnd?:   string | null;
 }
 
 export async function updateUserProfile(payload: UpdateProfilePayload): Promise<User> {

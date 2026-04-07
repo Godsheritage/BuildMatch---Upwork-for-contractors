@@ -21,7 +21,15 @@
 .brand {
   display:        flex;
   flex-direction: column;
-  gap:            var(--space-4);
+  align-items:    center;
+  text-align:     center;
+  gap:            0;
+}
+
+.brand img {
+  display:       block;
+  margin:        0;
+  padding:       0;
 }
 
 .wordmark {

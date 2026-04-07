@@ -14,6 +14,14 @@ export interface User {
   company: string | null;
   title: string | null;
   website: string | null;
+  displayName: string | null;
+  pronouns: string | null;
+  timezone: string | null;
+  locale: string | null;
+  dateFormat: 'MDY' | 'DMY' | 'YMD' | 'LONG' | null;
+  numberFormat: 'EN' | 'EU' | null;
+  quietHoursStart: string | null;
+  quietHoursEnd: string | null;
   isVerified: boolean;
   isActive: boolean;
   createdAt: string;

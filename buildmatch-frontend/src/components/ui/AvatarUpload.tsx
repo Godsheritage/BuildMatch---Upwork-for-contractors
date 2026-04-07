@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Camera, Trash2, X } from 'lucide-react';
 import useAvatarUpload from '../../hooks/useAvatarUpload';
 import { useToast } from '../../context/ToastContext';
@@ -36,26 +36,68 @@ function getAvatarColor(name: string): { bg: string; text: string } {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length] ?? AVATAR_COLORS[0];
 }
 
+// Stage size of the crop UI in pixels (square). The visible circle uses
+// the same diameter so the user is always cropping a perfect square.
+const CROP_STAGE = 320;
+// Output square size of the saved JPEG.
+const CROP_OUTPUT = 512;
+
+interface CropState {
+  nw:    number; // natural image width
+  nh:    number; // natural image height
+  scale: number; // user zoom multiplier (1 = "cover")
+  tx:    number; // image-centre offset from stage centre, X
+  ty:    number; // image-centre offset from stage centre, Y
+}
+
+function baseCoverScale(nw: number, nh: number): number {
+  // Scale that makes the smaller dimension exactly fill the stage.
+  return CROP_STAGE / Math.min(nw, nh);
+}
+
+function clampOffset(state: CropState): { tx: number; ty: number } {
+  const es = baseCoverScale(state.nw, state.nh) * state.scale;
+  const dw = state.nw * es;
+  const dh = state.nh * es;
+  const maxX = Math.max(0, (dw - CROP_STAGE) / 2);
+  const maxY = Math.max(0, (dh - CROP_STAGE) / 2);
+  return {
+    tx: Math.max(-maxX, Math.min(maxX, state.tx)),
+    ty: Math.max(-maxY, Math.min(maxY, state.ty)),
+  };
+}
+
 /**
- * Crop the centre square from an <img> element and return a Blob.
- * Output is JPEG at 0.92 quality.
+ * Render the visible circular crop region to a square JPEG Blob.
+ * The circle is masked via canvas clip so transparent corners don't show
+ * dark fill — JPEG has no alpha so we paint a white background first.
  */
-function cropCenterSquare(imgEl: HTMLImageElement): Promise<Blob> {
-  const { naturalWidth: nw, naturalHeight: nh } = imgEl;
-  const side = Math.min(nw, nh);
-  const sx = Math.floor((nw - side) / 2);
-  const sy = Math.floor((nh - side) / 2);
+function cropFromState(imgEl: HTMLImageElement, state: CropState): Promise<Blob> {
+  const es = baseCoverScale(state.nw, state.nh) * state.scale;
+  const sWidth  = CROP_STAGE / es;
+  const sHeight = CROP_STAGE / es;
+  const sx = state.nw / 2 - (CROP_STAGE / 2 + state.tx) / es;
+  const sy = state.nh / 2 - (CROP_STAGE / 2 + state.ty) / es;
 
   const canvas = document.createElement('canvas');
-  canvas.width  = side;
-  canvas.height = side;
-  canvas.getContext('2d')!.drawImage(imgEl, sx, sy, side, side, 0, 0, side, side);
+  canvas.width  = CROP_OUTPUT;
+  canvas.height = CROP_OUTPUT;
+  const ctx = canvas.getContext('2d')!;
+  ctx.imageSmoothingQuality = 'high';
+  // Mask to a circle so the saved PNG IS the cropper circle exactly —
+  // transparent corners, no extra content beyond what the user selected.
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CROP_OUTPUT / 2, CROP_OUTPUT / 2, CROP_OUTPUT / 2, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(imgEl, sx, sy, sWidth, sHeight, 0, 0, CROP_OUTPUT, CROP_OUTPUT);
+  ctx.restore();
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       blob => (blob ? resolve(blob) : reject(new Error('Canvas toBlob failed'))),
-      'image/jpeg',
-      0.92,
+      'image/png',
     );
   });
 }
@@ -96,6 +138,71 @@ export function AvatarUpload({
   const [pendingFile,       setPendingFile]       = useState<File | null>(null);
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const cropImgRef = useRef<HTMLImageElement>(null);
+  const [cropState, setCropState] = useState<CropState>({
+    nw: 0, nh: 0, scale: 1, tx: 0, ty: 0,
+  });
+  const dragRef = useRef<{ startX: number; startY: number; baseTx: number; baseTy: number } | null>(null);
+
+  const handleImgLoad = useCallback(() => {
+    const img = cropImgRef.current;
+    if (!img) return;
+    setCropState({
+      nw:    img.naturalWidth,
+      nh:    img.naturalHeight,
+      scale: 1,
+      tx:    0,
+      ty:    0,
+    });
+  }, []);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      baseTx: cropState.tx,
+      baseTy: cropState.ty,
+    };
+  }, [cropState.tx, cropState.ty]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const next = {
+      ...cropState,
+      tx: drag.baseTx + (e.clientX - drag.startX),
+      ty: drag.baseTy + (e.clientY - drag.startY),
+    };
+    setCropState({ ...next, ...clampOffset(next) });
+  }, [cropState]);
+
+  const handlePointerUp = useCallback(() => {
+    dragRef.current = null;
+  }, []);
+
+  const handleZoomChange = useCallback((value: number) => {
+    setCropState((prev) => {
+      const next = { ...prev, scale: value };
+      return { ...next, ...clampOffset(next) };
+    });
+  }, []);
+
+  // Wheel-to-zoom support inside the stage
+  useEffect(() => {
+    if (!pendingPreviewUrl) return;
+    const handler = (e: WheelEvent) => {
+      e.preventDefault();
+      setCropState((prev) => {
+        const delta = -e.deltaY * 0.0015;
+        const scale = Math.max(1, Math.min(3, prev.scale + delta));
+        const next  = { ...prev, scale };
+        return { ...next, ...clampOffset(next) };
+      });
+    };
+    const el = document.getElementById('avatar-crop-stage');
+    el?.addEventListener('wheel', handler, { passive: false });
+    return () => el?.removeEventListener('wheel', handler);
+  }, [pendingPreviewUrl]);
 
   // Delete-confirm state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -134,8 +241,9 @@ export function AvatarUpload({
     if (!pendingFile || !cropImgRef.current) return;
 
     try {
-      const blob     = await cropCenterSquare(cropImgRef.current);
-      const cropped  = new File([blob], pendingFile.name, { type: 'image/jpeg' });
+      const blob     = await cropFromState(cropImgRef.current, cropState);
+      const baseName = pendingFile.name.replace(/\.[^.]+$/, '');
+      const cropped  = new File([blob], `${baseName}.png`, { type: 'image/png' });
 
       // Close modal before uploading so the ring appears on the avatar
       closeCropModal();
@@ -150,7 +258,7 @@ export function AvatarUpload({
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Upload failed', 'error');
     }
-  }, [pendingFile, closeCropModal, uploadAvatar, onUploadComplete, toast]);
+  }, [pendingFile, cropState, closeCropModal, uploadAvatar, onUploadComplete, toast]);
 
   // ── Delete actions ─────────────────────────────────────────────────────────
 
@@ -343,21 +451,79 @@ export function AvatarUpload({
               </button>
             </div>
 
-            {/* Preview — centre square will be used */}
+            {/* Interactive circular crop stage */}
             <div className={styles.modalPreviewWrap}>
-              <img
-                ref={cropImgRef}
-                src={pendingPreviewUrl}
-                alt="Preview"
-                className={styles.modalPreviewImg}
-                draggable={false}
-              />
-              {/* Crosshair overlay to show the crop area */}
-              <div className={styles.modalCropOverlay} aria-hidden="true" />
+              <div
+                id="avatar-crop-stage"
+                className={styles.cropStage}
+                style={{ width: CROP_STAGE, height: CROP_STAGE }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+              >
+                <img
+                  ref={cropImgRef}
+                  src={pendingPreviewUrl}
+                  alt="Preview"
+                  className={styles.cropImg}
+                  draggable={false}
+                  onLoad={handleImgLoad}
+                  style={{
+                    transform: `translate(-50%, -50%) translate(${cropState.tx}px, ${cropState.ty}px) scale(${
+                      cropState.nw && cropState.nh
+                        ? baseCoverScale(cropState.nw, cropState.nh) * cropState.scale
+                        : cropState.scale
+                    })`,
+                  }}
+                />
+                {/* Dim mask + circular hole */}
+                <svg
+                  className={styles.cropMask}
+                  viewBox={`0 0 ${CROP_STAGE} ${CROP_STAGE}`}
+                  aria-hidden="true"
+                >
+                  <defs>
+                    <mask id="avatar-crop-hole">
+                      <rect width={CROP_STAGE} height={CROP_STAGE} fill="white" />
+                      <circle cx={CROP_STAGE / 2} cy={CROP_STAGE / 2} r={CROP_STAGE / 2} fill="black" />
+                    </mask>
+                  </defs>
+                  <rect
+                    width={CROP_STAGE}
+                    height={CROP_STAGE}
+                    fill="rgba(0,0,0,0.55)"
+                    mask="url(#avatar-crop-hole)"
+                  />
+                  <circle
+                    cx={CROP_STAGE / 2}
+                    cy={CROP_STAGE / 2}
+                    r={CROP_STAGE / 2 - 1}
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </div>
+
+              {/* Zoom slider */}
+              <div className={styles.zoomRow}>
+                <span className={styles.zoomLabel}>Zoom</span>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.01}
+                  value={cropState.scale}
+                  onChange={(e) => handleZoomChange(Number(e.target.value))}
+                  className={styles.zoomSlider}
+                  aria-label="Zoom"
+                />
+              </div>
             </div>
 
             <p className={styles.modalHint}>
-              The centre square of your image will be used.
+              Drag to reposition. Scroll or use the slider to zoom.
             </p>
 
             {/* Actions */}

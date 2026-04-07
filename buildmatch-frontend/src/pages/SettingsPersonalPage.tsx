@@ -1,14 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChevronLeft, Pencil, Check, X,
-  ExternalLink,
+  ExternalLink, Mail, Link2,
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { getMyContractorProfile, updateMyProfile } from '../services/contractor.service';
 import { updateUserProfile } from '../services/auth.service';
-import { AvatarUpload } from '../components/ui/AvatarUpload';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../context/ToastContext';
 import styles from './SettingsPersonalPage.module.css';
@@ -68,11 +67,56 @@ function SectionHeader({ title, onEdit, editing }: { title: string; onEdit?: () 
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
+// Common time zones — short curated list. Browsers also expose
+// Intl.supportedValuesOf('timeZone') which we use to expand the dropdown.
+const TIMEZONE_FALLBACK = [
+  'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+  'America/Phoenix', 'America/Anchorage', 'Pacific/Honolulu',
+  'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Madrid',
+  'Africa/Lagos', 'Africa/Johannesburg',
+  'Asia/Dubai', 'Asia/Kolkata', 'Asia/Singapore', 'Asia/Tokyo',
+  'Australia/Sydney',
+];
+
+const LANGUAGE_OPTIONS = [
+  { value: 'en-US', label: 'English (US)' },
+  { value: 'en-GB', label: 'English (UK)' },
+  { value: 'es-ES', label: 'Spanish' },
+  { value: 'fr-FR', label: 'French' },
+  { value: 'pt-BR', label: 'Portuguese (Brazil)' },
+  { value: 'de-DE', label: 'German' },
+];
+
+const DATE_FORMAT_OPTIONS = [
+  { value: 'MDY',  label: 'MM/DD/YYYY (04/07/2026)' },
+  { value: 'DMY',  label: 'DD/MM/YYYY (07/04/2026)' },
+  { value: 'YMD',  label: 'YYYY-MM-DD (2026-04-07)' },
+  { value: 'LONG', label: '7 Apr 2026' },
+] as const;
+
+const NUMBER_FORMAT_OPTIONS = [
+  { value: 'EN', label: '1,200.50 (English)' },
+  { value: 'EU', label: '1.200,50 (European)' },
+] as const;
+
 export function SettingsPersonalPage() {
   const { user, updateUser } = useAuth();
   const { toast }            = useToast();
   const queryClient          = useQueryClient();
   const isContractor         = user?.role === 'CONTRACTOR';
+
+  // Detect the browser's IANA timezone for the default option
+  const browserTz = useMemo(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return ''; }
+  }, []);
+
+  const timezoneOptions = useMemo(() => {
+    try {
+      // @ts-expect-error — supportedValuesOf is widely supported but not in older TS lib
+      const all: string[] = Intl.supportedValuesOf?.('timeZone') ?? TIMEZONE_FALLBACK;
+      return all.length > 0 ? all : TIMEZONE_FALLBACK;
+    } catch { return TIMEZONE_FALLBACK; }
+  }, []);
 
   const { data: profile } = useQuery({
     queryKey: ['my-contractor-profile'],
@@ -92,6 +136,28 @@ export function SettingsPersonalPage() {
 
   // ── Investor states ────────────────────────────────────────────────────────
   const [projectPref, setProjectPref] = useState<ProjectPref>('both');
+
+  // ── Identity (display name + pronouns) ─────────────────────────────────────
+  const [displayName, setDisplayName] = useState<string>(user?.displayName ?? '');
+  const [pronouns,    setPronouns]    = useState<string>(user?.pronouns    ?? '');
+  const [savingIdentity, setSavingIdentity] = useState(false);
+
+  // ── Bio + website (non-contractors) ────────────────────────────────────────
+  const [bio,     setBio]     = useState<string>(user?.bio     ?? '');
+  const [website, setWebsite] = useState<string>(user?.website ?? '');
+  const [savingBio, setSavingBio] = useState(false);
+
+  // ── Locale & format prefs ──────────────────────────────────────────────────
+  const [timezone,     setTimezone]     = useState<string>(user?.timezone ?? browserTz);
+  const [locale,       setLocale]       = useState<string>(user?.locale ?? 'en-US');
+  const [dateFormat,   setDateFormat]   = useState<string>(user?.dateFormat ?? 'MDY');
+  const [numberFormat, setNumberFormat] = useState<string>(user?.numberFormat ?? 'EN');
+  const [savingLocale, setSavingLocale] = useState(false);
+
+  // ── Quiet hours ────────────────────────────────────────────────────────────
+  const [quietStart, setQuietStart] = useState<string>(user?.quietHoursStart ?? '');
+  const [quietEnd,   setQuietEnd]   = useState<string>(user?.quietHoursEnd   ?? '');
+  const [savingQuiet, setSavingQuiet] = useState(false);
 
   if (!user) return null;
 
@@ -152,7 +218,67 @@ export function SettingsPersonalPage() {
     );
   }
 
-  const name = `${user.firstName} ${user.lastName}`;
+  // ── New: identity, bio, locale, quiet hours save handlers ──────────────────
+
+  async function persistUserFields(payload: Record<string, string | null>, label: string) {
+    try {
+      const updated = await updateUserProfile(payload);
+      updateUser(updated);
+      toast(`${label} updated.`);
+    } catch {
+      toast(`Could not update ${label.toLowerCase()}.`, 'error');
+      throw new Error('save failed');
+    }
+  }
+
+  async function saveIdentity() {
+    setSavingIdentity(true);
+    try {
+      await persistUserFields(
+        { displayName: displayName.trim() || null, pronouns: pronouns.trim() || null },
+        'Display name',
+      );
+    } catch {} finally { setSavingIdentity(false); }
+  }
+
+  async function saveBioWebsite() {
+    setSavingBio(true);
+    try {
+      await persistUserFields(
+        { bio: bio.trim() || null, website: website.trim() || null },
+        'About',
+      );
+    } catch {} finally { setSavingBio(false); }
+  }
+
+  async function saveLocale() {
+    setSavingLocale(true);
+    try {
+      await persistUserFields(
+        {
+          timezone:     timezone || null,
+          locale:       locale || null,
+          dateFormat:   dateFormat || null,
+          numberFormat: numberFormat || null,
+        },
+        'Preferences',
+      );
+    } catch {} finally { setSavingLocale(false); }
+  }
+
+  async function saveQuiet() {
+    if ((quietStart && !quietEnd) || (!quietStart && quietEnd)) {
+      toast('Set both a start and end time, or leave both blank.', 'error');
+      return;
+    }
+    setSavingQuiet(true);
+    try {
+      await persistUserFields(
+        { quietHoursStart: quietStart || null, quietHoursEnd: quietEnd || null },
+        'Quiet hours',
+      );
+    } catch {} finally { setSavingQuiet(false); }
+  }
 
   return (
     <div className={styles.page}>
@@ -173,21 +299,83 @@ export function SettingsPersonalPage() {
         )}
       </div>
 
-      {/* ── Profile photo ── */}
+
+      {/* ── 1. Display name & pronouns (identity) ── */}
       <div className={styles.section}>
-        <SectionHeader title="Profile photo" />
-        <AvatarUpload
-          name={name}
-          currentAvatarUrl={user.avatarUrl}
-          size="lg"
-          onUploadComplete={(url) => updateUser({ avatarUrl: url })}
-          onDelete={() => updateUser({ avatarUrl: null })}
-        />
+        <SectionHeader title="Display name & pronouns" />
+        <p className={styles.sectionDesc}>
+          Your display name appears in messages and bids. Pronouns are optional.
+        </p>
+        <div className={styles.formRow}>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>Display name</span>
+            <input
+              type="text"
+              className={styles.formInput}
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder={`${user.firstName} ${user.lastName}`}
+              maxLength={80}
+            />
+          </label>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>Pronouns</span>
+            <input
+              type="text"
+              className={styles.formInput}
+              value={pronouns}
+              onChange={(e) => setPronouns(e.target.value)}
+              placeholder="e.g. she/her, they/them"
+              maxLength={40}
+            />
+          </label>
+        </div>
+        <Button type="button" variant="primary" size="sm" onClick={saveIdentity} disabled={savingIdentity}>
+          {savingIdentity ? 'Saving…' : 'Save'}
+        </Button>
       </div>
 
       <div className={styles.divider} />
 
-      {/* ── Visibility / Availability ── */}
+      {/* ── 2. About you (non-contractors) ── */}
+      {!isContractor && (
+        <>
+          <div className={styles.section}>
+            <SectionHeader title="About you" />
+            <p className={styles.sectionDesc}>
+              A short bio and personal link contractors will see when you message them or post a job.
+            </p>
+            <label className={styles.formField}>
+              <span className={styles.formLabel}>Bio</span>
+              <textarea
+                className={styles.formInput}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={4}
+                maxLength={2000}
+                placeholder="Tell contractors a bit about yourself or your projects."
+              />
+            </label>
+            <label className={styles.formField}>
+              <span className={styles.formLabel}>Website</span>
+              <input
+                type="url"
+                className={styles.formInput}
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://example.com"
+              />
+            </label>
+            <Button type="button" variant="primary" size="sm" onClick={saveBioWebsite} disabled={savingBio}>
+              {savingBio ? 'Saving…' : 'Save'}
+            </Button>
+          </div>
+
+          <div className={styles.divider} />
+        </>
+      )}
+
+      {/* ── 3. Visibility / Availability ── */}
       <div className={styles.section}>
         <SectionHeader title="Visibility" />
         <p className={styles.sectionDesc}>
@@ -228,7 +416,7 @@ export function SettingsPersonalPage() {
 
       <div className={styles.divider} />
 
-      {/* ── Experience level (contractors) ── */}
+      {/* ── 4. Experience level (contractors) ── */}
       {isContractor && (
         <>
           <div className={styles.section}>
@@ -260,38 +448,7 @@ export function SettingsPersonalPage() {
         </>
       )}
 
-      {/* ── Project preferences (investors) ── */}
-      {!isContractor && (
-        <>
-          <div className={styles.section}>
-            <SectionHeader title="Project preference" />
-            <p className={styles.sectionDesc}>
-              What types of projects do you typically post?
-            </p>
-
-            <div className={styles.expGrid}>
-              {PROJECT_PREFS.map(({ value, label, desc }) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={`${styles.expCard} ${projectPref === value ? styles.expCardActive : ''}`}
-                  onClick={() => setProjectPref(value)}
-                >
-                  <div className={`${styles.expRadio} ${projectPref === value ? styles.expRadioOn : ''}`}>
-                    {projectPref === value && <div className={styles.expRadioDot} />}
-                  </div>
-                  <p className={styles.expCardLabel}>{label}</p>
-                  <p className={styles.expCardDesc}>{desc}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.divider} />
-        </>
-      )}
-
-      {/* ── Specialties / Categories (contractors) ── */}
+      {/* ── 5. Specialties / Categories (contractors) ── */}
       {isContractor && (
         <>
           <div className={styles.section}>
@@ -359,6 +516,195 @@ export function SettingsPersonalPage() {
           <div className={styles.divider} />
         </>
       )}
+
+      {/* ── 6. Project preference (investors) ── */}
+      {!isContractor && (
+        <>
+          <div className={styles.section}>
+            <SectionHeader title="Project preference" />
+            <p className={styles.sectionDesc}>
+              What types of projects do you typically post?
+            </p>
+
+            <div className={styles.expGrid}>
+              {PROJECT_PREFS.map(({ value, label, desc }) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`${styles.expCard} ${projectPref === value ? styles.expCardActive : ''}`}
+                  onClick={() => setProjectPref(value)}
+                >
+                  <div className={`${styles.expRadio} ${projectPref === value ? styles.expRadioOn : ''}`}>
+                    {projectPref === value && <div className={styles.expRadioDot} />}
+                  </div>
+                  <p className={styles.expCardLabel}>{label}</p>
+                  <p className={styles.expCardDesc}>{desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.divider} />
+        </>
+      )}
+
+      {/* ── Locale & format preferences ── */}
+      <div className={styles.section}>
+        <SectionHeader title="Language & region" />
+        <p className={styles.sectionDesc}>
+          Controls how dates, numbers, and times are shown to you across BuildMatch.
+        </p>
+        <div className={styles.formRow}>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>Time zone</span>
+            <select
+              className={styles.formInput}
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+            >
+              <option value="">Auto-detect ({browserTz || 'unknown'})</option>
+              {timezoneOptions.map((tz) => (
+                <option key={tz} value={tz}>{tz.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>Language</span>
+            <select
+              className={styles.formInput}
+              value={locale}
+              onChange={(e) => setLocale(e.target.value)}
+            >
+              {LANGUAGE_OPTIONS.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className={styles.formRow}>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>Date format</span>
+            <select
+              className={styles.formInput}
+              value={dateFormat}
+              onChange={(e) => setDateFormat(e.target.value)}
+            >
+              {DATE_FORMAT_OPTIONS.map((d) => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>Number format</span>
+            <select
+              className={styles.formInput}
+              value={numberFormat}
+              onChange={(e) => setNumberFormat(e.target.value)}
+            >
+              {NUMBER_FORMAT_OPTIONS.map((n) => (
+                <option key={n.value} value={n.value}>{n.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <Button type="button" variant="primary" size="sm" onClick={saveLocale} disabled={savingLocale}>
+          {savingLocale ? 'Saving…' : 'Save preferences'}
+        </Button>
+      </div>
+
+      <div className={styles.divider} />
+
+      {/* ── Quiet hours ── */}
+      <div className={styles.section}>
+        <SectionHeader title="Quiet hours" />
+        <p className={styles.sectionDesc}>
+          Don't send notifications between these times. Times are interpreted in your selected time zone. Leave both blank to receive notifications around the clock.
+        </p>
+        <div className={styles.formRow}>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>From</span>
+            <input
+              type="time"
+              className={styles.formInput}
+              value={quietStart}
+              onChange={(e) => setQuietStart(e.target.value)}
+            />
+          </label>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>To</span>
+            <input
+              type="time"
+              className={styles.formInput}
+              value={quietEnd}
+              onChange={(e) => setQuietEnd(e.target.value)}
+            />
+          </label>
+        </div>
+        <Button type="button" variant="primary" size="sm" onClick={saveQuiet} disabled={savingQuiet}>
+          {savingQuiet ? 'Saving…' : 'Save quiet hours'}
+        </Button>
+      </div>
+
+      <div className={styles.divider} />
+
+      {/* ── Email address ── */}
+      <div className={styles.section}>
+        <SectionHeader title="Email address" />
+        <p className={styles.sectionDesc}>Your account email. Changing it requires verification of the new address.</p>
+        <div className={styles.formRow}>
+          <label className={styles.formField} style={{ flex: 1 }}>
+            <span className={styles.formLabel}>Current email</span>
+            <input
+              type="email"
+              className={styles.formInput}
+              value={user.email}
+              disabled
+              readOnly
+            />
+          </label>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => toast('Email change with verification is coming soon.', 'info')}
+        >
+          <Mail size={14} strokeWidth={2} style={{ marginRight: 6 }} />
+          Change email
+        </Button>
+      </div>
+
+      <div className={styles.divider} />
+
+      {/* ── Connected accounts ── */}
+      <div className={styles.section}>
+        <SectionHeader title="Connected accounts" />
+        <p className={styles.sectionDesc}>
+          Link a third-party account so you can sign in with one click. No accounts linked yet.
+        </p>
+        <div className={styles.formRow}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => toast('Google sign-in is coming soon.', 'info')}
+          >
+            <Link2 size={14} strokeWidth={2} style={{ marginRight: 6 }} />
+            Connect Google
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => toast('Apple sign-in is coming soon.', 'info')}
+          >
+            <Link2 size={14} strokeWidth={2} style={{ marginRight: 6 }} />
+            Connect Apple
+          </Button>
+        </div>
+      </div>
+
+      <div className={styles.divider} />
 
       {/* ── AI preference ── */}
       <div className={styles.section}>
