@@ -214,7 +214,7 @@ export async function fileDispute(
       category:        input.category,
       description:     input.description,
       desired_outcome: input.desiredOutcome,
-      status:          'OPEN',
+      status:          'UNDER_REVIEW',
       last_activity_at: new Date().toISOString(),
     })
     .select()

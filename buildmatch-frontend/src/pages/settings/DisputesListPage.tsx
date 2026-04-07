@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ShieldCheck, MessageSquare, FileText, Clock } from 'lucide-react';
+import { ShieldCheck, MessageSquare, FileText, Clock, CheckCircle2, Ban } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
 import { useAuth } from '../../hooks/useAuth';
@@ -178,25 +178,22 @@ export function DisputesListPage() {
   const [activeTab, setActiveTab]        = useState<DisputeStatus | 'ALL'>('ALL');
 
   const { data, isLoading } = useQuery({
-    queryKey:       ['disputes', { status: activeTab === 'ALL' ? undefined : activeTab }],
-    queryFn:        () => getDisputes({
-      status: activeTab === 'ALL' ? undefined : activeTab,
-      page:   1,
-      limit:  25,
-    }),
+    queryKey:       ['disputes', { status: undefined }],
+    queryFn:        () => getDisputes({ page: 1, limit: 25 }),
     refetchInterval: 60_000,
   });
 
-  const disputes   = data?.disputes ?? [];
-  const totalByTab = data?.total ?? 0;
+  const allDisputes = data?.disputes ?? [];
+  const disputes    = activeTab === 'ALL'
+    ? allDisputes
+    : activeTab === 'OPEN'
+      ? allDisputes.filter((d) => d.status === 'OPEN' || d.status === 'UNDER_REVIEW')
+      : allDisputes.filter((d) => d.status === activeTab);
 
-  // Compute per-tab counts from current full result when on ALL tab
-  const allDisputes = activeTab === 'ALL' ? disputes : [];
   function tabCount(key: DisputeStatus | 'ALL'): number | null {
-    if (key === 'ALL') return data?.total ?? null;
-    if (activeTab === 'ALL') return allDisputes.filter((d) => d.status === key).length || null;
-    if (activeTab === key)   return totalByTab;
-    return null;
+    if (key === 'ALL')  return allDisputes.length || null;
+    if (key === 'OPEN') return allDisputes.filter((d) => d.status === 'OPEN' || d.status === 'UNDER_REVIEW').length || null;
+    return allDisputes.filter((d) => d.status === key).length || null;
   }
 
   return (
@@ -248,19 +245,39 @@ export function DisputesListPage() {
             <SkeletonCard />
           </>
         ) : disputes.length === 0 ? (
-          <div className={styles.empty}>
-            <ShieldCheck size={48} strokeWidth={1.25} className={styles.emptyIcon} />
-            <p className={styles.emptyTitle}>No disputes on your account</p>
-            <p className={styles.emptySub}>
-              If you have an issue with a job, you can file a dispute below.
-            </p>
-            <Button
-              variant="primary"
-              onClick={() => window.location.href = '/dashboard/settings/disputes/new'}
-            >
-              File a Dispute
-            </Button>
-          </div>
+          activeTab === 'AWAITING_EVIDENCE' ? (
+            <div className={styles.empty}>
+              <FileText size={48} strokeWidth={1.25} className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>No evidence requests</p>
+              <p className={styles.emptySub}>
+                You'll see disputes here when an admin requests additional evidence from you.
+              </p>
+            </div>
+          ) : activeTab === 'RESOLVED' ? (
+            <div className={styles.empty}>
+              <CheckCircle2 size={48} strokeWidth={1.25} className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>You have no resolved disputes yet</p>
+            </div>
+          ) : activeTab === 'WITHDRAWN' ? (
+            <div className={styles.empty}>
+              <Ban size={48} strokeWidth={1.25} className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>You have no withdrawn disputes yet</p>
+            </div>
+          ) : (
+            <div className={styles.empty}>
+              <ShieldCheck size={48} strokeWidth={1.25} className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>No disputes on your account</p>
+              <p className={styles.emptySub}>
+                If you have an issue with a job, you can file a dispute below.
+              </p>
+              <Button
+                variant="primary"
+                onClick={() => window.location.href = '/dashboard/settings/disputes/new'}
+              >
+                File a Dispute
+              </Button>
+            </div>
+          )
         ) : (
           disputes.map((d) => (
             <DisputeCard key={d.id} dispute={d} userId={user?.id ?? ''} />

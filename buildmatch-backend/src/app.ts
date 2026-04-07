@@ -35,7 +35,9 @@ import { authenticate, requireRole } from './middleware/auth.middleware';
 import { sendSuccess, sendError } from './utils/response.utils';
 import { computeAllReliabilityScores } from './services/ai/reliability-score.service';
 
-dotenv.config();
+// Load env file based on NODE_ENV: .env.production, .env.staging, or .env (local default)
+const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env';
+dotenv.config({ path: envFile });
 
 const app = express();
 
