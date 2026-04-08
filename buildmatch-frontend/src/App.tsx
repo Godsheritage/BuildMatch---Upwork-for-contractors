@@ -61,7 +61,7 @@ import { AdminHealthPage } from './pages/admin/AdminHealthPage';
 import { AdminAuditLogPage } from './pages/admin/AdminAuditLogPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AdminFeatureFlagsPage } from './pages/admin/AdminFeatureFlagsPage';
-import { AdminTestimonialsPage } from './pages/admin/AdminTestimonialsPage';
+import { AdminTestimonialsPage } from './pages/admin/AdminTestimonialsPage'
 
 const queryClient = new QueryClient();
 

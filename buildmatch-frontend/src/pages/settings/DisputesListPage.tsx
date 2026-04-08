@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { ShieldCheck, MessageSquare, FileText, Clock } from 'lucide-react';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { ShieldCheck, MessageSquare, FileText, Clock, CheckCircle2, Ban } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
 import { useAuth } from '../../hooks/useAuth';
-import { getDisputes } from '../../services/dispute.service';
+import { getDisputes, getDisputeSummary } from '../../services/dispute.service';
 import type { Dispute, DisputeStatus } from '../../types/dispute.types';
 import styles from './DisputesListPage.module.css';
 
@@ -64,7 +64,7 @@ function StatusBadge({ status }: { status: DisputeStatus }) {
 
 const TABS: { key: DisputeStatus | 'ALL'; label: string }[] = [
   { key: 'ALL',              label: 'All' },
-  { key: 'OPEN',             label: 'Open' },
+  { key: 'OPEN',             label: 'Active' },
   { key: 'UNDER_REVIEW',     label: 'Under Review' },
   { key: 'AWAITING_EVIDENCE',label: 'Awaiting Evidence' },
   { key: 'RESOLVED',         label: 'Resolved' },
@@ -177,26 +177,54 @@ export function DisputesListPage() {
   const { user }                         = useAuth();
   const [activeTab, setActiveTab]        = useState<DisputeStatus | 'ALL'>('ALL');
 
-  const { data, isLoading } = useQuery({
-    queryKey:       ['disputes', { status: activeTab === 'ALL' ? undefined : activeTab }],
-    queryFn:        () => getDisputes({
-      status: activeTab === 'ALL' ? undefined : activeTab,
-      page:   1,
-      limit:  25,
-    }),
+  // One unfiltered fetch on mount — every tab filters the same dataset
+  // client-side so switching tabs is instant.
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey:        ['disputes', 'list', 'all'],
+    queryFn:         ({ pageParam = 1 }) =>
+      getDisputes({ page: pageParam, limit: 25 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
     refetchInterval: 60_000,
   });
 
-  const disputes   = data?.disputes ?? [];
-  const totalByTab = data?.total ?? 0;
+  // Badge counts come from the dedicated summary endpoint so they reflect
+  // the user's full dataset, not just loaded pages.
+  const { data: summary } = useQuery({
+    queryKey:        ['disputes', 'summary'],
+    queryFn:         getDisputeSummary,
+    refetchInterval: 60_000,
+    staleTime:       30_000,
+  });
 
-  // Compute per-tab counts from current full result when on ALL tab
-  const allDisputes = activeTab === 'ALL' ? disputes : [];
+  const fetched: Dispute[] = data?.pages.flatMap((p) => p.disputes) ?? [];
+
+  const disputes: Dispute[] = activeTab === 'ALL'
+    ? fetched
+    : activeTab === 'OPEN'
+      ? fetched.filter((d) => d.status === 'OPEN' || d.status === 'UNDER_REVIEW')
+      : fetched.filter((d) => d.status === activeTab);
+
   function tabCount(key: DisputeStatus | 'ALL'): number | null {
-    if (key === 'ALL') return data?.total ?? null;
-    if (activeTab === 'ALL') return allDisputes.filter((d) => d.status === key).length || null;
-    if (activeTab === key)   return totalByTab;
-    return null;
+    if (!summary) return null;
+    switch (key) {
+      case 'ALL':               return summary.total            || null;
+      case 'OPEN':              return summary.active           || null;
+      case 'UNDER_REVIEW':      return summary.underReview      || null;
+      case 'AWAITING_EVIDENCE': return summary.awaitingEvidence || null;
+      case 'PENDING_RULING':    return summary.pendingRuling    || null;
+      case 'RESOLVED':          return summary.resolved         || null;
+      case 'CLOSED':            return summary.closed           || null;
+      case 'WITHDRAWN':         return summary.withdrawn        || null;
+      default:                  return null;
+    }
   }
 
   return (
@@ -248,23 +276,56 @@ export function DisputesListPage() {
             <SkeletonCard />
           </>
         ) : disputes.length === 0 ? (
-          <div className={styles.empty}>
-            <ShieldCheck size={48} strokeWidth={1.25} className={styles.emptyIcon} />
-            <p className={styles.emptyTitle}>No disputes on your account</p>
-            <p className={styles.emptySub}>
-              If you have an issue with a job, you can file a dispute below.
-            </p>
-            <Button
-              variant="primary"
-              onClick={() => window.location.href = '/dashboard/settings/disputes/new'}
-            >
-              File a Dispute
-            </Button>
-          </div>
+          activeTab === 'AWAITING_EVIDENCE' ? (
+            <div className={styles.empty}>
+              <FileText size={48} strokeWidth={1.25} className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>No evidence requests</p>
+              <p className={styles.emptySub}>
+                You'll see disputes here when an admin requests additional evidence from you.
+              </p>
+            </div>
+          ) : activeTab === 'RESOLVED' ? (
+            <div className={styles.empty}>
+              <CheckCircle2 size={48} strokeWidth={1.25} className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>You have no resolved disputes yet</p>
+            </div>
+          ) : activeTab === 'WITHDRAWN' ? (
+            <div className={styles.empty}>
+              <Ban size={48} strokeWidth={1.25} className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>You have no withdrawn disputes yet</p>
+            </div>
+          ) : (
+            <div className={styles.empty}>
+              <ShieldCheck size={48} strokeWidth={1.25} className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>No disputes on your account</p>
+              <p className={styles.emptySub}>
+                If you have an issue with a job, you can file a dispute below.
+              </p>
+              <Button
+                variant="primary"
+                onClick={() => window.location.href = '/dashboard/settings/disputes/new'}
+              >
+                File a Dispute
+              </Button>
+            </div>
+          )
         ) : (
-          disputes.map((d) => (
-            <DisputeCard key={d.id} dispute={d} userId={user?.id ?? ''} />
-          ))
+          <>
+            {disputes.map((d) => (
+              <DisputeCard key={d.id} dispute={d} userId={user?.id ?? ''} />
+            ))}
+            {activeTab === 'ALL' && hasNextPage && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                <Button
+                  variant="secondary"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                >
+                  {isFetchingNextPage ? 'Loading…' : 'Load more'}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

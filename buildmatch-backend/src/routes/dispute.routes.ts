@@ -120,7 +120,7 @@ const withdrawSchema = z.object({
 
 const listQuerySchema = z.object({
   status: z.enum([
-    'OPEN', 'UNDER_REVIEW', 'AWAITING_EVIDENCE',
+    'UNDER_REVIEW', 'AWAITING_EVIDENCE',
     'PENDING_RULING', 'RESOLVED', 'CLOSED', 'WITHDRAWN',
   ] as const).optional(),
   page:   z.coerce.number().int().min(1).default(1),

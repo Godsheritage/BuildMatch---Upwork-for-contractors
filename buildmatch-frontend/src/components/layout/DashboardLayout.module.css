@@ -21,10 +21,17 @@
 .sidebarHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid #EBEBEB;
+  justify-content: center;
+  position: relative;
+  padding: 4px 12px 0;
   flex-shrink: 0;
+}
+
+.sidebarHeader .closeBtn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .wordmark {
@@ -55,7 +62,7 @@
 /* ── Nav ─────────────────────────────────────────────── */
 .nav {
   flex: 1;
-  padding: 12px 10px;
+  padding: 0 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;

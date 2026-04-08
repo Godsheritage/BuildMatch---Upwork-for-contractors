@@ -31,9 +31,13 @@ interface DisputeRow {
   id:              string;
   job_id:          string;
   filed_by_id:     string;
-  milestone_draw:  number;
+  against_id:      string | null;
+  milestone_draw:  number | null;
   amount_disputed: number;
-  reason:          string;
+  category:        string | null;
+  description:     string | null;
+  desired_outcome: string | null;
+  reason:          string | null;
   status:          string;
   ruling:          string | null;
   ruling_note:     string | null;
@@ -115,10 +119,11 @@ async function sendRulingEmail(params: {
   if (!user?.email) return;
 
   const rulingLabels: Record<string, string> = {
-    INVESTOR:   'resolved in favour of the investor — funds have been returned',
-    CONTRACTOR: 'resolved in favour of the contractor — funds have been released',
-    SPLIT:      `resolved with a ${params.splitPct ?? 50}/${100 - (params.splitPct ?? 50)} split between parties`,
-    WITHDRAWN:  'closed as withdrawn',
+    INVESTOR_WINS:   'resolved in favour of the investor — funds have been returned',
+    CONTRACTOR_WINS: 'resolved in favour of the contractor — funds have been released',
+    SPLIT:           `resolved with a ${params.splitPct ?? 50}/${100 - (params.splitPct ?? 50)} split between parties`,
+    WITHDRAWN:       'closed as withdrawn',
+    NO_ACTION:       'closed with no action taken',
   };
   const label = rulingLabels[params.ruling] ?? params.ruling;
 
@@ -164,7 +169,8 @@ async function sendRequestInfoEmail(params: {
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
 const V2_STATUSES = [
-  'OPEN', 'UNDER_REVIEW', 'RESOLVED', 'CLOSED',
+  'OPEN', 'UNDER_REVIEW', 'AWAITING_EVIDENCE', 'PENDING_RULING',
+  'RESOLVED', 'CLOSED', 'WITHDRAWN',
 ] as const;
 
 const listQuerySchema = z.object({
@@ -181,7 +187,9 @@ const noteSchema = z.object({
   content: z.string().min(1).max(5000),
 });
 
-const RULING_VALUES = ['INVESTOR', 'CONTRACTOR', 'SPLIT', 'WITHDRAWN'] as const;
+const RULING_VALUES = [
+  'INVESTOR_WINS', 'CONTRACTOR_WINS', 'SPLIT', 'WITHDRAWN', 'NO_ACTION',
+] as const;
 
 const rulingSchema = z.object({
   ruling:     z.enum(RULING_VALUES),
@@ -198,7 +206,10 @@ const requestInfoSchema = z.object({
 });
 
 const adminStatusSchema = z.object({
-  status: z.enum(['UNDER_REVIEW', 'RESOLVED', 'CLOSED'] as const),
+  status: z.enum([
+    'UNDER_REVIEW', 'AWAITING_EVIDENCE', 'PENDING_RULING',
+    'RESOLVED', 'CLOSED',
+  ] as const),
   note:   z.string().max(2000).optional(),
 });
 
@@ -308,8 +319,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         jobTitle:       jobMap.get(r.job_id)?.title ?? '',
         filedById:      r.filed_by_id,
         filedByName:    filerMap.get(r.filed_by_id) ?? '',
+        againstId:      otherPartyIds[i],
+        againstName:    otherPartyIds[i] ? (otherMap.get(otherPartyIds[i]!) ?? '') : '',
         otherPartyId:   otherPartyIds[i],
         otherPartyName: otherPartyIds[i] ? (otherMap.get(otherPartyIds[i]!) ?? '') : '',
+        category:       r.category ?? null,
+        description:    r.description ?? null,
         milestoneDraw:  r.milestone_draw,
         amountDisputed: Number(r.amount_disputed),
         status:         r.status,
@@ -345,12 +360,20 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
       .from('disputes')
       .select('*')
       .eq('id', id)
-      .single();
-    if (drErr || !dr) { sendError(res, 'Dispute not found', 404); return; }
+      .maybeSingle();
+    if (drErr) {
+      console.error('[admin/disputes] GET /:id supabase error:', drErr);
+      sendError(res, 'Failed to fetch dispute', 500);
+      return;
+    }
+    if (!dr) { sendError(res, 'Dispute not found', 404); return; }
     const row = dr as DisputeRow;
 
-    // 2. Derive parties
+    // 2. Derive parties — prefer the explicit against_id column when present
     const { investorId, contractorId } = await deriveParties(row.job_id);
+    const filerId   = row.filed_by_id;
+    const againstId = row.against_id
+      ?? (filerId === investorId ? contractorId : investorId);
 
     // 3. Fetch job, parties, conversation, escrow, dispute_notes in parallel
     const [
@@ -423,12 +446,21 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
         include: { milestones: { orderBy: { order: 'asc' } } },
       }),
 
-      // Dispute notes (admin-only)
-      supabase
-        .from('dispute_notes')
-        .select('*')
-        .eq('dispute_id', id)
-        .order('created_at', { ascending: true }),
+      // Dispute notes (admin-only). The dispute_notes table is part of the
+      // v2 schema and may not exist on every environment — soft-fail to []
+      // so a missing table never breaks the whole detail response.
+      (async () => {
+        try {
+          const r = await supabase
+            .from('dispute_notes')
+            .select('*')
+            .eq('dispute_id', id)
+            .order('created_at', { ascending: true });
+          return { data: r.data ?? [], error: r.error };
+        } catch {
+          return { data: [], error: null };
+        }
+      })(),
     ]);
 
     // 4. Find the disputed milestone by order
@@ -455,7 +487,51 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
       : [];
     const adminMap = new Map(admins.map(a => [a.id, `${a.firstName} ${a.lastName}`]));
 
+    // Resolve filer/against user objects from the already-fetched users
+    const filerUser = filerId === investorId
+      ? investorUser
+      : filerId === contractorId ? contractorUser : null;
+    const againstUser = againstId === investorId
+      ? investorUser
+      : againstId === contractorId ? contractorUser : null;
+    const filerRole   = filerId   === investorId ? 'INVESTOR' : 'CONTRACTOR';
+    const againstRole = againstId === investorId ? 'INVESTOR' : 'CONTRACTOR';
+
     sendSuccess(res, {
+      // Flat fields the admin UI expects (AdminDisputeDetail)
+      id:             row.id,
+      jobId:          row.job_id,
+      jobTitle:       job?.title ?? '',
+      filedById:      row.filed_by_id,
+      againstId:      againstId ?? '',
+      status:         row.status,
+      ruling:         row.ruling,
+      rulingNote:     row.ruling_note,
+      amountDisputed: Number(row.amount_disputed),
+      category:       row.category ?? '',
+      description:    row.description ?? row.reason ?? '',
+      desiredOutcome: row.desired_outcome ?? '',
+      resolvedAt:     row.ruling_at,
+      lastActivityAt: row.updated_at,
+      createdAt:      row.created_at,
+      filedBy: filerUser ? {
+        id:        filerUser.id,
+        firstName: filerUser.firstName,
+        lastName:  filerUser.lastName,
+        avatarUrl: filerUser.avatarUrl,
+        role:      filerRole,
+      } : { id: filerId, firstName: '', lastName: '', avatarUrl: null, role: filerRole },
+      against: againstUser ? {
+        id:        againstUser.id,
+        firstName: againstUser.firstName,
+        lastName:  againstUser.lastName,
+        avatarUrl: againstUser.avatarUrl,
+        role:      againstRole,
+      } : { id: againstId ?? '', firstName: '', lastName: '', avatarUrl: null, role: againstRole },
+      evidenceCount: 0,
+      messageCount:  conversations?.convMessages.length ?? 0,
+
+      // Extended detail (still useful to admin detail page)
       dispute: {
         id:             row.id,
         jobId:          row.job_id,
@@ -655,114 +731,120 @@ router.post('/:id/ruling', async (req: Request, res: Response): Promise<void> =>
     if (row.status === 'RESOLVED') { sendError(res, 'Dispute is already resolved', 409); return; }
     if (row.status === 'CLOSED')   { sendError(res, 'Cannot rule on a closed dispute', 400); return; }
 
-    // 2. Load escrow + find disputed milestone
+    // 2. Load escrow + find disputed milestone (optional — disputes filed
+    //    on jobs without escrow still need a recorded ruling)
     const escrow = await prisma.escrowPayment.findUnique({
       where:   { jobId: row.job_id },
       include: { milestones: true },
     });
-    if (!escrow) throw new AppError('No escrow found for this job', 422);
-    if (!escrow.stripePaymentIntentId) throw new AppError('Escrow has no Stripe payment intent', 422);
+    const milestone = escrow?.milestones.find(m => m.order === row.milestone_draw) ?? null;
+    const hasEscrowFlow =
+      !!escrow && !!escrow.stripePaymentIntentId && !!milestone;
 
-    const milestone = escrow.milestones.find(m => m.order === row.milestone_draw);
-    if (!milestone) throw new AppError(`Milestone draw #${row.milestone_draw} not found`, 422);
-
-    // 3. Stripe fund movement
+    // 3. Stripe fund movement (only if escrow + milestone exist)
     const { contractorId } = await deriveParties(row.job_id);
-    const milestoneAmountCents = Math.round(milestone.amount * 100);
+    const milestoneAmountCents = milestone ? Math.round(milestone.amount * 100) : 0;
 
-    if (ruling === 'INVESTOR') {
-      // Full refund to investor
-      await stripe.refunds.create({
-        payment_intent: escrow.stripePaymentIntentId,
-        amount:         milestoneAmountCents,
-        metadata:       { disputeId: id, adminId, reason: 'admin_ruling_investor' },
-      });
-      await prisma.milestone.update({
-        where: { id: milestone.id },
-        data:  { status: 'RELEASED', releasedAt: new Date(), disputeReason: null },
-      });
+    if (hasEscrowFlow && escrow && milestone) {
+      const stripePaymentIntentId = escrow.stripePaymentIntentId!;
 
-    } else if (ruling === 'CONTRACTOR') {
-      // Full release to contractor
-      if (!contractorId) throw new AppError('No contractor found for this job', 422);
-      const stripeAcctId = await contractorStripeAccountId(contractorId);
-      const transfer = await stripe.transfers.create({
-        amount:         milestoneAmountCents,
-        currency:       'usd',
-        destination:    stripeAcctId,
-        transfer_group: escrow.id,
-        metadata:       { disputeId: id, adminId, reason: 'admin_ruling_contractor' },
-      });
-      await prisma.milestone.update({
-        where: { id: milestone.id },
-        data:  {
-          status:           'APPROVED',
-          approvedAt:       new Date(),
-          stripeTransferId: transfer.id,
-          disputeReason:    null,
-        },
-      });
+      if (ruling === 'INVESTOR_WINS') {
+        // Full refund to investor
+        await stripe.refunds.create({
+          payment_intent: stripePaymentIntentId,
+          amount:         milestoneAmountCents,
+          metadata:       { disputeId: id, adminId, reason: 'admin_ruling_investor' },
+        });
+        await prisma.milestone.update({
+          where: { id: milestone.id },
+          data:  { status: 'RELEASED', releasedAt: new Date(), disputeReason: null },
+        });
 
-    } else if (ruling === 'SPLIT') {
-      // splitPct% to contractor, remainder to investor
-      if (!contractorId) throw new AppError('No contractor found for this job', 422);
-      const pct            = splitPct!;
-      const contractorCents = Math.round(milestoneAmountCents * (pct / 100));
-      const investorCents   = milestoneAmountCents - contractorCents;
+      } else if (ruling === 'CONTRACTOR_WINS') {
+        // Full release to contractor
+        if (!contractorId) throw new AppError('No contractor found for this job', 422);
+        const stripeAcctId = await contractorStripeAccountId(contractorId);
+        const transfer = await stripe.transfers.create({
+          amount:         milestoneAmountCents,
+          currency:       'usd',
+          destination:    stripeAcctId,
+          transfer_group: escrow.id,
+          metadata:       { disputeId: id, adminId, reason: 'admin_ruling_contractor' },
+        });
+        await prisma.milestone.update({
+          where: { id: milestone.id },
+          data:  {
+            status:           'APPROVED',
+            approvedAt:       new Date(),
+            stripeTransferId: transfer.id,
+            disputeReason:    null,
+          },
+        });
 
-      const stripeAcctId = await contractorStripeAccountId(contractorId);
+      } else if (ruling === 'SPLIT') {
+        // splitPct% to contractor, remainder to investor
+        if (!contractorId) throw new AppError('No contractor found for this job', 422);
+        const pct             = splitPct!;
+        const contractorCents = Math.round(milestoneAmountCents * (pct / 100));
+        const investorCents   = milestoneAmountCents - contractorCents;
 
-      // Transfer first — if this fails we have not yet refunded
-      const transfer = await stripe.transfers.create({
-        amount:         contractorCents,
-        currency:       'usd',
-        destination:    stripeAcctId,
-        transfer_group: escrow.id,
-        metadata:       { disputeId: id, adminId, reason: 'admin_ruling_split_contractor', pct: String(pct) },
-      });
+        const stripeAcctId = await contractorStripeAccountId(contractorId);
 
-      await stripe.refunds.create({
-        payment_intent: escrow.stripePaymentIntentId,
-        amount:         investorCents,
-        metadata:       { disputeId: id, adminId, reason: 'admin_ruling_split_investor', pct: String(100 - pct) },
-      });
+        // Transfer first — if this fails we have not yet refunded
+        const transfer = await stripe.transfers.create({
+          amount:         contractorCents,
+          currency:       'usd',
+          destination:    stripeAcctId,
+          transfer_group: escrow.id,
+          metadata:       { disputeId: id, adminId, reason: 'admin_ruling_split_contractor', pct: String(pct) },
+        });
 
-      await prisma.milestone.update({
-        where: { id: milestone.id },
-        data:  {
-          status:           'RELEASED',
-          releasedAt:       new Date(),
-          stripeTransferId: transfer.id,
-          disputeReason:    null,
-        },
+        await stripe.refunds.create({
+          payment_intent: stripePaymentIntentId,
+          amount:         investorCents,
+          metadata:       { disputeId: id, adminId, reason: 'admin_ruling_split_investor', pct: String(100 - pct) },
+        });
+
+        await prisma.milestone.update({
+          where: { id: milestone.id },
+          data:  {
+            status:           'RELEASED',
+            releasedAt:       new Date(),
+            stripeTransferId: transfer.id,
+            disputeReason:    null,
+          },
+        });
+      }
+      // WITHDRAWN / NO_ACTION ruling: no Stripe movement
+
+      // 4. Update escrow status
+      const allMilestones = await prisma.milestone.findMany({ where: { escrowPaymentId: escrow.id } });
+      const allDone = allMilestones.every(m =>
+        m.id === milestone.id ? true : ['APPROVED', 'RELEASED', 'REFUNDED'].includes(m.status),
+      );
+      await prisma.escrowPayment.update({
+        where: { id: escrow.id },
+        data:  { status: allDone ? 'FULLY_RELEASED' : 'IN_PROGRESS' },
       });
     }
-    // WITHDRAWN ruling: no Stripe movement; just mark resolved
-
-    // 4. Update escrow status
-    const allMilestones = await prisma.milestone.findMany({ where: { escrowPaymentId: escrow.id } });
-    const allDone = allMilestones.every(m =>
-      m.id === milestone.id ? true : ['APPROVED', 'RELEASED', 'REFUNDED'].includes(m.status),
-    );
-    await prisma.escrowPayment.update({
-      where: { id: escrow.id },
-      data:  { status: allDone ? 'FULLY_RELEASED' : 'IN_PROGRESS' },
-    });
 
     // 5. Update dispute: set RESOLVED + ruling fields
     const now = new Date().toISOString();
     const { error: updateErr } = await supabase
       .from('disputes')
       .update({
-        status:     'RESOLVED',
+        status:           'RESOLVED',
         ruling,
-        ruling_note: rulingNote,
-        ruling_by:   adminId,
-        ruling_at:   now,
-        updated_at:  now,
+        ruling_note:      rulingNote,
+        ruling_by:        adminId,
+        ruling_at:        now,
+        last_activity_at: now,
       })
       .eq('id', id);
-    if (updateErr) throw new AppError('Failed to update dispute', 500);
+    if (updateErr) {
+      console.error('[admin/disputes] ruling update supabase error:', updateErr);
+      throw new AppError(updateErr.message || 'Failed to update dispute', 500);
+    }
 
     // 5b. Draw request callback — update DrawMilestone/DrawRequest if this
     //     dispute is linked to one (non-fatal: never block the ruling response)
@@ -772,7 +854,7 @@ router.post('/:id/ruling', async (req: Request, res: Response): Promise<void> =>
         select: { id: true, milestoneId: true },
       });
       if (drawReq) {
-        if (ruling === 'CONTRACTOR' || ruling === 'SPLIT') {
+        if (ruling === 'CONTRACTOR_WINS' || ruling === 'SPLIT') {
           await prisma.$transaction([
             prisma.drawRequest.update({
               where: { id: drawReq.id },
@@ -783,7 +865,7 @@ router.post('/:id/ruling', async (req: Request, res: Response): Promise<void> =>
               data:  { status: 'RELEASED', approvedAt: new Date(), releasedAt: new Date() },
             }),
           ]);
-        } else if (ruling === 'INVESTOR') {
+        } else if (ruling === 'INVESTOR_WINS') {
           await prisma.$transaction([
             prisma.drawRequest.update({
               where: { id: drawReq.id },
@@ -974,17 +1056,26 @@ router.put('/:id/status', async (req: Request, res: Response): Promise<void> => 
     const now = new Date().toISOString();
     const { error: updateErr } = await supabase
       .from('disputes')
-      .update({ status, updated_at: now })
+      .update({ status, last_activity_at: now })
       .eq('id', id);
-    if (updateErr) throw new AppError('Failed to update status', 500);
+    if (updateErr) {
+      console.error('[admin/disputes] status update supabase error:', updateErr);
+      throw new AppError(updateErr.message || 'Failed to update status', 500);
+    }
 
-    // Store admin note if provided
+    // Store admin note as a system message in dispute_messages (v1 schema).
+    // Soft-fail so a missing column or table never breaks the status update.
     if (note) {
-      await supabase.from('dispute_notes').insert({
-        dispute_id: id,
-        admin_id:   adminId,
-        content:    `[Status → ${status}] ${note}`,
-      });
+      try {
+        await supabase.from('dispute_messages').insert({
+          dispute_id: id,
+          sender_id:  adminId,
+          content:    `[Status → ${status}] ${note}`,
+          is_system:  true,
+        });
+      } catch (noteErr) {
+        console.error('[admin/disputes] note insert skipped:', noteErr);
+      }
     }
 
     void writeAuditLog({

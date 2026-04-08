@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeft,
   ChevronRight,
@@ -161,6 +161,7 @@ export function FileDisputePage() {
   const { user }           = useAuth();
   const { toast }          = useToast();
   const navigate           = useNavigate();
+  const queryClient        = useQueryClient();
   const [searchParams]     = useSearchParams();
 
   const isInvestor = user?.role === 'INVESTOR';
@@ -259,6 +260,8 @@ export function FileDisputePage() {
         desiredOutcome,
       }),
     onSuccess: (dispute) => {
+      queryClient.invalidateQueries({ queryKey: ['disputes', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['disputes', 'summary'] });
       toast('Dispute filed successfully');
       navigate(`/dashboard/settings/disputes/${dispute.id}`);
     },

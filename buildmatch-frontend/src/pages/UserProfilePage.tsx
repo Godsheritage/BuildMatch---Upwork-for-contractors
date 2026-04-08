@@ -2,34 +2,48 @@ import { Link } from 'react-router-dom';
 import {
   MapPin, Globe, Share2, Eye, Pencil, Plus,
   Briefcase, Video, Award, Star, ChevronRight, ChevronLeft,
-  CheckCircle2, Shield,
+  CheckCircle2, Shield, Clock, Moon,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
+import { AvatarUpload } from '../components/ui/AvatarUpload';
 import { getMyContractorProfile } from '../services/contractor.service';
 import type { ContractorProfile } from '../types/contractor.types';
 import styles from './UserProfilePage.module.css';
 import { getOptimizedUrl, JOB_PHOTO_FALLBACK } from '../utils/media';
 import { useState } from 'react';
 
-// ── Avatar helpers ────────────────────────────────────────────────────────────
+// ── Locale + time helpers ─────────────────────────────────────────────────────
 
-const AVATAR_COLORS = [
-  { bg: '#DBEAFE', text: '#1E40AF' },
-  { bg: '#D1FAE5', text: '#065F46' },
-  { bg: '#EDE9FE', text: '#5B21B6' },
-  { bg: '#FEE2E2', text: '#991B1B' },
-  { bg: '#FEF3C7', text: '#92400E' },
-  { bg: '#E0F2FE', text: '#0369A1' },
-];
+const LANGUAGE_NAME: Record<string, string> = {
+  'en-US': 'English',
+  'en-GB': 'English',
+  'es-ES': 'Spanish',
+  'fr-FR': 'French',
+  'pt-BR': 'Portuguese',
+  'de-DE': 'German',
+};
 
-function getAvatarColor(name: string) {
-  const hash = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length] ?? AVATAR_COLORS[0];
+function formatLanguage(locale: string | null | undefined): string {
+  if (!locale) return 'English';
+  return LANGUAGE_NAME[locale] ?? locale.split('-')[0]?.toUpperCase() ?? 'English';
 }
 
-function getInitials(name: string) {
-  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
+function formatTimezoneShort(tz: string | null | undefined): string | null {
+  if (!tz) return null;
+  // "America/New_York" → "New York"
+  const parts = tz.split('/');
+  return parts[parts.length - 1]?.replace(/_/g, ' ') ?? tz;
+}
+
+function formatHHMMto12h(hhmm: string): string {
+  const [hStr, mStr] = hhmm.split(':');
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm;
+  const period = h >= 12 ? 'pm' : 'am';
+  const h12 = ((h + 11) % 12) + 1;
+  return m === 0 ? `${h12}${period}` : `${h12}:${String(m).padStart(2, '0')}${period}`;
 }
 
 // ── Specialty labels ──────────────────────────────────────────────────────────
@@ -114,7 +128,7 @@ function ProfileSkeleton() {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function UserProfilePage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const isContractor = user?.role === 'CONTRACTOR';
 
@@ -130,9 +144,7 @@ export function UserProfilePage() {
   if (!user) return null;
   if (isLoading) return <div className={styles.page}><ProfileSkeleton /></div>;
 
-  const fullName    = `${user.firstName} ${user.lastName}`;
-  const initials    = getInitials(fullName);
-  const color       = getAvatarColor(fullName);
+  const fullName    = user.displayName?.trim() || `${user.firstName} ${user.lastName}`;
   const location    = isContractor
     ? (profile ? [profile.city, profile.state].filter(Boolean).join(', ') : null)
     : [user.city, user.state].filter(Boolean).join(', ') || null;
@@ -165,17 +177,30 @@ export function UserProfilePage() {
             <div className={styles.coverStrip} />
             <div className={styles.headerTop}>
               <div className={styles.avatarWrap}>
-                <div
-                  className={styles.avatar}
-                  style={{ background: color.bg, color: color.text }}
-                >
-                  {initials}
-                </div>
+                <AvatarUpload
+                  name={fullName}
+                  currentAvatarUrl={user?.avatarUrl ?? null}
+                  size="lg"
+                  onUploadComplete={(url) => updateUser({ avatarUrl: url })}
+                  onDelete={() => updateUser({ avatarUrl: null })}
+                />
               </div>
 
               <div className={styles.headerMeta}>
                 <div className={styles.nameRow}>
                   <span className={styles.name}>{fullName}</span>
+                  {user.pronouns && (
+                    <span style={{
+                      fontSize: 12,
+                      color: 'var(--color-text-muted)',
+                      fontWeight: 'var(--font-weight-medium)',
+                      padding: '2px 8px',
+                      background: 'var(--color-surface)',
+                      borderRadius: 'var(--radius-pill)',
+                    }}>
+                      {user.pronouns}
+                    </span>
+                  )}
                   <Link
                     to={isContractor ? '/dashboard/profile/setup' : '/dashboard/profile/edit'}
                     className={styles.editBtn}
@@ -208,10 +233,22 @@ export function UserProfilePage() {
                       {location}
                     </span>
                   )}
+                  {formatTimezoneShort(user.timezone) && (
+                    <span className={styles.metaBadge}>
+                      <Clock size={11} strokeWidth={2} />
+                      {formatTimezoneShort(user.timezone)}
+                    </span>
+                  )}
                   <span className={styles.metaBadge}>
                     <Globe size={11} strokeWidth={2} />
-                    Speaks English
+                    Speaks {formatLanguage(user.locale)}
                   </span>
+                  {user.quietHoursStart && user.quietHoursEnd && (
+                    <span className={styles.metaBadge} title="Notifications are paused during these hours">
+                      <Moon size={11} strokeWidth={2} />
+                      Quiet {formatHHMMto12h(user.quietHoursStart)}–{formatHHMMto12h(user.quietHoursEnd)}
+                    </span>
+                  )}
                   {user.isVerified && (
                     <span className={styles.metaBadge} style={{ color: 'var(--color-accent)' }}>
                       <CheckCircle2 size={11} strokeWidth={2} />

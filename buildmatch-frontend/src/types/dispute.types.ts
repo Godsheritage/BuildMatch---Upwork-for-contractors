@@ -84,10 +84,15 @@ export interface DisputeEvidence {
 }
 
 export interface DisputeSummary {
-  open:        number;
-  underReview: number;
-  resolved:    number;
-  total:       number;
+  open:              number;
+  underReview:       number;
+  awaitingEvidence:  number;
+  pendingRuling:     number;
+  resolved:          number;
+  closed:            number;
+  withdrawn:         number;
+  active:            number;
+  total:             number;
 }
 
 export interface DisputeListResult {

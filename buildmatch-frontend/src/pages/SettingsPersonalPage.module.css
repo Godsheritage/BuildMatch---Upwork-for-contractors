@@ -419,3 +419,60 @@
     gap: var(--space-1);
   }
 }
+
+/* ── Form fields (added for identity / locale / quiet hours / email / OAuth) ─ */
+
+.formRow {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 220px;
+  min-width: 0;
+  margin-bottom: var(--space-3);
+}
+
+.formLabel {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.formInput {
+  width: 100%;
+  font-size: 14px;
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.formInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(27, 58, 92, 0.08);
+}
+
+.formInput:disabled {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+textarea.formInput {
+  resize: vertical;
+  min-height: 80px;
+  line-height: var(--leading-body);
+}

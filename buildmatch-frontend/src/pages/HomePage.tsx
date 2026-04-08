@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import {
   Zap, Droplets, Wind, Home, Layers, Paintbrush,
   Trees, Hammer, Wrench, Building2,
-  ArrowRight, Search,
+  ArrowRight, Search, Menu, X,
   FileText, Users, CheckCircle2, UserCircle, Briefcase, Send,
 } from 'lucide-react';
 import { useContractorSearch } from '../hooks/useContractorSearch';
@@ -97,6 +97,7 @@ export function HomePage() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const [userCity, setUserCity] = useState<string | null>(null);
   const [howTab, setHowTab] = useState<'INVESTOR' | 'CONTRACTOR'>('INVESTOR');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Typewriter effect for search placeholder
   const [typedText, setTypedText]     = useState('');
@@ -170,7 +171,9 @@ export function HomePage() {
 
       {/* ── NAVBAR ─────────────────────────────────────── */}
       <nav className={styles.nav}>
-        <Link to="/"><img src="/logo.svg" alt="BuildMatch" style={{ height: 40 }} /></Link>
+        <Link to="/" className={styles.navLogo}>
+          <img src="/logo.svg" alt="BuildMatch" />
+        </Link>
         <div className={styles.navLinks}>
           <Link to="/contractors" className={styles.navLink}>Find Contractors</Link>
           <Link to="/post-job"    className={styles.navLink}>Post a Job</Link>
@@ -186,7 +189,49 @@ export function HomePage() {
             </>
           )}
         </div>
+        <button
+          type="button"
+          className={styles.navHamburger}
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Open menu"
+        >
+          <Menu size={22} strokeWidth={2} />
+        </button>
       </nav>
+
+      {/* ── MOBILE NAV DRAWER ──────────────────────────── */}
+      {mobileNavOpen && (
+        <div className={styles.mobileNavBackdrop} onClick={() => setMobileNavOpen(false)}>
+          <aside className={styles.mobileNavSheet} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.mobileNavHeader}>
+              <img src="/logo.svg" alt="BuildMatch" style={{ height: 36 }} />
+              <button
+                type="button"
+                className={styles.mobileNavClose}
+                onClick={() => setMobileNavOpen(false)}
+                aria-label="Close menu"
+              >
+                <X size={20} strokeWidth={2} />
+              </button>
+            </div>
+            <div className={styles.mobileNavLinks}>
+              <Link to="/contractors" className={styles.mobileNavLink} onClick={() => setMobileNavOpen(false)}>Find Contractors</Link>
+              <Link to="/post-job"    className={styles.mobileNavLink} onClick={() => setMobileNavOpen(false)}>Post a Job</Link>
+              <Link to="/register"    className={styles.mobileNavLink} onClick={() => setMobileNavOpen(false)}>How It Works</Link>
+            </div>
+            <div className={styles.mobileNavCtas}>
+              {user ? (
+                <Link to="/dashboard" className={styles.navCta} onClick={() => setMobileNavOpen(false)}>Dashboard</Link>
+              ) : (
+                <>
+                  <Link to="/login"    className={styles.mobileNavSignIn} onClick={() => setMobileNavOpen(false)}>Sign in</Link>
+                  <Link to="/register" className={styles.navCta} onClick={() => setMobileNavOpen(false)}>Get started</Link>
+                </>
+              )}
+            </div>
+          </aside>
+        </div>
+      )}
 
       {/* ── HERO ───────────────────────────────────────── */}
       <section className={styles.hero}>

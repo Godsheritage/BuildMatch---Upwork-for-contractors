@@ -67,6 +67,25 @@
   justify-content:  center;
   color:            var(--color-text-primary);
   flex-shrink:      0;
+  overflow:         hidden;
+}
+
+@keyframes settingsIconSpinCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes settingsIconSpinCCW {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+.cardIcon svg {
+  animation: settingsIconSpinCCW 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.card:hover .cardIcon svg {
+  animation: settingsIconSpinCW 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .cardTitle {

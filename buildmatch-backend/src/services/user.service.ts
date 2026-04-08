@@ -15,6 +15,14 @@ export const USER_SELECT = {
   company:   true,
   title:     true,
   website:   true,
+  displayName:     true,
+  pronouns:        true,
+  timezone:        true,
+  locale:          true,
+  dateFormat:      true,
+  numberFormat:    true,
+  quietHoursStart: true,
+  quietHoursEnd:   true,
   isVerified: true,
   isActive:   true,
   createdAt:  true,
@@ -47,6 +55,14 @@ export interface UpdateProfileInput {
   company?:   string | null;
   title?:     string | null;
   website?:   string | null;
+  displayName?:     string | null;
+  pronouns?:        string | null;
+  timezone?:        string | null;
+  locale?:          string | null;
+  dateFormat?:      string | null;
+  numberFormat?:    string | null;
+  quietHoursStart?: string | null;
+  quietHoursEnd?:   string | null;
 }
 
 export async function updateUserProfile(userId: string, data: UpdateProfileInput) {

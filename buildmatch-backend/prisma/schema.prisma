@@ -112,6 +112,14 @@ model User {
   company     String?
   title       String?
   website     String?
+  displayName String?
+  pronouns    String?
+  timezone    String?
+  locale      String?   @default("en-US")
+  dateFormat  String?
+  numberFormat String?
+  quietHoursStart String?
+  quietHoursEnd   String?
   isVerified     Boolean   @default(false)
   isActive       Boolean   @default(true)
   isBanned       Boolean   @default(false)

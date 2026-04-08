@@ -185,7 +185,7 @@ export function AdminDisputesPage() {
                 </td>
                 <td style={{ color: 'var(--color-text-muted)' }}>{d.filedByName}</td>
                 <td style={{ color: 'var(--color-text-muted)' }}>{d.againstName}</td>
-                <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{d.category.replace(/_/g, ' ')}</td>
+                <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{(d.category ?? '—').replace(/_/g, ' ')}</td>
                 <td style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
                   {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(d.amountDisputed)}
                 </td>
