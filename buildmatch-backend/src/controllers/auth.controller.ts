@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
+import * as passwordResetService from '../services/password-reset.service';
 import { AppError } from '../utils/app-error';
 import { sendSuccess, sendError } from '../utils/response.utils';
 
@@ -77,6 +78,50 @@ export async function unlinkGoogle(req: Request, res: Response): Promise<void> {
   try {
     const user = await authService.unlinkGoogleFromCurrentUser(req.user!.userId);
     sendSuccess(res, user, 'Google account unlinked');
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+// ── Password reset ───────────────────────────────────────────────────────────
+
+const GENERIC_RESET_REPLY =
+  "If an account exists for that email, we've sent a reset link. Check your inbox.";
+
+export async function forgotPassword(req: Request, res: Response): Promise<void> {
+  try {
+    const { email } = req.body ?? {};
+    // Always succeed — never reveal whether an account exists.
+    if (typeof email === 'string') {
+      await passwordResetService.requestPasswordReset(email);
+    }
+    sendSuccess(res, null, GENERIC_RESET_REPLY);
+  } catch (err) {
+    // Even on internal failure, don't leak — log and return the generic reply.
+    console.error('[auth] forgotPassword error:', err);
+    sendSuccess(res, null, GENERIC_RESET_REPLY);
+  }
+}
+
+export async function verifyResetToken(req: Request, res: Response): Promise<void> {
+  try {
+    const token = typeof req.query.token === 'string' ? req.query.token : '';
+    const result = await passwordResetService.verifyResetToken(token);
+    sendSuccess(res, result);
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response): Promise<void> {
+  try {
+    const { token, password } = req.body ?? {};
+    if (typeof token !== 'string' || typeof password !== 'string') {
+      sendError(res, 'Invalid request', 400);
+      return;
+    }
+    await passwordResetService.consumeResetToken(token, password);
+    sendSuccess(res, null, 'Password updated. You can now sign in.');
   } catch (err) {
     handleError(res, err);
   }
