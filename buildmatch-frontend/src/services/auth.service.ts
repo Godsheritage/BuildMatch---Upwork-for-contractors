@@ -36,6 +36,39 @@ export async function register(payload: RegisterPayload): Promise<AuthData> {
   return res.data;
 }
 
+export interface GoogleAuthData extends AuthData {
+  isNewUser: boolean;
+}
+
+export interface GoogleAuthExtras {
+  firstName?: string;
+  lastName?:  string;
+  phone?:     string;
+}
+
+export async function googleAuth(
+  idToken: string,
+  role?:   'INVESTOR' | 'CONTRACTOR',
+  extras?: GoogleAuthExtras,
+): Promise<GoogleAuthData> {
+  const { data: res } = await api.post<ApiResponse<GoogleAuthData>>('/auth/google', {
+    idToken,
+    role,
+    ...(extras ?? {}),
+  });
+  return res.data;
+}
+
+export async function linkGoogleAccount(idToken: string): Promise<User> {
+  const { data: res } = await api.post<ApiResponse<User>>('/auth/google/link', { idToken });
+  return res.data;
+}
+
+export async function unlinkGoogleAccount(): Promise<User> {
+  const { data: res } = await api.post<ApiResponse<User>>('/auth/google/unlink', {});
+  return res.data;
+}
+
 export async function getMe(): Promise<User> {
   const { data: res } = await api.get<ApiResponse<User>>('/auth/me');
   return res.data;
@@ -43,6 +76,20 @@ export async function getMe(): Promise<User> {
 
 export async function forgotPassword(email: string): Promise<void> {
   await api.post('/auth/forgot-password', { email });
+}
+
+export interface VerifyResetTokenResult { email: string }
+
+export async function verifyResetToken(token: string): Promise<VerifyResetTokenResult> {
+  const { data: res } = await api.get<ApiResponse<VerifyResetTokenResult>>(
+    '/auth/reset-password/verify',
+    { params: { token } },
+  );
+  return res.data;
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await api.post('/auth/reset-password', { token, password });
 }
 
 export interface UpdateProfilePayload {

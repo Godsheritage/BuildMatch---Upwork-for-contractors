@@ -7,8 +7,14 @@ node_modules/
 .env
 .env.local
 .env.development
+.env.staging
 .env.production
 .env.*.local
+# Admin app envs (explicit, in case patterns above ever get scoped)
+buildmatch-admin/.env
+buildmatch-admin/.env.local
+buildmatch-admin/.env.staging
+buildmatch-admin/.env.production
 # Keep example files
 !.env.example
 

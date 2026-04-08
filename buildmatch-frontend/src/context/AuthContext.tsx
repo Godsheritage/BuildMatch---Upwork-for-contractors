@@ -10,6 +10,11 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterPayload) => Promise<void>;
+  loginWithGoogle: (
+    idToken: string,
+    role?:   'INVESTOR' | 'CONTRACTOR',
+    extras?: { firstName?: string; lastName?: string; phone?: string },
+  ) => Promise<{ isNewUser: boolean }>;
   logout: () => void;
   updateUser: (patch: Partial<User>) => void;
 }
@@ -46,6 +51,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(userData);
   }, []);
 
+  const loginWithGoogle = useCallback(
+    async (
+      idToken: string,
+      role?:   'INVESTOR' | 'CONTRACTOR',
+      extras?: { firstName?: string; lastName?: string; phone?: string },
+    ) => {
+      const { user: userData, token, isNewUser } = await authService.googleAuth(idToken, role, extras);
+      localStorage.setItem(TOKEN_KEY, token);
+      setUser(userData);
+      return { isNewUser };
+    },
+    [],
+  );
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     setUser(null);
@@ -63,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         register,
+        loginWithGoogle,
         logout,
         updateUser,
       }}

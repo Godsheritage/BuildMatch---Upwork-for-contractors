@@ -100,7 +100,8 @@ enum DrawRequestStatus {
 model User {
   id          String    @id @default(cuid())
   email       String    @unique
-  password    String
+  password    String?
+  googleId    String?   @unique
   role        Role
   firstName   String
   lastName    String
@@ -144,6 +145,20 @@ model User {
   drawRequestsReviewed    DrawRequest[]            @relation("DrawRequestsReviewed")
   drawEvidenceUploads     DrawEvidence[]           @relation("DrawEvidenceUploads")
   drawScheduleEdits       DrawScheduleEdit[]       @relation("DrawScheduleEdits")
+  passwordResetTokens     PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model ContractorProfile {
