@@ -22,6 +22,7 @@ export interface User {
   numberFormat: 'EN' | 'EU' | null;
   quietHoursStart: string | null;
   quietHoursEnd: string | null;
+  googleId: string | null;
   isVerified: boolean;
   isActive: boolean;
   createdAt: string;

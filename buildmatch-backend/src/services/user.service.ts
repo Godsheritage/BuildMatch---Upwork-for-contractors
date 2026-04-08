@@ -23,6 +23,7 @@ export const USER_SELECT = {
   numberFormat:    true,
   quietHoursStart: true,
   quietHoursEnd:   true,
+  googleId:   true,
   isVerified: true,
   isActive:   true,
   createdAt:  true,

@@ -7,6 +7,7 @@ import { useLang } from '../context/LanguageContext';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { AvatarUpload } from '../components/ui/AvatarUpload';
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import type { UserRole } from '../types/user.types';
 
 type Role = Exclude<UserRole, 'ADMIN'>;
@@ -51,10 +52,14 @@ function RoleStep({
   selected,
   onSelect,
   onContinue,
+  onGoogleSignUp,
+  googleError,
 }: {
   selected: Role | '';
   onSelect: (r: Role) => void;
   onContinue: () => void;
+  onGoogleSignUp: (idToken: string, role: Role) => void;
+  googleError: string;
 }) {
   const { t } = useLang();
 
@@ -148,6 +153,29 @@ function RoleStep({
 
           <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-border" />
+            <span className="text-sm text-muted whitespace-nowrap">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+          {selected ? (
+            <div className="flex justify-center">
+              <GoogleSignInButton
+                text="signup_with"
+                onCredential={(idToken) => onGoogleSignUp(idToken, selected as Role)}
+              />
+            </div>
+          ) : (
+            <p className="text-xs text-muted text-center">
+              Choose a role above to sign up with Google.
+            </p>
+          )}
+          {googleError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-danger mt-4">
+              {googleError}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-border" />
             <span className="text-sm text-muted whitespace-nowrap">{t.register.haveAcct}</span>
             <div className="flex-1 h-px bg-border" />
           </div>
@@ -172,6 +200,7 @@ function FormStep({
   serverError,
   isSubmitting,
   onSubmit,
+  googleMode,
 }: {
   role: Role;
   onBack: () => void;
@@ -182,6 +211,7 @@ function FormStep({
   serverError: string;
   isSubmitting: boolean;
   onSubmit: (e: React.FormEvent) => void;
+  googleMode: boolean;
 }) {
   const { t } = useLang();
   const isContractor = role === 'CONTRACTOR';
@@ -267,8 +297,25 @@ function FormStep({
                   autoComplete="family-name" value={values.lastName} onChange={set('lastName')} error={fieldErrors.lastName} />
               </div>
 
-              <Input id="email" type="email" label={t.register.labels.email} placeholder={t.register.placeholders.email}
-                autoComplete="email" value={values.email} onChange={set('email')} error={fieldErrors.email} />
+              <div>
+                <Input
+                  id="email"
+                  type="email"
+                  label={t.register.labels.email}
+                  placeholder={t.register.placeholders.email}
+                  autoComplete="email"
+                  value={values.email}
+                  onChange={set('email')}
+                  error={fieldErrors.email}
+                  disabled={googleMode}
+                  readOnly={googleMode}
+                />
+                {googleMode && (
+                  <p style={{ fontSize: 11, color: 'var(--color-accent)', marginTop: 4 }}>
+                    Verified by Google — you can't change this email here.
+                  </p>
+                )}
+              </div>
 
               <Input id="phone" type="tel" label={t.register.labels.phone} placeholder={t.register.placeholders.phone}
                 autoComplete="tel" value={values.phone} onChange={set('phone')} error={fieldErrors.phone} />
@@ -334,30 +381,48 @@ function FormStep({
                 </>
               )}
 
-              {/* Password */}
-              <div>
-                <Input id="password" type="password" label={t.register.labels.password}
-                  placeholder={t.register.placeholders.password}
-                  autoComplete="new-password" value={values.password} onChange={set('password')}
-                  error={fieldErrors.password} />
-                {values.password.length > 0 && (
-                  <div className="mt-2.5 flex flex-col gap-1.5">
-                    {passwordChecks.map(({ label, met }) => (
-                      <div key={label} className="flex items-center gap-2">
-                        {met
-                          ? <CheckCircle2 size={13} className="text-accent flex-shrink-0" strokeWidth={2.5} />
-                          : <Circle size={13} className="text-border flex-shrink-0" strokeWidth={2} />}
-                        <span className={`text-xs ${met ? 'text-accent' : 'text-muted'}`}>{label}</span>
+              {/* Password — hidden when signing up via Google */}
+              {!googleMode && (
+                <>
+                  <div>
+                    <Input id="password" type="password" label={t.register.labels.password}
+                      placeholder={t.register.placeholders.password}
+                      autoComplete="new-password" value={values.password} onChange={set('password')}
+                      error={fieldErrors.password} />
+                    {values.password.length > 0 && (
+                      <div className="mt-2.5 flex flex-col gap-1.5">
+                        {passwordChecks.map(({ label, met }) => (
+                          <div key={label} className="flex items-center gap-2">
+                            {met
+                              ? <CheckCircle2 size={13} className="text-accent flex-shrink-0" strokeWidth={2.5} />
+                              : <Circle size={13} className="text-border flex-shrink-0" strokeWidth={2} />}
+                            <span className={`text-xs ${met ? 'text-accent' : 'text-muted'}`}>{label}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
 
-              <Input id="confirmPassword" type="password" label={t.register.labels.confirmPw}
-                placeholder={t.register.placeholders.password}
-                autoComplete="new-password" value={values.confirmPassword}
-                onChange={set('confirmPassword')} error={fieldErrors.confirmPassword} />
+                  <Input id="confirmPassword" type="password" label={t.register.labels.confirmPw}
+                    placeholder={t.register.placeholders.password}
+                    autoComplete="new-password" value={values.confirmPassword}
+                    onChange={set('confirmPassword')} error={fieldErrors.confirmPassword} />
+                </>
+              )}
+
+              {googleMode && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 14px', borderRadius: 8,
+                  background: 'var(--color-highlight)',
+                  border: '1px solid var(--color-accent)',
+                }}>
+                  <CheckCircle2 size={16} color="var(--color-accent)" strokeWidth={2} />
+                  <span style={{ fontSize: 13, color: 'var(--color-accent)', fontWeight: 'var(--font-weight-medium)' as React.CSSProperties['fontWeight'] }}>
+                    You'll sign in with Google. No password needed.
+                  </span>
+                </div>
+              )}
 
               {serverError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-danger">
@@ -478,7 +543,7 @@ function AvatarStep({
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function RegisterPage() {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const { t } = useLang();
   const navigate = useNavigate();
 
@@ -488,6 +553,10 @@ export function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // When set, the user is completing signup with a Google credential. We
+  // hold the verified ID token and submit it alongside the form data.
+  const [googleIdToken, setGoogleIdToken] = useState<string | null>(null);
+  const googleMode = googleIdToken !== null;
 
   function validate(v: FormValues): FormErrors {
     const e: FormErrors = {};
@@ -501,12 +570,15 @@ export function RegisterPage() {
       if (v.specialties.length === 0)    e.specialties   = t.register.validation.specialtyRequired;
       if (!v.zipCode.trim())             e.zipCode       = t.register.validation.zipRequired;
     }
-    if (!v.password)                     e.password      = t.register.validation.pwRequired;
-    else if (v.password.length < 8)      e.password      = t.register.validation.pwMin;
-    else if (!/[A-Z]/.test(v.password))  e.password      = t.register.validation.pwUppercase;
-    else if (!/[0-9]/.test(v.password))  e.password      = t.register.validation.pwNumber;
-    if (!v.confirmPassword)              e.confirmPassword = t.register.validation.confirmRequired;
-    else if (v.password !== v.confirmPassword) e.confirmPassword = t.register.validation.pwMismatch;
+    // Password rules only apply for the email/password flow.
+    if (!googleMode) {
+      if (!v.password)                     e.password      = t.register.validation.pwRequired;
+      else if (v.password.length < 8)      e.password      = t.register.validation.pwMin;
+      else if (!/[A-Z]/.test(v.password))  e.password      = t.register.validation.pwUppercase;
+      else if (!/[0-9]/.test(v.password))  e.password      = t.register.validation.pwNumber;
+      if (!v.confirmPassword)              e.confirmPassword = t.register.validation.confirmRequired;
+      else if (v.password !== v.confirmPassword) e.confirmPassword = t.register.validation.pwMismatch;
+    }
     return e;
   }
 
@@ -518,15 +590,26 @@ export function RegisterPage() {
     if (Object.keys(errors).length > 0) return;
     setIsSubmitting(true);
     try {
-      await register({
-        email: values.email,
-        password: values.password,
-        firstName: values.firstName.trim(),
-        lastName: values.lastName.trim(),
-        role: role as Role,
-        ...(values.phone.trim() ? { phone: values.phone.trim() } : {}),
-      });
-      setStep(3);
+      if (googleMode && googleIdToken) {
+        // Google flow: re-send the verified ID token along with the form data.
+        // The backend will create the account using these names + phone.
+        await loginWithGoogle(googleIdToken, role as Role, {
+          firstName: values.firstName.trim(),
+          lastName:  values.lastName.trim(),
+          phone:     values.phone.trim() || undefined,
+        });
+        setStep(3);
+      } else {
+        await register({
+          email: values.email,
+          password: values.password,
+          firstName: values.firstName.trim(),
+          lastName: values.lastName.trim(),
+          role: role as Role,
+          ...(values.phone.trim() ? { phone: values.phone.trim() } : {}),
+        });
+        setStep(3);
+      }
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {
         setServerError(err.response.data.message as string);
@@ -538,6 +621,66 @@ export function RegisterPage() {
     }
   };
 
+  // Decode the (already-verified-by-Google) ID token client-side to extract
+  // name + email for pre-filling the form. We never trust this for auth —
+  // the backend re-verifies the token signature before creating an account.
+  function decodeGoogleJwt(idToken: string): {
+    email: string;
+    given_name?: string;
+    family_name?: string;
+  } | null {
+    try {
+      const [, payload] = idToken.split('.');
+      if (!payload) return null;
+      const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const bin = atob(b64);
+      const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+      const json = new TextDecoder('utf-8').decode(bytes);
+      return JSON.parse(json);
+    } catch {
+      return null;
+    }
+  }
+
+  async function handleGoogleSignUp(idToken: string, selectedRole: Role) {
+    setServerError('');
+    // 1. First try a normal Google sign-in. If the user already exists
+    //    (linked by googleId or email), we log them in immediately and
+    //    skip the form entirely.
+    try {
+      await loginWithGoogle(idToken);
+      navigate('/dashboard');
+      return;
+    } catch (err) {
+      const status = axios.isAxiosError(err) ? err.response?.status : null;
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : null;
+
+      // 400 means "no matching account, role required" → fall through to
+      // the prefilled signup form. Anything else is a real error.
+      if (status !== 400) {
+        setServerError(message ?? 'Google sign-in failed. Please try again.');
+        return;
+      }
+    }
+
+    // 2. Brand-new user — pre-fill the form from the Google payload and
+    //    advance to Step 2 in "Google mode".
+    const payload = decodeGoogleJwt(idToken);
+    if (!payload?.email) {
+      setServerError('Could not read your Google profile. Please try again.');
+      return;
+    }
+    setValues((prev) => ({
+      ...prev,
+      firstName: payload.given_name?.trim() ?? prev.firstName,
+      lastName:  payload.family_name?.trim() ?? prev.lastName,
+      email:     payload.email,
+    }));
+    setRole(selectedRole);
+    setGoogleIdToken(idToken);
+    setStep(2);
+  }
+
   if (step === 1) {
     return (
       <RoleStep
@@ -546,6 +689,8 @@ export function RegisterPage() {
         onContinue={() => {
           if (role) setStep(2);
         }}
+        onGoogleSignUp={handleGoogleSignUp}
+        googleError={serverError}
       />
     );
   }
@@ -562,7 +707,7 @@ export function RegisterPage() {
   return (
     <FormStep
       role={role as Role}
-      onBack={() => setStep(1)}
+      onBack={() => { setStep(1); setGoogleIdToken(null); }}
       values={values}
       setValues={setValues}
       fieldErrors={fieldErrors}
@@ -570,6 +715,7 @@ export function RegisterPage() {
       serverError={serverError}
       isSubmitting={isSubmitting}
       onSubmit={handleSubmit}
+      googleMode={googleMode}
     />
   );
 }

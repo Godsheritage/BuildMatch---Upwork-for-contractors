@@ -5,11 +5,12 @@ import { useAuth } from '../hooks/useAuth';
 import { useLang } from '../context/LanguageContext';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 
 interface FormErrors { email?: string; password?: string; }
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const { t } = useLang();
   const navigate = useNavigate();
 
@@ -87,6 +88,32 @@ export function LoginPage() {
               </Button>
             </div>
           </form>
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-sm text-muted whitespace-nowrap">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+          <div className="flex justify-center mb-6">
+            <GoogleSignInButton
+              text="signin_with"
+              onCredential={async (idToken) => {
+                setServerError('');
+                setIsSubmitting(true);
+                try {
+                  await loginWithGoogle(idToken);
+                  navigate('/dashboard');
+                } catch (err) {
+                  if (axios.isAxiosError(err) && err.response?.data?.message) {
+                    setServerError(err.response.data.message as string);
+                  } else {
+                    setServerError('Google sign-in failed. Please try again.');
+                  }
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }}
+            />
+          </div>
           <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-border" />
             <span className="text-sm text-muted whitespace-nowrap">{t.login.newTo}</span>

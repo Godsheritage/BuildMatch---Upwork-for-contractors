@@ -7,7 +7,8 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { getMyContractorProfile, updateMyProfile } from '../services/contractor.service';
-import { updateUserProfile } from '../services/auth.service';
+import { updateUserProfile, linkGoogleAccount, unlinkGoogleAccount } from '../services/auth.service';
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../context/ToastContext';
 import styles from './SettingsPersonalPage.module.css';
@@ -680,23 +681,97 @@ export function SettingsPersonalPage() {
       <div className={styles.section}>
         <SectionHeader title="Connected accounts" />
         <p className={styles.sectionDesc}>
-          Link a third-party account so you can sign in with one click. No accounts linked yet.
+          Link a third-party account so you can sign in with one click.
         </p>
-        <div className={styles.formRow}>
+
+        {/* Google */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16,
+            padding: '14px 16px',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-sm)',
+            marginBottom: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 22 }}>🇬</span>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', margin: 0 }}>
+                Google
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0 }}>
+                {user.googleId ? 'Connected' : 'Not connected'}
+              </p>
+            </div>
+          </div>
+          {user.googleId ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={async () => {
+                try {
+                  const updated = await unlinkGoogleAccount();
+                  updateUser(updated);
+                  toast('Google account unlinked.');
+                } catch (err: unknown) {
+                  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+                  toast(msg ?? 'Could not unlink Google.', 'error');
+                }
+              }}
+            >
+              Unlink
+            </Button>
+          ) : (
+            <GoogleSignInButton
+              text="continue_with"
+              width={220}
+              onCredential={async (idToken) => {
+                try {
+                  const updated = await linkGoogleAccount(idToken);
+                  updateUser(updated);
+                  toast('Google account linked.');
+                } catch (err: unknown) {
+                  const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+                  toast(msg ?? 'Could not link Google.', 'error');
+                }
+              }}
+            />
+          )}
+        </div>
+
+        {/* Apple — placeholder */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16,
+            padding: '14px 16px',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-sm)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 22 }}></span>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', margin: 0 }}>
+                Apple
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0 }}>
+                Coming soon
+              </p>
+            </div>
+          </div>
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            onClick={() => toast('Google sign-in is coming soon.', 'info')}
-          >
-            <Link2 size={14} strokeWidth={2} style={{ marginRight: 6 }} />
-            Connect Google
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => toast('Apple sign-in is coming soon.', 'info')}
+            disabled
           >
             <Link2 size={14} strokeWidth={2} style={{ marginRight: 6 }} />
             Connect Apple
