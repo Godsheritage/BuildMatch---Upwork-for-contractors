@@ -47,14 +47,21 @@ app.use(requestTimer);
 // Security headers
 app.use(helmet());
 
-// CORS — allow configured frontend origin (and any localhost port in dev)
-const allowedOrigin = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+// CORS — allow a comma-separated list of frontend origins (FRONTEND_URL)
+// plus any localhost port in dev. The same env var holds the user app and
+// the admin app origins, e.g.
+//   FRONTEND_URL=https://app.buildmatch.us,https://admin.buildmatch.us
+const allowedOrigins = (process.env.FRONTEND_URL ?? 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true); // allow non-browser requests (curl, Postman)
       const isLocalhost = /^http:\/\/localhost(:\d+)?$/.test(origin);
-      if (origin === allowedOrigin || isLocalhost) return callback(null, true);
+      if (allowedOrigins.includes(origin) || isLocalhost) return callback(null, true);
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,
