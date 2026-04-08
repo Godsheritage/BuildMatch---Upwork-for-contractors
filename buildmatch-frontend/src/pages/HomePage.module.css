@@ -1374,9 +1374,14 @@
     gap: 10px;
   }
   .searchIcon { display: none; }
-  .searchInputWrap { width: 100%; }
+  .searchInputWrap { width: 100%; overflow: hidden; }
   .searchInput { font-size: 15px; padding: 8px 0; }
-  .searchPlaceholder { font-size: 15px; }
+  .searchPlaceholder {
+    font-size: 15px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .searchBtnWrap {
     width: 100%;
     justify-content: space-between;
