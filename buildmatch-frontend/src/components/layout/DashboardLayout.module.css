@@ -343,6 +343,12 @@
   background: #FAFAFA;
   min-width: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.main > :global(footer) {
+  margin-top: auto;
 }
 
 /* ── Mobile top bar ──────────────────────────────────── */

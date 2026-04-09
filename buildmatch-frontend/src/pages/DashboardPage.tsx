@@ -96,6 +96,30 @@ function InvestorDashboard({ greeting, t }: { greeting: string; t: ReturnType<ty
   const activeJobs   = jobs.filter((j) => j.status === 'OPEN' || j.status === 'IN_PROGRESS' || j.status === 'AWARDED');
   const recentJobs   = jobs.slice(0, 5);
 
+  // Contractors hired = unique accepted-bid contractor IDs across any job
+  // that has actually been awarded (AWARDED / IN_PROGRESS / COMPLETED).
+  const hiredContractorIds = new Set<string>();
+  jobs.forEach((j) => {
+    if (
+      j.acceptedBid &&
+      (j.status === 'AWARDED' || j.status === 'IN_PROGRESS' || j.status === 'COMPLETED')
+    ) {
+      hiredContractorIds.add(j.acceptedBid.contractorId);
+    }
+  });
+  const contractorsHired = hiredContractorIds.size;
+
+  // Total spent = sum of accepted-bid amounts on COMPLETED jobs only.
+  const totalSpent = jobs
+    .filter((j) => j.status === 'COMPLETED' && j.acceptedBid)
+    .reduce((sum, j) => sum + (j.acceptedBid?.amount ?? 0), 0);
+
+  const formattedTotalSpent = totalSpent.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  });
+
   return (
     <div className={styles.page}>
       <div className={styles.singleCol}>
@@ -106,8 +130,8 @@ function InvestorDashboard({ greeting, t }: { greeting: string; t: ReturnType<ty
 
         <div className={styles.statsRow}>
           <StatCard label={t.dashboard.stats.activeJobs}       value={String(activeJobs.length)} />
-          <StatCard label={t.dashboard.stats.contractorsHired} value="0" />
-          <StatCard label={t.dashboard.stats.totalSpent}       value="$0" />
+          <StatCard label={t.dashboard.stats.contractorsHired} value={String(contractorsHired)} />
+          <StatCard label={t.dashboard.stats.totalSpent}       value={formattedTotalSpent} />
         </div>
 
         <SavedContractorsWidget />

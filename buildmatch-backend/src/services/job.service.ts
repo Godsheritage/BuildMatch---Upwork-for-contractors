@@ -171,9 +171,20 @@ export async function getMyJobs(investorId: string) {
   const jobs = await prisma.job.findMany({
     where:   { investorId },
     orderBy: { createdAt: 'desc' },
-    include: { _count: { select: { bids: true } } },
+    include: {
+      _count: { select: { bids: true } },
+      bids:   {
+        where:  { status: 'ACCEPTED' },
+        select: { id: true, amount: true, contractorId: true },
+        take:   1,
+      },
+    },
   });
-  return jobs.map(({ _count, ...j }) => ({ ...j, bidCount: _count.bids }));
+  return jobs.map(({ _count, bids, ...j }) => ({
+    ...j,
+    bidCount:    _count.bids,
+    acceptedBid: bids[0] ?? null,
+  }));
 }
 
 // ── Bid services ─────────────────────────────────────────────────────────────
