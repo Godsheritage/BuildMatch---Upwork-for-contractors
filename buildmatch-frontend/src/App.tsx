@@ -41,6 +41,7 @@ import { AboutPage } from './pages/AboutPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { ContractReviewPage } from './pages/ContractReviewPage';
 import { SavedContractorsProvider } from './context/SavedContractorsContext';
+import { BugReportProvider } from './context/BugReportContext';
 import { ScopeEstimatorPage } from './pages/ScopeEstimatorPage';
 import { SavedContractorsPage } from './pages/SavedContractorsPage';
 import { DisputesListPage } from './pages/settings/DisputesListPage';
@@ -77,6 +78,7 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <SavedContractorsProvider>
+          <BugReportProvider>
           <BrowserRouter>
             <Routes>
               {/* Public routes */}
@@ -263,6 +265,7 @@ export default function App() {
               </Route>
             </Routes>
           </BrowserRouter>
+          </BugReportProvider>
           </SavedContractorsProvider>
         </ToastProvider>
       </AuthProvider>

@@ -3,18 +3,19 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Wrench, Briefcase, Scale, FileSearch,
   Settings, Flag, CreditCard, ShieldAlert, BarChart2, Activity,
-  MessageSquareWarning, Star, BadgeCheck,
+  MessageSquareWarning, Star, BadgeCheck, Bug,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { getStats } from '../../services/admin.service';
+import { getStats, getBugReportNewCount } from '../../services/admin.service';
 import styles from './AdminLayout.module.css';
 
-interface NavItem { to: string; icon: React.ElementType; label: string; end?: boolean; badgeKey?: 'disputes' | 'moderation'; }
+interface NavItem { to: string; icon: React.ElementType; label: string; end?: boolean; badgeKey?: 'disputes' | 'moderation' | 'bugs'; }
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/admin',             icon: LayoutDashboard,      label: 'Overview',      end: true },
   { to: '/admin/users',       icon: Users,                label: 'Users'                    },
   { to: '/admin/verifications', icon: BadgeCheck,         label: 'Verifications'            },
+  { to: '/admin/bugs',        icon: Bug,                  label: 'Bug Reports',   badgeKey: 'bugs' },
   { to: '/admin/contractors', icon: Wrench,               label: 'Contractors'              },
   { to: '/admin/jobs',        icon: Briefcase,            label: 'Jobs'                     },
   { to: '/admin/disputes',    icon: Scale,                label: 'Disputes',      badgeKey: 'disputes' },
@@ -28,16 +29,23 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/flags',       icon: Flag,                 label: 'Feature Flags'            },
 ];
 
-interface BadgeCounts { disputes: number; moderation: number; }
+interface BadgeCounts { disputes: number; moderation: number; bugs: number; }
 
 function useBadgeCounts(): BadgeCounts {
-  const [counts, setCounts] = useState<BadgeCounts>({ disputes: 0, moderation: 0 });
+  const [counts, setCounts] = useState<BadgeCounts>({ disputes: 0, moderation: 0, bugs: 0 });
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function fetchCounts() {
     try {
-      const stats = await getStats();
-      setCounts({ disputes: stats.disputes?.open ?? 0, moderation: 0 });
+      const [stats, bugs] = await Promise.all([
+        getStats(),
+        getBugReportNewCount().catch(() => ({ newCount: 0 })),
+      ]);
+      setCounts({
+        disputes:   stats.disputes?.open ?? 0,
+        moderation: 0,
+        bugs:       bugs.newCount ?? 0,
+      });
     } catch { /* non-fatal */ }
   }
 

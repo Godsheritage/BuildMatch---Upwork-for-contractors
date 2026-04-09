@@ -240,6 +240,42 @@ export const reviewIdVerification = (
   note?:    string,
 ) => api.put(`/admin/users/${userId}/id-verification`, { decision, note });
 
+// ── Bug Reports ───────────────────────────────────────────────────────────────
+
+export type BugStatus   = 'NEW' | 'IN_PROGRESS' | 'RESOLVED' | 'WONT_FIX';
+export type BugSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface BugReportItem {
+  id:              string;
+  title:           string;
+  description:     string;
+  severity:        BugSeverity;
+  status:          BugStatus;
+  screenshotUrls:  string[];
+  pageUrl:         string | null;
+  userAgent:       string | null;
+  reportingUserId: string | null;
+  ipAddress:       string | null;
+  adminNote:       string | null;
+  resolvedAt:      string | null;
+  createdAt:       string;
+  updatedAt:       string;
+  reportingUser:   {
+    id: string; firstName: string; lastName: string; email: string; role: string; avatarUrl: string | null;
+  } | null;
+}
+
+export const getBugReports = (params: { status?: BugStatus; page?: number; limit?: number }) =>
+  api.get('/admin/bug-reports', { params }).then(data<PageResponse<BugReportItem>>);
+
+export const getBugReportNewCount = () =>
+  api.get('/admin/bug-reports/count').then(data<{ newCount: number }>);
+
+export const updateBugReportAdmin = (
+  id:    string,
+  patch: { status?: BugStatus; adminNote?: string | null },
+) => api.put(`/admin/bug-reports/${id}`, patch).then(data<BugReportItem>);
+
 export const banUser   = (id: string) => api.put(`/admin/users/${id}/ban`);
 export const unbanUser = (id: string) => api.put(`/admin/users/${id}/unban`);
 

@@ -23,6 +23,7 @@ import { AdminAuditLogPage } from './pages/admin/AdminAuditLogPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AdminFeatureFlagsPage } from './pages/admin/AdminFeatureFlagsPage';
 import { AdminVerificationsPage } from './pages/admin/AdminVerificationsPage';
+import { AdminBugReportsPage } from './pages/admin/AdminBugReportsPage';
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ export default function App() {
                   <Route path="users"                 element={<AdminUsersPage />} />
                   <Route path="users/:userId"         element={<AdminUserDetailPage />} />
                   <Route path="verifications"         element={<AdminVerificationsPage />} />
+                  <Route path="bugs"                  element={<AdminBugReportsPage />} />
                   <Route path="contractors"           element={<AdminContractorsPage />} />
                   <Route path="jobs"                  element={<AdminJobsPage />} />
                   <Route path="jobs/:jobId"           element={<AdminJobDetailPage />} />
