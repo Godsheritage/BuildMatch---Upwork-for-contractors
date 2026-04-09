@@ -33,6 +33,7 @@ import { SettingsPersonalPage } from './pages/SettingsPersonalPage';
 import { SettingsSecurityPage } from './pages/SettingsSecurityPage';
 import { SettingsNotificationsPage } from './pages/SettingsNotificationsPage';
 import { SettingsVerificationPage } from './pages/SettingsVerificationPage';
+import { SettingsBillingPage } from './pages/SettingsBillingPage';
 import { IdVerificationStartPage } from './pages/IdVerificationStartPage';
 import { MobileIdVerificationPage } from './pages/MobileIdVerificationPage';
 import { ProfileEditPage } from './pages/ProfileEditPage';
@@ -158,6 +159,7 @@ export default function App() {
                 <Route path="/dashboard/settings/security"     element={<SettingsSecurityPage />} />
                 <Route path="/dashboard/settings/notifications" element={<SettingsNotificationsPage />} />
                 <Route path="/dashboard/settings/verification" element={<SettingsVerificationPage />} />
+                <Route path="/dashboard/settings/billing"      element={<SettingsBillingPage />} />
                 <Route path="/dashboard/settings/verification/id" element={<IdVerificationStartPage />} />
                 {/* Disputes — inside DashboardLayout but no settings sidebar */}
                 <Route path="/dashboard/settings/disputes"              element={<DisputesListPage />} />
