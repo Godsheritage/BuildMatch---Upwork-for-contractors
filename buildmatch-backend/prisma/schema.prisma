@@ -121,6 +121,9 @@ model User {
   numberFormat String?
   quietHoursStart String?
   quietHoursEnd   String?
+  profilePublic     Boolean?
+  projectPreference String?
+  aiPreference      String?
   isVerified     Boolean   @default(false)
   isActive       Boolean   @default(true)
   isBanned       Boolean   @default(false)

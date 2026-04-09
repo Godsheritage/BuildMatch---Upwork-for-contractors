@@ -26,6 +26,9 @@ export const updateProfileSchema = z.object({
   numberFormat: z.enum(['EN', 'EU']).nullable().optional(),
   quietHoursStart: z.string().regex(HHMM, 'Use HH:MM').nullable().optional(),
   quietHoursEnd:   z.string().regex(HHMM, 'Use HH:MM').nullable().optional(),
+  profilePublic:     z.boolean().nullable().optional(),
+  projectPreference: z.enum(['SHORT', 'LONG', 'BOTH']).nullable().optional(),
+  aiPreference:      z.enum(['FULL', 'LIMITED', 'NONE']).nullable().optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

@@ -172,7 +172,7 @@ export function HomePage() {
       {/* ── NAVBAR ─────────────────────────────────────── */}
       <nav className={styles.nav}>
         <Link to="/" className={styles.navLogo}>
-          <img src="/logo.svg" alt="BuildMatch" />
+          <img src="/logo.png" alt="BuildMatch" />
         </Link>
         <div className={styles.navLinks}>
           <Link to="/contractors" className={styles.navLink}>Find Contractors</Link>
@@ -204,7 +204,7 @@ export function HomePage() {
         <div className={styles.mobileNavBackdrop} onClick={() => setMobileNavOpen(false)}>
           <aside className={styles.mobileNavSheet} onClick={(e) => e.stopPropagation()}>
             <div className={styles.mobileNavHeader}>
-              <img src="/logo.svg" alt="BuildMatch" style={{ height: 36 }} />
+              <img src="/logo.png" alt="BuildMatch" style={{ height: 36 }} />
               <button
                 type="button"
                 className={styles.mobileNavClose}

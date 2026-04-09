@@ -10,6 +10,7 @@
 .inner {
   display:               grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
+  align-items:           center;
   gap:                   var(--space-10);
   max-width:             1180px;
   margin:                0 auto;

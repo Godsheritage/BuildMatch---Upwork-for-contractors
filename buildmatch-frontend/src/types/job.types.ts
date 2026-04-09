@@ -35,6 +35,8 @@ export interface JobPost {
   investorId: string;
   investor: { firstName: string; lastName: string };
   bidCount: number;
+  /** Present on /jobs/my-jobs when an ACCEPTED bid exists. */
+  acceptedBid?: { id: string; amount: number; contractorId: string } | null;
   createdAt: string;
   updatedAt: string;
   /** Present on detail endpoint when caller is authenticated */

@@ -110,6 +110,9 @@ export interface UpdateProfilePayload {
   numberFormat?:    'EN' | 'EU' | null;
   quietHoursStart?: string | null;
   quietHoursEnd?:   string | null;
+  profilePublic?:     boolean | null;
+  projectPreference?: 'SHORT' | 'LONG' | 'BOTH' | null;
+  aiPreference?:      'FULL'  | 'LIMITED' | 'NONE' | null;
 }
 
 export async function updateUserProfile(payload: UpdateProfilePayload): Promise<User> {
