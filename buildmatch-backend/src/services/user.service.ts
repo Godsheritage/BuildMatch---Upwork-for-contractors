@@ -23,6 +23,9 @@ export const USER_SELECT = {
   numberFormat:    true,
   quietHoursStart: true,
   quietHoursEnd:   true,
+  profilePublic:     true,
+  projectPreference: true,
+  aiPreference:      true,
   googleId:   true,
   isVerified: true,
   isActive:   true,
@@ -64,6 +67,9 @@ export interface UpdateProfileInput {
   numberFormat?:    string | null;
   quietHoursStart?: string | null;
   quietHoursEnd?:   string | null;
+  profilePublic?:     boolean | null;
+  projectPreference?: string  | null;
+  aiPreference?:      string  | null;
 }
 
 export async function updateUserProfile(userId: string, data: UpdateProfileInput) {

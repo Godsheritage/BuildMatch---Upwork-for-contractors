@@ -7,7 +7,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
 import { getMyContractorProfile, updateMyProfile } from '../services/contractor.service';
-import { updateUserProfile, linkGoogleAccount, unlinkGoogleAccount } from '../services/auth.service';
+import { updateUserProfile, linkGoogleAccount, unlinkGoogleAccount, forgotPassword } from '../services/auth.service';
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../context/ToastContext';
@@ -136,7 +136,19 @@ export function SettingsPersonalPage() {
   const [savingSpec,     setSavingSpec]     = useState(false);
 
   // ── Investor states ────────────────────────────────────────────────────────
-  const [projectPref, setProjectPref] = useState<ProjectPref>('both');
+  // Visibility for investors maps to user.profilePublic (default true).
+  const [profilePublic, setProfilePublic] = useState<boolean>(user?.profilePublic ?? true);
+  const initialProjectPref: ProjectPref =
+    user?.projectPreference === 'SHORT' ? 'short'
+    : user?.projectPreference === 'LONG' ? 'long'
+    : 'both';
+  const [projectPref, setProjectPref] = useState<ProjectPref>(initialProjectPref);
+  const [savingProjectPref, setSavingProjectPref] = useState(false);
+
+  // ── AI preference ─────────────────────────────────────────────────────────
+  type AiPref = 'FULL' | 'LIMITED' | 'NONE';
+  const [aiPref, setAiPref] = useState<AiPref>((user?.aiPreference as AiPref) ?? 'FULL');
+  const [savingAi, setSavingAi] = useState(false);
 
   // ── Identity (display name + pronouns) ─────────────────────────────────────
   const [displayName, setDisplayName] = useState<string>(user?.displayName ?? '');
@@ -221,9 +233,12 @@ export function SettingsPersonalPage() {
 
   // ── New: identity, bio, locale, quiet hours save handlers ──────────────────
 
-  async function persistUserFields(payload: Record<string, string | null>, label: string) {
+  async function persistUserFields(
+    payload: Record<string, string | boolean | null>,
+    label:   string,
+  ) {
     try {
-      const updated = await updateUserProfile(payload);
+      const updated = await updateUserProfile(payload as never);
       updateUser(updated);
       toast(`${label} updated.`);
     } catch {
@@ -265,6 +280,48 @@ export function SettingsPersonalPage() {
         'Preferences',
       );
     } catch {} finally { setSavingLocale(false); }
+  }
+
+  // Investor visibility — toggles user.profilePublic
+  async function saveVisibilityInvestor(val: boolean) {
+    setProfilePublic(val);
+    try {
+      await persistUserFields({ profilePublic: val }, 'Visibility');
+    } catch {
+      // revert on failure
+      setProfilePublic(!val);
+    }
+  }
+
+  // Investor project preference — persists user.projectPreference
+  const PROJECT_PREF_TO_DB: Record<ProjectPref, 'SHORT' | 'LONG' | 'BOTH'> = {
+    short: 'SHORT', long: 'LONG', both: 'BOTH',
+  };
+  async function saveProjectPref(val: ProjectPref) {
+    const previous = projectPref;
+    setProjectPref(val);
+    setSavingProjectPref(true);
+    try {
+      await persistUserFields({ projectPreference: PROJECT_PREF_TO_DB[val] }, 'Project preference');
+    } catch {
+      setProjectPref(previous);
+    } finally {
+      setSavingProjectPref(false);
+    }
+  }
+
+  // AI preference
+  async function saveAiPref(val: AiPref) {
+    const previous = aiPref;
+    setAiPref(val);
+    setSavingAi(true);
+    try {
+      await persistUserFields({ aiPreference: val }, 'AI preference');
+    } catch {
+      setAiPref(previous);
+    } finally {
+      setSavingAi(false);
+    }
   }
 
   async function saveQuiet() {
@@ -395,23 +452,33 @@ export function SettingsPersonalPage() {
                 { value: true,  label: 'Public profile',  desc: 'Contractors can see your profile and history.' },
                 { value: false, label: 'Private profile', desc: 'Your profile is hidden from contractors.' },
               ]
-          ).map(({ value, label, desc }) => (
-            <button
-              key={String(value)}
-              type="button"
-              className={`${styles.visCard} ${availability === value ? styles.visCardActive : ''}`}
-              onClick={() => { if (!savingAvail && isContractor) saveAvailability(value); else setAvailability(value); }}
-              disabled={savingAvail}
-            >
-              <span className={`${styles.visRadio} ${availability === value ? styles.visRadioOn : ''}`}>
-                {availability === value && <Check size={10} strokeWidth={3} color="#fff" />}
-              </span>
-              <div className={styles.visCardText}>
-                <p className={styles.visCardLabel}>{label}</p>
-                <p className={styles.visCardDesc}>{desc}</p>
-              </div>
-            </button>
-          ))}
+          ).map(({ value, label, desc }) => {
+            const current = isContractor ? availability : profilePublic;
+            const isActive = current === value;
+            return (
+              <button
+                key={String(value)}
+                type="button"
+                className={`${styles.visCard} ${isActive ? styles.visCardActive : ''}`}
+                onClick={() => {
+                  if (isContractor) {
+                    if (!savingAvail) saveAvailability(value);
+                  } else {
+                    saveVisibilityInvestor(value);
+                  }
+                }}
+                disabled={savingAvail}
+              >
+                <span className={`${styles.visRadio} ${isActive ? styles.visRadioOn : ''}`}>
+                  {isActive && <Check size={10} strokeWidth={3} color="#fff" />}
+                </span>
+                <div className={styles.visCardText}>
+                  <p className={styles.visCardLabel}>{label}</p>
+                  <p className={styles.visCardDesc}>{desc}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -533,7 +600,8 @@ export function SettingsPersonalPage() {
                   key={value}
                   type="button"
                   className={`${styles.expCard} ${projectPref === value ? styles.expCardActive : ''}`}
-                  onClick={() => setProjectPref(value)}
+                  onClick={() => { if (!savingProjectPref) saveProjectPref(value); }}
+                  disabled={savingProjectPref}
                 >
                   <div className={`${styles.expRadio} ${projectPref === value ? styles.expRadioOn : ''}`}>
                     {projectPref === value && <div className={styles.expRadioDot} />}
@@ -648,10 +716,13 @@ export function SettingsPersonalPage() {
 
       <div className={styles.divider} />
 
-      {/* ── Email address ── */}
+      {/* ── Email + password ── */}
       <div className={styles.section}>
-        <SectionHeader title="Email address" />
-        <p className={styles.sectionDesc}>Your account email. Changing it requires verification of the new address.</p>
+        <SectionHeader title="Email & password" />
+        <p className={styles.sectionDesc}>
+          Your sign-in email is set when your account is created. To change it, contact support.
+          To reset your password, request a secure link below — it expires after one hour.
+        </p>
         <div className={styles.formRow}>
           <label className={styles.formField} style={{ flex: 1 }}>
             <span className={styles.formLabel}>Current email</span>
@@ -668,10 +739,17 @@ export function SettingsPersonalPage() {
           type="button"
           variant="secondary"
           size="sm"
-          onClick={() => toast('Email change with verification is coming soon.', 'info')}
+          onClick={async () => {
+            try {
+              await forgotPassword(user.email);
+              toast("We've emailed you a password reset link.");
+            } catch {
+              toast('Could not send reset email. Please try again.', 'error');
+            }
+          }}
         >
           <Mail size={14} strokeWidth={2} style={{ marginRight: 6 }} />
-          Change email
+          Send password reset link
         </Button>
       </div>
 
@@ -790,9 +868,27 @@ export function SettingsPersonalPage() {
             Your data is never shared with third parties.
           </span>
         </p>
-        <Button type="button" variant="secondary" size="sm">
-          Set preference
-        </Button>
+        <div className={styles.expGrid}>
+          {([
+            { value: 'FULL',    label: 'Full',    desc: 'Use my profile, jobs, and bids to power matching and recommendations.' },
+            { value: 'LIMITED', label: 'Limited', desc: 'Only use the minimum data needed to show matches.' },
+            { value: 'NONE',    label: 'Off',     desc: 'Do not use AI matching or recommendations on my account.' },
+          ] as const).map(({ value, label, desc }) => (
+            <button
+              key={value}
+              type="button"
+              className={`${styles.expCard} ${aiPref === value ? styles.expCardActive : ''}`}
+              onClick={() => { if (!savingAi) saveAiPref(value); }}
+              disabled={savingAi}
+            >
+              <div className={`${styles.expRadio} ${aiPref === value ? styles.expRadioOn : ''}`}>
+                {aiPref === value && <div className={styles.expRadioDot} />}
+              </div>
+              <p className={styles.expCardLabel}>{label}</p>
+              <p className={styles.expCardDesc}>{desc}</p>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

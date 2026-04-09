@@ -7,7 +7,7 @@
 }
 
 .navLogo img {
-  height: 40px;
+  height: 60px;
   display: block;
 }
 
@@ -157,6 +157,7 @@
   align-items: center;
   gap: 28px;
   flex: 1;
+  justify-content: center;
 }
 
 .navLink {

@@ -26,7 +26,7 @@ export function Footer() {
       <div className={styles.inner}>
         {/* Brand column */}
         <div className={styles.brand}>
-          <img src="/logo.svg" alt="BuildMatch" style={{ height: 120 }} />
+          <img src="/logo-footer.svg" alt="BuildMatch" style={{ height: 156 }} />
           <p className={styles.tagline}>
             The smarter way to find and hire licensed construction contractors
             across the United States.
