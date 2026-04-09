@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
 import * as passwordResetService from '../services/password-reset.service';
+import * as verificationService from '../services/verification.service';
 import { AppError } from '../utils/app-error';
 import { sendSuccess, sendError } from '../utils/response.utils';
 
@@ -122,6 +123,45 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
     }
     await passwordResetService.consumeResetToken(token, password);
     sendSuccess(res, null, 'Password updated. You can now sign in.');
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+// ── Identity verification ────────────────────────────────────────────────────
+
+export async function requestEmailVerification(req: Request, res: Response): Promise<void> {
+  try {
+    await verificationService.requestEmailVerification(req.user!.userId);
+    sendSuccess(res, null, "We've sent a verification link to your email.");
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+export async function confirmEmailVerification(req: Request, res: Response): Promise<void> {
+  try {
+    const { token } = req.body ?? {};
+    if (typeof token !== 'string') {
+      sendError(res, 'Invalid request', 400);
+      return;
+    }
+    await verificationService.confirmEmailVerification(token);
+    sendSuccess(res, null, 'Email verified.');
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+export async function submitIdDocument(req: Request, res: Response): Promise<void> {
+  try {
+    const { documentUrl } = req.body ?? {};
+    if (typeof documentUrl !== 'string' || !documentUrl) {
+      sendError(res, 'documentUrl is required', 400);
+      return;
+    }
+    await verificationService.submitIdDocument(req.user!.userId, documentUrl);
+    sendSuccess(res, null, 'Document received. Our team will review it within 1 business day.');
   } catch (err) {
     handleError(res, err);
   }
