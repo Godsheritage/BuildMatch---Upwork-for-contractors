@@ -109,6 +109,12 @@ enum BugStatus {
   WONT_FIX
 }
 
+enum BillingMethodType {
+  CARD
+  PAYPAL
+  VENMO
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -180,6 +186,30 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   idVerificationSessions  IdVerificationSession[]
   bugReports              BugReport[]              @relation("BugReports")
+  billingMethods          BillingMethod[]
+}
+
+model BillingMethod {
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          BillingMethodType
+  brand         String?
+  last4         String?
+  holderName    String?
+  expMonth      Int?
+  expYear       Int?
+  accountEmail  String?
+  country       String?
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  state         String?
+  zipCode       String?
+  isDefault     Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+
+  @@index([userId])
 }
 
 model BugReport {
