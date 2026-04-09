@@ -1,23 +1,20 @@
-import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, CheckCircle2, BadgeCheck, FileText, Mail, Phone, Clock, AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
-import { useIdDocumentUpload } from '../hooks/useIdDocumentUpload';
 import * as authService from '../services/auth.service';
-import { getMe } from '../services/auth.service';
 import { Button } from '../components/ui/Button';
 import styles from './SettingsSubPage.module.css';
 
 type IdStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export function SettingsVerificationPage() {
-  const { user, updateUser }            = useAuth();
+  const { user }                        = useAuth();
   const { toast }                       = useToast();
-  const { uploadIdDocument, isUploading } = useIdDocumentUpload();
-  const fileInputRef                    = useRef<HTMLInputElement>(null);
+  const navigate                        = useNavigate();
 
   const [sendingEmail, setSendingEmail] = useState(false);
 
@@ -69,26 +66,8 @@ export function SettingsVerificationPage() {
     }
   }
 
-  async function handleRefreshUser() {
-    try {
-      const fresh = await getMe();
-      updateUser(fresh);
-    } catch {/* non-fatal */}
-  }
-
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = '';
-    try {
-      const publicUrl = await uploadIdDocument(file);
-      await authService.submitIdDocument(publicUrl);
-      await handleRefreshUser();
-      toast('Document received. Our team will review it within 1 business day.');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Upload failed.';
-      toast(msg, 'error');
-    }
+  function handleStartIdFlow() {
+    navigate('/dashboard/settings/verification/id');
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -214,22 +193,10 @@ export function SettingsVerificationPage() {
               Pending review
             </span>
           ) : (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-            >
-              {isUploading ? 'Uploading…' : idStatus === 'REJECTED' ? 'Re-upload' : 'Upload'}
+            <Button variant="secondary" size="sm" onClick={handleStartIdFlow}>
+              {idStatus === 'REJECTED' ? 'Re-verify' : 'Verify'}
             </Button>
           )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
-            style={{ display: 'none' }}
-            onChange={handleFileChange}
-          />
         </div>
 
         {idStatus === 'REJECTED' && user.idVerificationNote && (

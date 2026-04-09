@@ -128,6 +128,9 @@ model User {
   phoneVerifiedAt      DateTime?
   idVerificationStatus String?
   idDocumentUrl        String?
+  idSelfieUrl          String?
+  idCountry            String?
+  idType               String?
   idVerifiedAt         DateTime?
   idVerificationNote   String?
   isVerified     Boolean   @default(false)
@@ -156,6 +159,25 @@ model User {
   drawScheduleEdits       DrawScheduleEdit[]       @relation("DrawScheduleEdits")
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  idVerificationSessions  IdVerificationSession[]
+}
+
+model IdVerificationSession {
+  id          String    @id @default(cuid())
+  userId      String
+  tokenHash   String    @unique
+  status      String    @default("PENDING") // PENDING | UPLOADED | EXPIRED
+  documentUrl String?
+  selfieUrl   String?
+  country     String?
+  idType      String?
+  expiresAt   DateTime
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model PasswordResetToken {

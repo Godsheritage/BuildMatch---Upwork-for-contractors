@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 
 import authRoutes from './routes/auth.routes';
+import idVerificationRoutes from './routes/id-verification.routes';
 import userRoutes from './routes/user.routes';
 import contractorRoutes from './routes/contractor.routes';
 import jobRoutes from './routes/job.routes';
@@ -91,6 +92,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/identity', idVerificationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/contractors', contractorRoutes);
 app.use('/api/jobs', jobRoutes);

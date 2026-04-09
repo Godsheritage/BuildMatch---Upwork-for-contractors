@@ -33,6 +33,8 @@ import { SettingsPersonalPage } from './pages/SettingsPersonalPage';
 import { SettingsSecurityPage } from './pages/SettingsSecurityPage';
 import { SettingsNotificationsPage } from './pages/SettingsNotificationsPage';
 import { SettingsVerificationPage } from './pages/SettingsVerificationPage';
+import { IdVerificationStartPage } from './pages/IdVerificationStartPage';
+import { MobileIdVerificationPage } from './pages/MobileIdVerificationPage';
 import { ProfileEditPage } from './pages/ProfileEditPage';
 import { TestimonialSubmitPage } from './pages/TestimonialSubmitPage';
 import { AboutPage } from './pages/AboutPage';
@@ -89,6 +91,7 @@ export default function App() {
               <Route path="/contractors/:id" element={<ContractorProfilePage />} />
               <Route path="/testimonials/:token" element={<TestimonialSubmitPage />} />
               <Route path="/jobs/:id" element={<JobDetailPage />} />
+              <Route path="/verify-id/m/:token" element={<MobileIdVerificationPage />} />
 
               {/* Contract review — protected, party-only access enforced in page */}
               <Route
@@ -153,6 +156,7 @@ export default function App() {
                 <Route path="/dashboard/settings/security"     element={<SettingsSecurityPage />} />
                 <Route path="/dashboard/settings/notifications" element={<SettingsNotificationsPage />} />
                 <Route path="/dashboard/settings/verification" element={<SettingsVerificationPage />} />
+                <Route path="/dashboard/settings/verification/id" element={<IdVerificationStartPage />} />
                 {/* Disputes — inside DashboardLayout but no settings sidebar */}
                 <Route path="/dashboard/settings/disputes"              element={<DisputesListPage />} />
                 <Route path="/dashboard/settings/disputes/new"          element={<FileDisputePage />} />
