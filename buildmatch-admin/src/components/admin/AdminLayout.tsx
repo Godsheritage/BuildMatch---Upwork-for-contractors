@@ -3,7 +3,7 @@ import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Wrench, Briefcase, Scale, FileSearch,
   Settings, Flag, CreditCard, ShieldAlert, BarChart2, Activity,
-  MessageSquareWarning, Star,
+  MessageSquareWarning, Star, BadgeCheck,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { getStats } from '../../services/admin.service';
@@ -14,6 +14,7 @@ interface NavItem { to: string; icon: React.ElementType; label: string; end?: bo
 const NAV_ITEMS: NavItem[] = [
   { to: '/admin',             icon: LayoutDashboard,      label: 'Overview',      end: true },
   { to: '/admin/users',       icon: Users,                label: 'Users'                    },
+  { to: '/admin/verifications', icon: BadgeCheck,         label: 'Verifications'            },
   { to: '/admin/contractors', icon: Wrench,               label: 'Contractors'              },
   { to: '/admin/jobs',        icon: Briefcase,            label: 'Jobs'                     },
   { to: '/admin/disputes',    icon: Scale,                label: 'Disputes',      badgeKey: 'disputes' },

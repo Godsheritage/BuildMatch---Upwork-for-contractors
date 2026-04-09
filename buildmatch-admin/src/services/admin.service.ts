@@ -217,6 +217,29 @@ export const getUserFullProfile = (id: string) =>
 export const getFlaggedUsers = () =>
   api.get('/admin/users/flagged').then(data<{ users: FlaggedUser[] }>);
 
+export interface IdVerificationItem {
+  id: string; firstName: string; lastName: string; email: string; role: string;
+  avatarUrl: string | null;
+  idVerificationStatus: string | null;
+  idDocumentUrl: string | null;
+  idSelfieUrl:   string | null;
+  idCountry:     string | null;
+  idType:        string | null;
+  idVerifiedAt:  string | null;
+  idVerificationNote: string | null;
+  updatedAt:     string;
+}
+
+export const getIdVerifications = (status: 'PENDING' | 'APPROVED' | 'REJECTED' = 'PENDING') =>
+  api.get('/admin/users/id-verifications', { params: { status } })
+     .then(data<{ users: IdVerificationItem[] }>);
+
+export const reviewIdVerification = (
+  userId:   string,
+  decision: 'APPROVED' | 'REJECTED',
+  note?:    string,
+) => api.put(`/admin/users/${userId}/id-verification`, { decision, note });
+
 export const banUser   = (id: string) => api.put(`/admin/users/${id}/ban`);
 export const unbanUser = (id: string) => api.put(`/admin/users/${id}/unban`);
 
