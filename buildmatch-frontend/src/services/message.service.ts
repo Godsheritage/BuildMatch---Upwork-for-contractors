@@ -42,12 +42,30 @@ export async function getMessages(
 export async function sendMessage(
   conversationId: string,
   content: string,
+  replyToId?: string,
 ): Promise<Message> {
   const res = await api.post<{ data: Message }>(
     `/messages/conversations/${conversationId}/messages`,
-    { content },
+    { content, ...(replyToId ? { replyToId } : {}) },
   );
   return unwrap(res.data);
+}
+
+export async function editMessage(messageId: string, content: string): Promise<Message> {
+  const res = await api.put<{ data: Message }>(`/messages/messages/${messageId}`, { content });
+  return unwrap(res.data);
+}
+
+export async function deleteMessage(messageId: string): Promise<void> {
+  await api.delete(`/messages/messages/${messageId}`);
+}
+
+export async function reportMessage(
+  messageId:  string,
+  reason:     string,
+  description?: string,
+): Promise<void> {
+  await api.post(`/messages/messages/${messageId}/report`, { reason, description });
 }
 
 export async function getTotalUnreadCount(): Promise<{ total: number }> {
