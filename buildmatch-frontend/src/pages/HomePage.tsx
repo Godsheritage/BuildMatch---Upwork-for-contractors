@@ -8,6 +8,7 @@ import {
   FileText, Users, CheckCircle2, UserCircle, Briefcase, Send,
 } from 'lucide-react';
 import { useContractorSearch } from '../hooks/useContractorSearch';
+import { Footer } from '../components/layout/Footer';
 import { ContractorSearchResults } from '../components/contractor/ContractorSearchResults';
 import styles from './HomePage.module.css';
 
@@ -440,62 +441,8 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ── FOOTER ─────────────────────────────────────── */}
-      <footer className={styles.footer}>
-        <div className={styles.footerInner}>
-          <div className={styles.footerTop}>
-            {/* Brand */}
-            <div>
-              <Link to="/" className={styles.footerWordmark}>BuildMatch</Link>
-              <p className={styles.footerTagline}>
-                The smarter way to find and hire licensed construction contractors
-                across the United States.
-              </p>
-            </div>
-
-            {/* Platform */}
-            <div>
-              <p className={styles.footerColTitle}>Platform</p>
-              <div className={styles.footerLinks}>
-                <Link to="/contractors" className={styles.footerLink}>Find Contractors</Link>
-                <Link to="/post-job"    className={styles.footerLink}>Post a Job</Link>
-                <Link to="/register"    className={styles.footerLink}>How It Works</Link>
-                <Link to="/login"       className={styles.footerLink}>Sign In</Link>
-              </div>
-            </div>
-
-            {/* For contractors */}
-            <div>
-              <p className={styles.footerColTitle}>For Contractors</p>
-              <div className={styles.footerLinks}>
-                <Link to="/register?role=CONTRACTOR" className={styles.footerLink}>Create Profile</Link>
-                <Link to="/dashboard/profile/setup"  className={styles.footerLink}>Profile Setup</Link>
-                <Link to="/register"                 className={styles.footerLink}>Browse Jobs</Link>
-              </div>
-            </div>
-
-            {/* Company */}
-            <div>
-              <p className={styles.footerColTitle}>Company</p>
-              <div className={styles.footerLinks}>
-                <Link to="/" className={styles.footerLink}>About</Link>
-                <Link to="/" className={styles.footerLink}>Blog</Link>
-                <Link to="/" className={styles.footerLink}>Privacy Policy</Link>
-                <Link to="/" className={styles.footerLink}>Terms of Service</Link>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.footerBottom}>
-            <p className={styles.footerCopy}>
-              © {new Date().getFullYear()} BuildMatch, Inc. All rights reserved.
-            </p>
-            <p className={styles.footerCopy}>
-              Built for the construction industry.
-            </p>
-          </div>
-        </div>
-      </footer>
+      {/* ── FOOTER (shared component) ──────────────────── */}
+      <Footer />
 
     </div>
   );

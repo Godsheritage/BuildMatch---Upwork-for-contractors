@@ -11,6 +11,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { ContractorsPage } from './pages/ContractorsPage';
 import { ContractorProfilePage } from './pages/ContractorProfilePage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -82,6 +83,7 @@ export default function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/verify-email"   element={<VerifyEmailPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contractors/:id" element={<ContractorProfilePage />} />

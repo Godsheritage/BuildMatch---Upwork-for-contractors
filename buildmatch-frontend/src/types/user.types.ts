@@ -26,6 +26,12 @@ export interface User {
   projectPreference: 'SHORT' | 'LONG' | 'BOTH' | null;
   aiPreference: 'FULL' | 'LIMITED' | 'NONE' | null;
   googleId: string | null;
+  emailVerifiedAt: string | null;
+  phoneVerifiedAt: string | null;
+  idVerificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  idDocumentUrl: string | null;
+  idVerifiedAt: string | null;
+  idVerificationNote: string | null;
   isVerified: boolean;
   isActive: boolean;
   createdAt: string;

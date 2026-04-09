@@ -1,35 +1,97 @@
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, CheckCircle2, BadgeCheck, FileText, Mail, Phone } from 'lucide-react';
+import {
+  ChevronLeft, CheckCircle2, BadgeCheck, FileText, Mail, Phone, Clock, AlertTriangle,
+} from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../context/ToastContext';
+import { useIdDocumentUpload } from '../hooks/useIdDocumentUpload';
+import * as authService from '../services/auth.service';
+import { getMe } from '../services/auth.service';
+import { Button } from '../components/ui/Button';
 import styles from './SettingsSubPage.module.css';
 
-const STEPS = [
-  {
-    icon:  Mail,
-    title: 'Email verification',
-    desc:  'Confirm your email address to secure your account.',
-    done:  true,
-  },
-  {
-    icon:  Phone,
-    title: 'Phone verification',
-    desc:  'Add a phone number to increase your trust score.',
-    done:  false,
-  },
-  {
-    icon:  FileText,
-    title: 'ID document',
-    desc:  'Upload a government-issued ID to become fully verified.',
-    done:  false,
-  },
-];
+type IdStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export function SettingsVerificationPage() {
-  const { user } = useAuth();
+  const { user, updateUser }            = useAuth();
+  const { toast }                       = useToast();
+  const { uploadIdDocument, isUploading } = useIdDocumentUpload();
+  const fileInputRef                    = useRef<HTMLInputElement>(null);
+
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   if (!user) return null;
 
-  const doneCount = STEPS.filter((s) => s.done).length;
+  const emailVerified  = !!user.emailVerifiedAt;
+  const phoneVerified  = !!user.phoneVerifiedAt;
+  const idStatus: IdStatus =
+    (user.idVerificationStatus as IdStatus | null) ?? (user.idDocumentUrl ? 'PENDING' : 'NONE');
+  const idVerified = idStatus === 'APPROVED';
+
+  const steps = [
+    {
+      key:   'email',
+      icon:  Mail,
+      title: 'Email verification',
+      desc:  'Confirm your email address to secure your account.',
+      done:  emailVerified,
+    },
+    {
+      key:   'phone',
+      icon:  Phone,
+      title: 'Phone verification',
+      desc:  'Add a verified phone number to increase your trust score.',
+      done:  phoneVerified,
+    },
+    {
+      key:   'id',
+      icon:  FileText,
+      title: 'Government ID',
+      desc:  'Upload a government-issued ID to become fully verified.',
+      done:  idVerified,
+    },
+  ] as const;
+
+  const doneCount = steps.filter((s) => s.done).length;
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
+  async function handleSendVerificationEmail() {
+    setSendingEmail(true);
+    try {
+      await authService.requestEmailVerification();
+      toast("We've emailed you a verification link. Check your inbox.");
+    } catch {
+      toast('Could not send verification email. Please try again.', 'error');
+    } finally {
+      setSendingEmail(false);
+    }
+  }
+
+  async function handleRefreshUser() {
+    try {
+      const fresh = await getMe();
+      updateUser(fresh);
+    } catch {/* non-fatal */}
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    try {
+      const publicUrl = await uploadIdDocument(file);
+      await authService.submitIdDocument(publicUrl);
+      await handleRefreshUser();
+      toast('Document received. Our team will review it within 1 business day.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Upload failed.';
+      toast(msg, 'error');
+    }
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className={styles.page}>
@@ -52,20 +114,23 @@ export function SettingsVerificationPage() {
         </div>
         <div className={styles.verifyBody}>
           <p className={styles.verifyTitle}>
-            {doneCount}/{STEPS.length} steps complete
+            {doneCount}/{steps.length} steps complete
           </p>
           <p className={styles.verifyDesc}>
             Complete all verification steps to earn the Verified badge on your profile —
-            this significantly increases your credibility with {user.role === 'CONTRACTOR' ? 'investors' : 'contractors'}.
+            this significantly increases your credibility with{' '}
+            {user.role === 'CONTRACTOR' ? 'investors' : 'contractors'}.
           </p>
-          <ul className={styles.stepList}>
-            {STEPS.filter((s) => s.done).map((s) => (
-              <li key={s.title} className={styles.stepItem}>
-                <CheckCircle2 size={13} strokeWidth={2.5} />
-                {s.title}
-              </li>
-            ))}
-          </ul>
+          {doneCount > 0 && (
+            <ul className={styles.stepList}>
+              {steps.filter((s) => s.done).map((s) => (
+                <li key={s.title} className={styles.stepItem}>
+                  <CheckCircle2 size={13} strokeWidth={2.5} />
+                  {s.title}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
@@ -73,27 +138,119 @@ export function SettingsVerificationPage() {
       <div className={styles.card}>
         <p className={styles.sectionTitle}>Verification steps</p>
 
-        {STEPS.map(({ icon: Icon, title, desc, done }) => (
-          <div key={title} className={styles.infoRow}>
-            <div className={styles.infoRowLeft}>
-              <p className={styles.infoRowLabel} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Icon size={14} strokeWidth={1.75} style={{ flexShrink: 0 }} />
-                {title}
-              </p>
-              <p className={styles.infoRowValue}>{desc}</p>
-            </div>
-            {done ? (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-accent)', fontWeight: 500, flexShrink: 0 }}>
-                <CheckCircle2 size={14} strokeWidth={2.5} />
-                Verified
-              </span>
-            ) : (
-              <button className={styles.infoRowAction}>
-                Start →
-              </button>
-            )}
+        {/* Email */}
+        <div className={styles.infoRow}>
+          <div className={styles.infoRowLeft}>
+            <p className={styles.infoRowLabel} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Mail size={14} strokeWidth={1.75} />
+              Email verification
+            </p>
+            <p className={styles.infoRowValue}>
+              {emailVerified
+                ? `Verified — ${user.email}`
+                : `We'll send a one-time link to ${user.email}.`}
+            </p>
           </div>
-        ))}
+          {emailVerified ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-accent)', fontWeight: 500 }}>
+              <CheckCircle2 size={14} strokeWidth={2.5} />
+              Verified
+            </span>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleSendVerificationEmail}
+              disabled={sendingEmail}
+            >
+              {sendingEmail ? 'Sending…' : 'Send link'}
+            </Button>
+          )}
+        </div>
+
+        {/* Phone */}
+        <div className={styles.infoRow}>
+          <div className={styles.infoRowLeft}>
+            <p className={styles.infoRowLabel} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Phone size={14} strokeWidth={1.75} />
+              Phone verification
+            </p>
+            <p className={styles.infoRowValue}>
+              SMS verification is rolling out soon. We'll notify you when it's available.
+            </p>
+          </div>
+          <Button variant="secondary" size="sm" disabled>
+            Coming soon
+          </Button>
+        </div>
+
+        {/* ID document */}
+        <div className={styles.infoRow}>
+          <div className={styles.infoRowLeft}>
+            <p className={styles.infoRowLabel} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <FileText size={14} strokeWidth={1.75} />
+              Government ID
+            </p>
+            <p className={styles.infoRowValue}>
+              {idStatus === 'APPROVED' && 'Your ID has been verified.'}
+              {idStatus === 'PENDING' && 'Document received. Our team is reviewing it.'}
+              {idStatus === 'REJECTED' && (
+                <>
+                  Your previous submission was rejected.
+                  {user.idVerificationNote ? ` Reason: ${user.idVerificationNote}` : ''} You can upload a new one.
+                </>
+              )}
+              {idStatus === 'NONE' && 'Upload a JPG / PNG / PDF of your driver\'s license, passport, or state ID. Max 10 MB.'}
+            </p>
+          </div>
+          {idStatus === 'APPROVED' ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-accent)', fontWeight: 500 }}>
+              <CheckCircle2 size={14} strokeWidth={2.5} />
+              Verified
+            </span>
+          ) : idStatus === 'PENDING' ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-warning)', fontWeight: 500 }}>
+              <Clock size={14} strokeWidth={2.5} />
+              Pending review
+            </span>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {isUploading ? 'Uploading…' : idStatus === 'REJECTED' ? 'Re-upload' : 'Upload'}
+            </Button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
+        </div>
+
+        {idStatus === 'REJECTED' && user.idVerificationNote && (
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              alignItems: 'flex-start',
+              padding: '10px 14px',
+              background: '#FEF2F2',
+              border: '1px solid #FEE2E2',
+              borderRadius: 8,
+              marginTop: 12,
+              fontSize: 13,
+              color: 'var(--color-danger)',
+            }}
+          >
+            <AlertTriangle size={14} strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
+            <span>{user.idVerificationNote}</span>
+          </div>
+        )}
       </div>
 
       {/* Why verify */}

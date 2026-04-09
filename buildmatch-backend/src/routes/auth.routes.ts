@@ -4,6 +4,7 @@ import {
   register, login, getMe,
   googleAuth, linkGoogle, unlinkGoogle,
   forgotPassword, verifyResetToken, resetPassword,
+  requestEmailVerification, confirmEmailVerification, submitIdDocument,
 } from '../controllers/auth.controller';
 import { validate } from '../middleware/validate.middleware';
 import { authenticate } from '../middleware/auth.middleware';
@@ -34,5 +35,9 @@ router.post('/google/unlink', authenticate, unlinkGoogle);
 router.post('/forgot-password',        forgotPasswordLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.get('/reset-password/verify',   verifyResetToken);
 router.post('/reset-password',         validate(resetPasswordSchema), resetPassword);
+
+router.post('/email/verify/request',   authenticate, requestEmailVerification);
+router.post('/email/verify/confirm',   confirmEmailVerification);
+router.post('/identity/document',      authenticate, submitIdDocument);
 
 export default router;

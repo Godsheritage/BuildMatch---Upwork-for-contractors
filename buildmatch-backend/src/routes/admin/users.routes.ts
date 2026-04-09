@@ -26,6 +26,7 @@ import {
   impersonateUser,
   sendAdminMessage,
 } from '../../services/admin/users.service';
+import { reviewIdDocument } from '../../services/verification.service';
 
 const router = Router();
 
@@ -342,6 +343,33 @@ router.put('/:userId/role', async (req: Request, res: Response): Promise<void> =
   } catch (err) {
     if (err instanceof AppError) { sendError(res, err.message, err.statusCode); return; }
     sendError(res, 'Failed to change user role', 500);
+  }
+});
+
+// ── ID document review ────────────────────────────────────────────────────────
+router.put('/:userId/id-verification', async (req: Request, res: Response): Promise<void> => {
+  const adminId = req.user!.userId;
+  const { userId } = req.params;
+  const { decision, note } = req.body ?? {};
+  if (decision !== 'APPROVED' && decision !== 'REJECTED') {
+    sendError(res, 'decision must be APPROVED or REJECTED', 400);
+    return;
+  }
+  try {
+    await reviewIdDocument(userId, decision, typeof note === 'string' ? note : undefined);
+    await writeAuditLog({
+      adminId,
+      action:     decision === 'APPROVED' ? 'ID_DOC_APPROVED' : 'ID_DOC_REJECTED',
+      targetType: 'user',
+      targetId:   userId,
+      payload:    { decision },
+      ipAddress:  req.ip,
+      note,
+    });
+    sendSuccess(res, null, `ID document ${decision.toLowerCase()}`);
+  } catch (err) {
+    if (err instanceof AppError) { sendError(res, err.message, err.statusCode); return; }
+    sendError(res, 'Failed to review ID document', 500);
   }
 });
 

@@ -92,6 +92,20 @@ export async function resetPassword(token: string, password: string): Promise<vo
   await api.post('/auth/reset-password', { token, password });
 }
 
+// ── Identity verification ────────────────────────────────────────────────────
+
+export async function requestEmailVerification(): Promise<void> {
+  await api.post('/auth/email/verify/request', {});
+}
+
+export async function confirmEmailVerification(token: string): Promise<void> {
+  await api.post('/auth/email/verify/confirm', { token });
+}
+
+export async function submitIdDocument(documentUrl: string): Promise<void> {
+  await api.post('/auth/identity/document', { documentUrl });
+}
+
 export interface UpdateProfilePayload {
   firstName?: string;
   lastName?:  string;
