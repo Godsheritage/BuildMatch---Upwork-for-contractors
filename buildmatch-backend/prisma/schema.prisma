@@ -124,6 +124,11 @@ model User {
   profilePublic     Boolean?
   projectPreference String?
   aiPreference      String?
+  notifMessages        Boolean @default(true)
+  notifBidActivity     Boolean @default(true)
+  notifJobUpdates      Boolean @default(true)
+  notifDisputeUpdates  Boolean @default(true)
+  notifDrawUpdates     Boolean @default(true)
   emailVerifiedAt      DateTime?
   phoneVerifiedAt      DateTime?
   idVerificationStatus String?

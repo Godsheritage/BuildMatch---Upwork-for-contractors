@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { sendSuccess, sendError } from '../utils/response.utils';
 import { setAvatarUrl, clearAvatarUrl, updateUserProfile } from '../services/user.service';
 import type { UpdateProfileInput } from '../schemas/user.schemas';
+import { getPreferences, updatePreferences } from '../services/notification-prefs.service';
 
 // Matches https://<project-ref>.supabase.co/storage/v1/object/public/avatars/
 const SUPABASE_AVATAR_PREFIX = /^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\/avatars\//;
@@ -38,5 +39,23 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
     sendSuccess(res, user, 'Profile updated');
   } catch (err) {
     sendError(res, err instanceof Error ? err.message : 'Failed to update profile', 500);
+  }
+}
+
+export async function getNotificationPrefs(req: Request, res: Response): Promise<void> {
+  try {
+    const prefs = await getPreferences(req.user!.userId);
+    sendSuccess(res, prefs);
+  } catch (err) {
+    sendError(res, err instanceof Error ? err.message : 'Failed to load preferences', 500);
+  }
+}
+
+export async function updateNotificationPrefs(req: Request, res: Response): Promise<void> {
+  try {
+    const prefs = await updatePreferences(req.user!.userId, req.body ?? {});
+    sendSuccess(res, prefs, 'Preferences saved');
+  } catch (err) {
+    sendError(res, err instanceof Error ? err.message : 'Failed to save preferences', 500);
   }
 }

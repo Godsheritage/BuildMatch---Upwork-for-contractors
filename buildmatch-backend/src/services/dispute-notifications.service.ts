@@ -19,6 +19,7 @@
 
 import prisma from '../lib/prisma';
 import type { Dispute, DisputeStatus } from '../types/dispute.types';
+import { isOptedIn } from './notification-prefs.service';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -222,6 +223,7 @@ export async function notifyDisputeFiled(params: {
   const { dispute, filedByUser, againstUser, job } = params;
 
   if (!againstUser.email) return;
+  if (!(await isOptedIn(againstUser.id, 'disputeUpdates'))) return;
 
   const ctaUrl = `${SITE_URL}/dashboard/settings/disputes/${dispute.id}`;
 
@@ -258,6 +260,7 @@ export async function notifyStatusChange(params: {
 
   const recipient = await fetchUserEmail(affectedUserId);
   if (!recipient?.email) return;
+  if (!(await isOptedIn(affectedUserId, 'disputeUpdates'))) return;
 
   type StatusConfig = { subject: string; heading: string; paragraphs: string[]; ctaLabel?: string };
 
@@ -341,6 +344,7 @@ export async function notifyNewDisputeMessage(params: {
 
   const recipient = await fetchUserEmail(recipientUserId);
   if (!recipient?.email) return;
+  if (!(await isOptedIn(recipientUserId, 'disputeUpdates'))) return;
 
   // Update debounce tracker before sending so a concurrent call won't double-send
   lastNotifiedAt.set(debounceKey, Date.now());
@@ -377,6 +381,7 @@ export async function notifyDisputeWithdrawn(params: {
 
   const recipient = await fetchUserEmail(otherUserId);
   if (!recipient?.email) return;
+  if (!(await isOptedIn(otherUserId, 'disputeUpdates'))) return;
 
   const ctaUrl = `${SITE_URL}/dashboard/settings/disputes/${dispute.id}`;
 
