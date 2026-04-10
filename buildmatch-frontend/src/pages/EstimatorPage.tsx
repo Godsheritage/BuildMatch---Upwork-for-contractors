@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Check, Building2, Camera, ClipboardList, Eye, Sparkles,
 } from 'lucide-react';
@@ -11,7 +11,7 @@ import { Step1PropertyBasics }     from '../components/estimator/Step1PropertyBa
 import { Step2PhotoCapture }       from '../components/estimator/Step2PhotoCapture';
 import { Step3Questionnaire }      from '../components/estimator/Step3Questionnaire';
 import { Step4ReviewSubmit }        from '../components/estimator/Step4ReviewSubmit';
-import { EstimatorStep5Results }   from '../components/estimator/EstimatorStep5Results';
+import { Step5Results }             from '../components/estimator/Step5Results';
 
 // ── Wizard state ─────────────────────────────────────────────────────────────
 
@@ -75,7 +75,6 @@ const STEPS = [
 
 export function EstimatorPage() {
   const [params]  = useSearchParams();
-  const navigate  = useNavigate();
   const { toast } = useToast();
 
   const [wizard, setWizard] = useState<WizardState>(INITIAL_STATE);
@@ -197,10 +196,10 @@ export function EstimatorPage() {
         />
       )}
       {currentStep === 5 && (
-        <EstimatorStep5Results
-          wizard={wizard}
+        <Step5Results
+          state={wizard}
           onUpdate={updateWizard}
-          onNewEstimate={() => navigate('/dashboard/scope-estimator')}
+          onGoToStep={goToStep}
         />
       )}
     </div>
