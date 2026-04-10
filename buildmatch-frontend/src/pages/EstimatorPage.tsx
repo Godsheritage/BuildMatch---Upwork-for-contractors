@@ -10,7 +10,7 @@ import { getProperty, type Property } from '../services/property.service';
 import { Step1PropertyBasics }     from '../components/estimator/Step1PropertyBasics';
 import { Step2PhotoCapture }       from '../components/estimator/Step2PhotoCapture';
 import { Step3Questionnaire }      from '../components/estimator/Step3Questionnaire';
-import { EstimatorStep4Review }    from '../components/estimator/EstimatorStep4Review';
+import { Step4ReviewSubmit }        from '../components/estimator/Step4ReviewSubmit';
 import { EstimatorStep5Results }   from '../components/estimator/EstimatorStep5Results';
 
 // ── Wizard state ─────────────────────────────────────────────────────────────
@@ -124,16 +124,6 @@ export function EstimatorPage() {
 
   // ── Navigation ───────────────────────────────────────────────────────────
 
-  const goNext = useCallback((patch: Partial<WizardState>) => {
-    setWizard((prev) => {
-      const next = { ...prev, ...patch };
-      if (next.currentStep < 5) {
-        next.currentStep = (next.currentStep + 1) as WizardState['currentStep'];
-      }
-      return next;
-    });
-  }, []);
-
   const goBack = useCallback(() => {
     setWizard((prev) => {
       if (prev.currentStep <= 1) return prev;
@@ -143,6 +133,10 @@ export function EstimatorPage() {
 
   const updateWizard = useCallback((patch: Partial<WizardState>) => {
     setWizard((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const goToStep = useCallback((step: 1 | 2 | 3 | 4 | 5) => {
+    setWizard((prev) => ({ ...prev, currentStep: step }));
   }, []);
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -195,10 +189,11 @@ export function EstimatorPage() {
         />
       )}
       {currentStep === 4 && (
-        <EstimatorStep4Review
-          wizard={wizard}
-          onNext={(patch) => goNext(patch)}
-          onUpdate={updateWizard}
+        <Step4ReviewSubmit
+          state={wizard}
+          onNext={(updated) => setWizard(updated)}
+          onBack={goBack}
+          onGoToStep={goToStep}
         />
       )}
       {currentStep === 5 && (
