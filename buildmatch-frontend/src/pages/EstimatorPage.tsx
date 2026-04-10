@@ -8,7 +8,7 @@ import { getProperty, type Property } from '../services/property.service';
 
 // Step components (rendered inline below — will be extracted later if they grow)
 import { Step1PropertyBasics }     from '../components/estimator/Step1PropertyBasics';
-import { EstimatorStep2Photos }   from '../components/estimator/EstimatorStep2Photos';
+import { Step2PhotoCapture }       from '../components/estimator/Step2PhotoCapture';
 import { EstimatorStep3Questions } from '../components/estimator/EstimatorStep3Questions';
 import { EstimatorStep4Review }    from '../components/estimator/EstimatorStep4Review';
 import { EstimatorStep5Results }   from '../components/estimator/EstimatorStep5Results';
@@ -181,11 +181,10 @@ export function EstimatorPage() {
         />
       )}
       {currentStep === 2 && (
-        <EstimatorStep2Photos
-          property={wizard.property}
-          photos={wizard.photos}
-          onNext={(photos) => goNext({ photos })}
-          onUpdate={(photos) => updateWizard({ photos })}
+        <Step2PhotoCapture
+          state={wizard}
+          onNext={(updated) => setWizard(updated)}
+          onBack={goBack}
         />
       )}
       {currentStep === 3 && (
