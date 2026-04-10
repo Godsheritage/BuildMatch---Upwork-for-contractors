@@ -5,6 +5,7 @@ import {
   getEstimatePhotos, getAnswers, updateEstimate,
   type PropertyEstimate,
 } from '../property.service';
+import { COST_RANGES_PER_SQFT, CATEGORY_COSTS, REGIONAL_MULTIPLIERS } from './cost-data';
 
 const MODEL   = 'claude-opus-4-5';
 const FEATURE = 'property_estimator';
@@ -96,11 +97,18 @@ export async function runPropertyEstimation(
 
     const photoLabels = photos.map(p => `  - ${p.area_label} (${p.area_key})`).join('\n');
 
+    // Build cost reference data for the prompt
+    const regionalMultiplier = REGIONAL_MULTIPLIERS[property.city] ?? 1.0;
+    const costRef = JSON.stringify({ COST_RANGES_PER_SQFT, CATEGORY_COSTS, regionalMultiplier }, null, 2);
+
     const systemPrompt =
       `You are a licensed general contractor and professional construction cost estimator with 25+ years of residential renovation experience across the United States. ` +
       `You are analyzing photos of a property to produce a detailed renovation cost estimate.\n\n` +
+      `BASELINE COST DATA (use as a reference and adjust for the specific property, condition, and region):\n${costRef}\n\n` +
+      `Regional multiplier for ${property.city}: ${regionalMultiplier}x (1.0 = national average).\n\n` +
       `RULES:\n` +
       `- Base all costs on 2024-2026 regional pricing for ${property.city}, ${property.state}.\n` +
+      `- Apply the regional multiplier to the baseline costs above.\n` +
       `- Include labor + materials in every line item.\n` +
       `- If you cannot assess something from the photos, list it in cannot_assess.\n` +
       `- Respond ONLY with valid JSON matching the schema. No markdown or extra text.`;
