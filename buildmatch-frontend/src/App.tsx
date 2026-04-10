@@ -44,6 +44,7 @@ import { ContractReviewPage } from './pages/ContractReviewPage';
 import { SavedContractorsProvider } from './context/SavedContractorsContext';
 import { BugReportProvider } from './context/BugReportContext';
 import { ScopeEstimatorPage } from './pages/ScopeEstimatorPage';
+import { EstimatorPage } from './pages/EstimatorPage';
 import { SavedContractorsPage } from './pages/SavedContractorsPage';
 import { DisputesListPage } from './pages/settings/DisputesListPage';
 import { DisputeDetailPage } from './pages/settings/DisputeDetailPage';
@@ -205,6 +206,14 @@ export default function App() {
                   element={
                     <ProtectedRoute roles={['INVESTOR']}>
                       <ScopeEstimatorPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/estimate/new"
+                  element={
+                    <ProtectedRoute roles={['INVESTOR']}>
+                      <EstimatorPage />
                     </ProtectedRoute>
                   }
                 />
