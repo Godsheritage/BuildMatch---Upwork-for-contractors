@@ -43,7 +43,6 @@ import { MessagesPage } from './pages/MessagesPage';
 import { ContractReviewPage } from './pages/ContractReviewPage';
 import { SavedContractorsProvider } from './context/SavedContractorsContext';
 import { BugReportProvider } from './context/BugReportContext';
-import { ScopeEstimatorPage } from './pages/ScopeEstimatorPage';
 import { EstimatorPage } from './pages/EstimatorPage';
 import { MyEstimatesPage } from './pages/MyEstimatesPage';
 import { EstimateReportPage } from './pages/EstimateReportPage';
@@ -200,14 +199,6 @@ export default function App() {
                   element={
                     <ProtectedRoute roles={['INVESTOR']}>
                       <PostJobPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard/scope-estimator"
-                  element={
-                    <ProtectedRoute roles={['INVESTOR']}>
-                      <ScopeEstimatorPage />
                     </ProtectedRoute>
                   }
                 />
