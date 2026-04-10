@@ -140,7 +140,7 @@ export async function updateEstimate(
 // ── Photos ───────────────────────────────────────────────────────────────────
 
 export async function addEstimatePhoto(input: {
-  estimate_id: string; property_id: string;
+  estimate_id: string | null; property_id: string;
   area_key: string; area_label: string;
   url: string; storage_path: string;
   caption?: string; sort_order?: number;
