@@ -7,7 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { getProperty, type Property } from '../services/property.service';
 
 // Step components (rendered inline below — will be extracted later if they grow)
-import { EstimatorStep1Property } from '../components/estimator/EstimatorStep1Property';
+import { Step1PropertyBasics }     from '../components/estimator/Step1PropertyBasics';
 import { EstimatorStep2Photos }   from '../components/estimator/EstimatorStep2Photos';
 import { EstimatorStep3Questions } from '../components/estimator/EstimatorStep3Questions';
 import { EstimatorStep4Review }    from '../components/estimator/EstimatorStep4Review';
@@ -175,9 +175,9 @@ export function EstimatorPage() {
 
       {/* ── Active step ─────────────────────────────────────────────────── */}
       {currentStep === 1 && (
-        <EstimatorStep1Property
-          property={wizard.property}
-          onNext={(property) => goNext({ property })}
+        <Step1PropertyBasics
+          state={wizard}
+          onNext={(updated) => setWizard(updated)}
         />
       )}
       {currentStep === 2 && (
