@@ -6,7 +6,7 @@ import { validate } from '../middleware/validate.middleware';
 import { sendSuccess, sendError } from '../utils/response.utils';
 import { AppError } from '../utils/app-error';
 import * as svc from '../services/property.service';
-import { runPropertyEstimation } from '../services/ai/property-estimator.service';
+import { generatePropertyEstimate } from '../services/ai/property-estimator.service';
 
 const router = Router();
 router.use(authenticate);
@@ -182,9 +182,36 @@ router.post('/estimates/:estimateId/run', async (req: Request, res: Response): P
       return;
     }
     const property = await svc.getProperty(estimate.property_id, req.user!.userId);
+    const photos   = await svc.getEstimatePhotos(estimate.id);
+    const answers  = await svc.getAnswers(estimate.id);
+
+    const answersMap: Record<string, string> = {};
+    for (const a of answers) answersMap[a.question_key] = a.answer;
 
     // Fire-and-forget — run in background so the response is instant
-    void runPropertyEstimation(estimate, property).catch(console.error);
+    void generatePropertyEstimate({
+      estimateId:          estimate.id,
+      propertyAddress:     `${property.address_line1}, ${property.city}, ${property.state} ${property.zip_code}`,
+      zipCode:             property.zip_code,
+      propertyType:        property.property_type,
+      yearBuilt:           property.year_built,
+      sqftEstimate:        property.sqft_estimate,
+      bedrooms:            property.bedrooms ?? 0,
+      bathrooms:           property.bathrooms ?? 0,
+      hasBasement:         property.has_basement,
+      hasGarage:           property.has_garage,
+      stories:             property.stories,
+      renovationPurpose:   estimate.renovation_purpose,
+      primaryIssue:        estimate.primary_issue,
+      questionnaireAnswers: answersMap,
+      photos:              photos.map(p => ({
+        areaKey:   p.area_key,
+        areaLabel: p.area_label,
+        url:       p.url,
+        caption:   p.caption,
+      })),
+      investorId:          req.user!.userId,
+    }).catch(console.error);
 
     sendSuccess(res, { status: 'PROCESSING' }, 'Estimation started');
   } catch (err) {

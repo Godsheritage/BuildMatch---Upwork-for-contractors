@@ -155,3 +155,58 @@ export const REGIONAL_MULTIPLIERS: Record<string, number> = {
   'Little Rock':     0.78,
   'Jackson':         0.75,
 };
+
+/**
+ * ZIP-code prefix → metro mapping for the most common US zip ranges.
+ * Falls back to state-level defaults, then 1.0 (national average).
+ */
+const ZIP_TO_METRO: Record<string, string> = {
+  '100': 'New York', '101': 'New York', '102': 'New York', '103': 'New York', '104': 'New York',
+  '110': 'New York', '111': 'New York', '112': 'New York', '113': 'New York', '114': 'New York',
+  '900': 'Los Angeles', '901': 'Los Angeles', '902': 'Los Angeles', '903': 'Los Angeles',
+  '910': 'Los Angeles', '911': 'Los Angeles', '912': 'Los Angeles', '913': 'Los Angeles',
+  '941': 'San Francisco', '940': 'San Francisco', '943': 'San Francisco', '944': 'San Francisco',
+  '021': 'Boston', '022': 'Boston', '023': 'Boston', '024': 'Boston',
+  '980': 'Seattle', '981': 'Seattle', '982': 'Seattle',
+  '200': 'Washington DC', '201': 'Washington DC', '202': 'Washington DC', '203': 'Washington DC', '204': 'Washington DC',
+  '331': 'Miami', '330': 'Miami', '332': 'Miami', '333': 'Miami',
+  '606': 'Chicago', '600': 'Chicago', '601': 'Chicago',
+  '802': 'Denver', '800': 'Denver', '801': 'Denver',
+  '920': 'San Diego', '921': 'San Diego', '919': 'San Diego',
+  '787': 'Austin', '786': 'Austin',
+  '972': 'Portland', '970': 'Portland', '971': 'Portland',
+  '372': 'Nashville', '370': 'Nashville', '371': 'Nashville',
+  '282': 'Charlotte', '280': 'Charlotte', '281': 'Charlotte',
+  '554': 'Minneapolis', '553': 'Minneapolis', '551': 'Minneapolis',
+  '191': 'Philadelphia', '190': 'Philadelphia', '192': 'Philadelphia',
+  '303': 'Atlanta', '300': 'Atlanta', '301': 'Atlanta',
+  '750': 'Dallas', '751': 'Dallas', '752': 'Dallas', '753': 'Dallas',
+  '850': 'Phoenix', '851': 'Phoenix', '852': 'Phoenix', '853': 'Phoenix',
+  '276': 'Raleigh', '275': 'Raleigh', '277': 'Raleigh',
+  '770': 'Houston', '772': 'Houston', '773': 'Houston', '774': 'Houston',
+  '782': 'San Antonio', '781': 'San Antonio', '780': 'San Antonio',
+  '462': 'Indianapolis', '460': 'Indianapolis', '461': 'Indianapolis',
+  '432': 'Columbus', '430': 'Columbus', '431': 'Columbus',
+  '381': 'Memphis', '380': 'Memphis',
+  '482': 'Detroit', '480': 'Detroit', '481': 'Detroit', '483': 'Detroit',
+  '441': 'Cleveland', '440': 'Cleveland', '442': 'Cleveland',
+  '631': 'St. Louis', '630': 'St. Louis',
+  '641': 'Kansas City', '640': 'Kansas City', '661': 'Kansas City',
+  '352': 'Birmingham', '350': 'Birmingham', '351': 'Birmingham',
+  '402': 'Louisville', '400': 'Louisville', '401': 'Louisville',
+  '731': 'Oklahoma City', '730': 'Oklahoma City',
+  '722': 'Little Rock', '720': 'Little Rock', '721': 'Little Rock',
+  '392': 'Jackson', '390': 'Jackson', '391': 'Jackson',
+  '968': 'Honolulu', '967': 'Honolulu', '966': 'Honolulu',
+};
+
+/**
+ * Resolve a zip code to a regional cost multiplier.
+ * Tries 3-digit zip prefix → metro → multiplier. Falls back to 1.0.
+ */
+export function getRegionalMultiplier(zipCode: string): number {
+  const prefix = zipCode.replace(/\D/g, '').slice(0, 3);
+  const metro = ZIP_TO_METRO[prefix];
+  if (metro && metro in REGIONAL_MULTIPLIERS) return REGIONAL_MULTIPLIERS[metro];
+  return 1.0;
+}
