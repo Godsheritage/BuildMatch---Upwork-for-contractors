@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { Sparkles, Check, Wrench, MapPin, Camera } from 'lucide-react';
 import JobMediaUploader from '../components/job/JobMediaUploader';
 import { ScopeEstimatorPanel } from '../components/job/ScopeEstimatorPanel';
+import { PropertyEstimatorPage } from './PropertyEstimatorPage';
 import styles from './ScopeEstimatorPage.module.css';
+
+type EstimatorTab = 'quick' | 'property';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -131,6 +134,7 @@ export function ScopeEstimatorPage() {
   const [tradeType, setTradeType] = useState('');
   const [city,      setCity]      = useState('');
   const [state,     setState]     = useState('');
+  const [tab,       setTab]       = useState<EstimatorTab>('quick');
 
   const canEstimate =
     photoUrls.length > 0 && tradeType !== '' && city.trim() !== '' && state !== '';
@@ -149,6 +153,33 @@ export function ScopeEstimatorPage() {
           Upload project photos and get an instant AI-powered cost estimate — scope, materials, and budget range included.
         </p>
       </div>
+
+      {/* ── Tabs ──────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--color-border)', marginBottom: 24 }}>
+        {([
+          { key: 'quick' as EstimatorTab, label: 'Quick estimate' },
+          { key: 'property' as EstimatorTab, label: 'Property estimate' },
+        ]).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            style={{
+              padding: '10px 18px', background: 'none', border: 'none',
+              borderBottom: tab === t.key ? '2px solid var(--color-primary)' : '2px solid transparent',
+              color: tab === t.key ? 'var(--color-primary)' : 'var(--color-text-muted)',
+              fontSize: 14, fontWeight: 500, cursor: 'pointer', marginBottom: -1,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'property' && <PropertyEstimatorPage />}
+
+      {tab === 'quick' && (<>
+      {/* ── Quick estimate body below ── */}
 
       {/* ── Two-column body ───────────────────────────────────────────────── */}
       <div className={styles.body}>
@@ -246,6 +277,7 @@ export function ScopeEstimatorPage() {
         </div>
 
       </div>
+      </>)}
     </div>
   );
 }
