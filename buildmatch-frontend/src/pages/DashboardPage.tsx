@@ -4,7 +4,7 @@ import {
   Briefcase, MessageSquare, FileText, TrendingUp,
   Star, DollarSign, CheckCircle2, Circle, ChevronRight,
   MessageCircle, ArrowRight, Pencil, MapPin, Award, Eye,
-  Shield, Video, Wand2, BookMarked,
+  Shield, Video, Wand2, BookMarked, Calculator,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useSavedContractors } from '../context/SavedContractorsContext';
@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useLang } from '../context/LanguageContext';
 import { getMyContractorProfile } from '../services/contractor.service';
 import { getMyJobs } from '../services/job.service';
+import { listProperties } from '../services/property.service';
 import type { ContractorProfile } from '../types/contractor.types';
 import type { JobPost } from '../types/job.types';
 import { Button } from '../components/ui/Button';
@@ -135,6 +136,8 @@ function InvestorDashboard({ greeting, t }: { greeting: string; t: ReturnType<ty
         </div>
 
         <SavedContractorsWidget />
+
+        <EstimatorWidget />
 
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>{t.dashboard.sections.recentJobs}</h2>
@@ -530,6 +533,73 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <div className={styles.statCard}>
       <p className={styles.statLabel}>{label}</p>
       <p className={styles.statValue}>{value}</p>
+    </div>
+  );
+}
+
+// ── Estimator widget ─────────────────────────────────────────────────────────
+
+function EstimatorWidget() {
+  const { data: properties } = useQuery({
+    queryKey: ['estimator-properties'],
+    queryFn:  listProperties,
+    staleTime: 60_000,
+  });
+
+  const hasEstimates = (properties ?? []).length > 0;
+
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid var(--color-border)',
+      borderRadius: 12, padding: '20px 22px', marginBottom: 16,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 10,
+          background: 'rgba(15, 110, 86, 0.08)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <Calculator size={22} strokeWidth={1.5} color="var(--color-accent)" />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: 'var(--color-text-primary)' }}>
+            Property Cost Estimator
+          </p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+            Walk through a property and get an AI-powered renovation cost estimate in under 5 minutes.
+          </p>
+        </div>
+      </div>
+
+      {hasEstimates && (properties ?? []).slice(0, 2).map((p) => (
+        <Link
+          key={p.id}
+          to={`/estimate/new?propertyId=${p.id}`}
+          style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '10px 0', borderTop: '1px solid var(--color-border)',
+            marginTop: 10, fontSize: 13, textDecoration: 'none', color: 'inherit',
+          }}
+        >
+          <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
+            {p.address_line1}
+          </span>
+          <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>
+            {p.city}, {p.state}
+          </span>
+        </Link>
+      ))}
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+        <Link to="/estimate/new">
+          <Button variant="primary" size="sm">New Estimate</Button>
+        </Link>
+        {hasEstimates && (
+          <Link to="/estimates">
+            <Button variant="secondary" size="sm">View All Estimates</Button>
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

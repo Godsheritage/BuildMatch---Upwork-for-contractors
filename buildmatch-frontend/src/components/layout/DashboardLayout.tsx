@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   Home, Search, Briefcase, PlusCircle,
-  FileText, Menu, X,
+  FileText, Menu, X, Calculator,
   HelpCircle, Bell, Settings, ChevronUp, MessageSquare, Sparkles, ShieldAlert, BookMarked,
 } from 'lucide-react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
@@ -62,6 +62,7 @@ export function DashboardLayout() {
     { to: '/contractors',                 icon: Search,        label: t.nav.findContractors, badge: 0                          },
     { to: '/dashboard/saved',             icon: BookMarked,    label: 'Saved Contractors',   badge: totalSaved > 0 ? totalSaved : 0 },
     { to: '/dashboard/jobs',              icon: Briefcase,     label: t.nav.myJobs,          badge: 0                          },
+    { to: '/estimate/new',               icon: Calculator,    label: 'Estimate Costs',      badge: 0                          },
     { to: '/dashboard/post-job',          icon: PlusCircle,    label: t.nav.postJob,         badge: 0                          },
   ];
 

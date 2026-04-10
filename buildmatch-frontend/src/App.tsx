@@ -45,6 +45,8 @@ import { SavedContractorsProvider } from './context/SavedContractorsContext';
 import { BugReportProvider } from './context/BugReportContext';
 import { ScopeEstimatorPage } from './pages/ScopeEstimatorPage';
 import { EstimatorPage } from './pages/EstimatorPage';
+import { MyEstimatesPage } from './pages/MyEstimatesPage';
+import { EstimateReportPage } from './pages/EstimateReportPage';
 import { SavedContractorsPage } from './pages/SavedContractorsPage';
 import { DisputesListPage } from './pages/settings/DisputesListPage';
 import { DisputeDetailPage } from './pages/settings/DisputeDetailPage';
@@ -214,6 +216,22 @@ export default function App() {
                   element={
                     <ProtectedRoute roles={['INVESTOR']}>
                       <EstimatorPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/estimate/:estimateId"
+                  element={
+                    <ProtectedRoute roles={['INVESTOR']}>
+                      <EstimateReportPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/estimates"
+                  element={
+                    <ProtectedRoute roles={['INVESTOR']}>
+                      <MyEstimatesPage />
                     </ProtectedRoute>
                   }
                 />
