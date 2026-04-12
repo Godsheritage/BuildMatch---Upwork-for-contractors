@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   Zap, Droplets, Wind, Home, Layers, Paintbrush,
@@ -7,9 +7,7 @@ import {
   ArrowRight, Search, Menu, X,
   FileText, Users, CheckCircle2, UserCircle, Briefcase, Send,
 } from 'lucide-react';
-import { useContractorSearch } from '../hooks/useContractorSearch';
 import { Footer } from '../components/layout/Footer';
-import { ContractorSearchResults } from '../components/contractor/ContractorSearchResults';
 import styles from './HomePage.module.css';
 
 // ── Static data ────────────────────────────────────────────────────────────
@@ -92,10 +90,8 @@ const SEARCH_EXAMPLES = [
 
 export function HomePage() {
   const { user } = useAuth();
-  const { results, isPending, isError, search, reset } = useContractorSearch();
+  const navigate = useNavigate();
   const [inputValue, setInputValue] = useState('');
-  const [submittedQuery, setSubmittedQuery] = useState('');
-  const resultsRef = useRef<HTMLDivElement>(null);
   const [userCity, setUserCity] = useState<string | null>(null);
   const [howTab, setHowTab] = useState<'INVESTOR' | 'CONTRACTOR'>('INVESTOR');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -153,19 +149,9 @@ export function HomePage() {
 
   function handleSearch() {
     const q = inputValue.trim();
-    if (q.length < 10) return;
-    setSubmittedQuery(q);
-    search(q);
-    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    if (!q) return;
+    navigate(`/contractors?search=${encodeURIComponent(q)}`);
   }
-
-  function handleClear() {
-    reset();
-    setInputValue('');
-    setSubmittedQuery('');
-  }
-
-  const showResults = isPending || isError || results !== null;
 
   return (
     <div className={styles.page}>
@@ -284,29 +270,16 @@ export function HomePage() {
                 <button
                   className={styles.searchBtn}
                   onClick={handleSearch}
-                  disabled={isPending || inputValue.trim().length < 10}
+                  disabled={!inputValue.trim()}
                   type="button"
                 >
-                  {isPending ? 'Searching…' : 'Find Contractors'}
+                  Find Contractors
                 </button>
               </div>
             </div>
           </div>
         </div>
       </section>
-
-      {/* ── AI SEARCH RESULTS ──────────────────────────── */}
-      {showResults && (
-        <div ref={resultsRef}>
-          <ContractorSearchResults
-            query={submittedQuery}
-            results={results}
-            isPending={isPending}
-            isError={isError}
-            onClear={handleClear}
-          />
-        </div>
-      )}
 
       {/* ── TRUST BAR ──────────────────────────────────── */}
       <div className={styles.trustBar}>
