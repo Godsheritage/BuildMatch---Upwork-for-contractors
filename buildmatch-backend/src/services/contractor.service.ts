@@ -81,13 +81,58 @@ export async function listContractors(query: ListContractorsQuery) {
     where.specialties = { has: query.specialty };
   }
 
-  // search: bio contains OR specialties array has the term
+  // search: split into words, match across name/bio/specialties/city/state
   if (query.search) {
-    const term = query.search;
-    where.OR = [
-      { bio: { contains: term, mode: 'insensitive' } },
-      { specialties: { has: term } },
-    ];
+    const raw = query.search.trim();
+    // Extract words (3+ chars to skip noise like "a", "in", "an")
+    const words = raw.split(/\s+/).filter(w => w.length >= 3).map(w => w.toLowerCase());
+
+    // Map common search terms to specialty enum values
+    const SPECIALTY_MAP: Record<string, string> = {
+      electrical: 'ELECTRICAL', electric: 'ELECTRICAL', wiring: 'ELECTRICAL', rewire: 'ELECTRICAL',
+      plumbing: 'PLUMBING', plumber: 'PLUMBING', pipes: 'PLUMBING',
+      hvac: 'HVAC', heating: 'HVAC', cooling: 'HVAC', furnace: 'HVAC',
+      roofing: 'ROOFING', roof: 'ROOFING', shingles: 'ROOFING',
+      flooring: 'FLOORING', floor: 'FLOORING', floors: 'FLOORING', hardwood: 'FLOORING', tile: 'FLOORING',
+      painting: 'PAINTING', paint: 'PAINTING', painter: 'PAINTING',
+      landscaping: 'LANDSCAPING', landscape: 'LANDSCAPING', lawn: 'LANDSCAPING',
+      demolition: 'DEMOLITION', demo: 'DEMOLITION',
+      general: 'GENERAL', renovation: 'GENERAL', remodel: 'GENERAL', contractor: 'GENERAL',
+    };
+
+    // Detect specialty keywords
+    const matchedSpecialties = [...new Set(
+      words.map(w => SPECIALTY_MAP[w]).filter((s): s is string => !!s),
+    )];
+
+    // Build OR conditions for each word
+    const orClauses: Prisma.ContractorProfileWhereInput[] = [];
+
+    for (const word of words) {
+      // Skip if it's a known specialty keyword (handled separately)
+      if (SPECIALTY_MAP[word]) continue;
+      orClauses.push(
+        { bio:   { contains: word, mode: 'insensitive' } },
+        { city:  { contains: word, mode: 'insensitive' } },
+        { state: { contains: word, mode: 'insensitive' } },
+        { user:  { firstName: { contains: word, mode: 'insensitive' } } },
+        { user:  { lastName:  { contains: word, mode: 'insensitive' } } },
+      );
+    }
+
+    // Add specialty matches
+    for (const spec of matchedSpecialties) {
+      orClauses.push({ specialties: { has: spec } });
+    }
+
+    // Also try the full raw string against bio (catches multi-word phrases)
+    if (raw.length >= 3) {
+      orClauses.push({ bio: { contains: raw, mode: 'insensitive' } });
+    }
+
+    if (orClauses.length > 0) {
+      where.OR = orClauses;
+    }
   }
 
   const [contractors, total] = await Promise.all([
