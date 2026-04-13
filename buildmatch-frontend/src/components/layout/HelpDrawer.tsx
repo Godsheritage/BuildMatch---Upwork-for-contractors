@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Sparkles, RotateCcw } from 'lucide-react';
+import { X, Send, Sparkles, RotateCcw, Bug } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useBugReport } from '../../context/BugReportContext';
 import { sendMessage } from '../../services/ai.service';
 import type { ChatMessage } from '../../services/ai.service';
 import styles from './HelpDrawer.module.css';
@@ -19,6 +20,7 @@ interface HelpDrawerProps {
 
 export function HelpDrawer({ open, onClose }: HelpDrawerProps) {
   const { user } = useAuth();
+  const { open: openBugReport } = useBugReport();
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -164,6 +166,19 @@ export function HelpDrawer({ open, onClose }: HelpDrawerProps) {
             </button>
           </div>
           <p className={styles.disclaimer}>AI may make mistakes. Verify important information.</p>
+          <button
+            type="button"
+            onClick={() => { onClose(); openBugReport(); }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 12, color: 'var(--color-text-muted)',
+              padding: '8px 0 0', marginTop: 4,
+            }}
+          >
+            <Bug size={13} strokeWidth={1.75} />
+            Report a bug
+          </button>
         </div>
       </div>
     </>

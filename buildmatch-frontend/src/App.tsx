@@ -33,6 +33,7 @@ import { SettingsPersonalPage } from './pages/SettingsPersonalPage';
 import { SettingsSecurityPage } from './pages/SettingsSecurityPage';
 import { SettingsNotificationsPage } from './pages/SettingsNotificationsPage';
 import { SettingsVerificationPage } from './pages/SettingsVerificationPage';
+import { SettingsBillingPage } from './pages/SettingsBillingPage';
 import { IdVerificationStartPage } from './pages/IdVerificationStartPage';
 import { MobileIdVerificationPage } from './pages/MobileIdVerificationPage';
 import { ProfileEditPage } from './pages/ProfileEditPage';
@@ -41,7 +42,10 @@ import { AboutPage } from './pages/AboutPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { ContractReviewPage } from './pages/ContractReviewPage';
 import { SavedContractorsProvider } from './context/SavedContractorsContext';
-import { ScopeEstimatorPage } from './pages/ScopeEstimatorPage';
+import { BugReportProvider } from './context/BugReportContext';
+import { EstimatorPage } from './pages/EstimatorPage';
+import { MyEstimatesPage } from './pages/MyEstimatesPage';
+import { EstimateReportPage } from './pages/EstimateReportPage';
 import { SavedContractorsPage } from './pages/SavedContractorsPage';
 import { DisputesListPage } from './pages/settings/DisputesListPage';
 import { DisputeDetailPage } from './pages/settings/DisputeDetailPage';
@@ -77,6 +81,7 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <SavedContractorsProvider>
+          <BugReportProvider>
           <BrowserRouter>
             <Routes>
               {/* Public routes */}
@@ -156,6 +161,7 @@ export default function App() {
                 <Route path="/dashboard/settings/security"     element={<SettingsSecurityPage />} />
                 <Route path="/dashboard/settings/notifications" element={<SettingsNotificationsPage />} />
                 <Route path="/dashboard/settings/verification" element={<SettingsVerificationPage />} />
+                <Route path="/dashboard/settings/billing"      element={<SettingsBillingPage />} />
                 <Route path="/dashboard/settings/verification/id" element={<IdVerificationStartPage />} />
                 {/* Disputes — inside DashboardLayout but no settings sidebar */}
                 <Route path="/dashboard/settings/disputes"              element={<DisputesListPage />} />
@@ -197,10 +203,26 @@ export default function App() {
                   }
                 />
                 <Route
-                  path="/dashboard/scope-estimator"
+                  path="/estimate/new"
                   element={
                     <ProtectedRoute roles={['INVESTOR']}>
-                      <ScopeEstimatorPage />
+                      <EstimatorPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/estimate/:estimateId"
+                  element={
+                    <ProtectedRoute roles={['INVESTOR']}>
+                      <EstimateReportPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/estimates"
+                  element={
+                    <ProtectedRoute roles={['INVESTOR']}>
+                      <MyEstimatesPage />
                     </ProtectedRoute>
                   }
                 />
@@ -263,6 +285,7 @@ export default function App() {
               </Route>
             </Routes>
           </BrowserRouter>
+          </BugReportProvider>
           </SavedContractorsProvider>
         </ToastProvider>
       </AuthProvider>

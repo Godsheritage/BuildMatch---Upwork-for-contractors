@@ -17,7 +17,8 @@ export type AuditAction =
   | 'USER_WARN' | 'USER_ESCALATE'
   | 'CONTENT_APPROVE' | 'CONTENT_REMOVE'
   | 'TESTIMONIAL_APPROVE' | 'TESTIMONIAL_REJECT'
-  | 'ID_DOC_APPROVED' | 'ID_DOC_REJECTED';
+  | 'ID_DOC_APPROVED' | 'ID_DOC_REJECTED'
+  | 'BUG_REPORT_STATUS_CHANGE';
 
 // ── Params ────────────────────────────────────────────────────────────────────
 

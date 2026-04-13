@@ -6,6 +6,10 @@ import dotenv from 'dotenv';
 
 import authRoutes from './routes/auth.routes';
 import idVerificationRoutes from './routes/id-verification.routes';
+import bugReportRoutes from './routes/bug-report.routes';
+import billingMethodRoutes from './routes/billing-method.routes';
+import propertyRoutes from './routes/property.routes';
+import estimatorRoutes from './routes/estimator.routes';
 import userRoutes from './routes/user.routes';
 import contractorRoutes from './routes/contractor.routes';
 import jobRoutes from './routes/job.routes';
@@ -93,6 +97,10 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/identity', idVerificationRoutes);
+app.use('/api/bug-reports', bugReportRoutes);
+app.use('/api/billing-methods', billingMethodRoutes);
+app.use('/api/properties', propertyRoutes);
+app.use('/api/estimator', estimatorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/contractors', contractorRoutes);
 app.use('/api/jobs', jobRoutes);

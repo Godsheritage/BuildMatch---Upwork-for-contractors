@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Zap, Droplets, Wind, Home as HomeIcon, Layers, Paintbrush,
   Trees, Hammer, Wrench, Building2, ChevronDown,
@@ -340,6 +340,7 @@ export function PostJobPage() {
   const navigate   = useNavigate();
   const { toast }  = useToast();
   const { t }      = useLang();
+  const [searchParams] = useSearchParams();
 
   // ── Stage management ────────────────────────────────────────────────────────
   const [stage, setStage]                   = useState<'describe' | 'form'>('describe');
@@ -386,7 +387,111 @@ export function PostJobPage() {
   const [aiHint, setAiHint]           = useState<string | null>(null);
   const [aiAssisted, setAiAssisted]   = useState(false);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [estimateCallout, setEstimateCallout] = useState<{ address: string; estimateId: string } | null>(null);
   const classifyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Estimate pre-fill ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const estimateId = searchParams.get('estimateId');
+    if (!estimateId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        // Fetch full estimate
+        const estRes = await import('../services/api').then(m => m.default.get<{
+          success: boolean;
+          data: {
+            id: string; property_id: string; status: string;
+            total_low: number | null; total_high: number | null;
+            ai_summary: string | null;
+            line_items: Array<{ category: string; label: string; scopeRecommended: string; amountHigh: number }> | null;
+            renovation_purpose: string; primary_issue: string;
+          };
+        }>(`/estimator/estimates/${estimateId}`));
+        const est = estRes.data.data;
+        if (cancelled || est.status !== 'COMPLETE') return;
+
+        // Fetch property
+        const propRes = await import('../services/api').then(m => m.default.get<{
+          success: boolean;
+          data: { address_line1: string; city: string; state: string; zip_code: string };
+        }>(`/properties/${est.property_id}`));
+        const prop = propRes.data.data;
+        if (cancelled) return;
+
+        // Fetch estimate photos
+        const photosRes = await import('../services/api').then(m => m.default.get<{
+          success: boolean;
+          data: Array<{ url: string }>;
+        }>(`/estimator/estimates/${estimateId}/photos`));
+        if (cancelled) return;
+
+        // Build description
+        const lineItems = est.line_items ?? [];
+        const scopeLines = lineItems
+          .filter(i => i.amountHigh > 0)
+          .map(i => `- ${i.label}: ${i.scopeRecommended}`);
+        const description =
+          (est.ai_summary ?? '') +
+          (scopeLines.length > 0 ? '\n\nScope of Work:\n' + scopeLines.join('\n') : '') +
+          `\n\nBudget Estimate: $${(est.total_low ?? 0).toLocaleString()} - $${(est.total_high ?? 0).toLocaleString()}`;
+
+        // Determine trade type from biggest line item category
+        const tradeType = inferTradeType(lineItems, est.primary_issue);
+
+        setForm({
+          title:       `Renovation at ${prop.address_line1}`,
+          tradeType,
+          description: description.trim(),
+          budgetMin:   est.total_low  != null ? String(Math.round(est.total_low))  : '',
+          budgetMax:   est.total_high != null ? String(Math.round(est.total_high)) : '',
+          city:        prop.city,
+          state:       prop.state,
+          zipCode:     prop.zip_code,
+        });
+
+        // Pre-populate photos
+        const urls = (photosRes.data.data ?? []).map(p => p.url);
+        if (urls.length > 0) setPhotoUrls(urls);
+
+        setEstimateCallout({ address: `${prop.address_line1}, ${prop.city}, ${prop.state}`, estimateId });
+        setStage('form');
+      } catch {
+        // Non-fatal — just don't prefill
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [searchParams]);
+
+  function inferTradeType(
+    lineItems: Array<{ category: string; amountHigh: number }>,
+    primaryIssue: string,
+  ): string {
+    if (primaryIssue === 'FULL_GUT' || primaryIssue === 'NEGLECT') return 'GENERAL';
+    if (primaryIssue === 'FIRE_DAMAGE') return 'GENERAL';
+    if (primaryIssue === 'WATER_DAMAGE') return 'PLUMBING';
+
+    // Find biggest cost category
+    const catTotals = new Map<string, number>();
+    for (const item of lineItems) {
+      const cat = item.category.toUpperCase();
+      catTotals.set(cat, (catTotals.get(cat) ?? 0) + item.amountHigh);
+    }
+    let biggest = '';
+    let biggestVal = 0;
+    for (const [cat, val] of catTotals) {
+      if (val > biggestVal) { biggest = cat; biggestVal = val; }
+    }
+
+    const mapping: Record<string, string> = {
+      KITCHEN: 'GENERAL', BATHROOM: 'PLUMBING', ROOF: 'ROOFING',
+      ROOFING: 'ROOFING', ELECTRICAL: 'ELECTRICAL', PLUMBING: 'PLUMBING',
+      HVAC: 'HVAC', FLOORING: 'FLOORING', PAINTING: 'PAINTING',
+      DEMOLITION: 'DEMOLITION', LANDSCAPING: 'LANDSCAPING',
+      SIDING: 'GENERAL', FOUNDATION: 'GENERAL', WINDOWS: 'GENERAL',
+    };
+    return mapping[biggest] ?? 'GENERAL';
+  }
 
   useEffect(() => {
     if (classifyTimer.current) clearTimeout(classifyTimer.current);
@@ -618,6 +723,32 @@ export function PostJobPage() {
           <h1 className={styles.heading}>{t.postJob.title}</h1>
           <p className={styles.subheading}>{t.postJob.subtitle}</p>
         </div>
+
+        {/* ── Estimate pre-fill callout ── */}
+        {estimateCallout && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+            gap: 12, padding: '14px 18px', marginBottom: 16,
+            background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 10,
+          }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#065F46', display: 'flex', alignItems: 'center', gap: 6 }}>
+                ✓ Pre-filled from your property estimate
+              </p>
+              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#065F46' }}>
+                at {estimateCallout.address}. Review and edit before posting.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEstimateCallout(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#065F46', fontSize: 16, padding: 4 }}
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* ── Form card ── */}
         <form onSubmit={handleSubmit} noValidate>

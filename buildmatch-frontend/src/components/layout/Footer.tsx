@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import styles from './Footer.module.css';
+import { useBugReport } from '../../context/BugReportContext';
 
 const PLATFORM_LINKS = [
   { label: 'Find Contractors', to: '/contractors' },
@@ -21,6 +22,7 @@ const COMPANY_LINKS = [
 ];
 
 export function Footer() {
+  const { open: openBugReport } = useBugReport();
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
@@ -53,6 +55,14 @@ export function Footer() {
           {COMPANY_LINKS.map(({ label, to }) => (
             <Link key={label} to={to} className={styles.link}>{label}</Link>
           ))}
+          <button
+            type="button"
+            onClick={openBugReport}
+            className={styles.link}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+          >
+            Report a bug
+          </button>
         </div>
       </div>
 

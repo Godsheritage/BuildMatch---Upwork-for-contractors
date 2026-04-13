@@ -268,6 +268,10 @@ export interface MessageWithSender {
   content: string;
   isFiltered: boolean;
   createdAt: string;
+  editedAt:  string | null;
+  deletedAt: string | null;
+  replyToId: string | null;
+  replyTo:   { id: string; senderId: string; content: string; deletedAt: string | null } | null;
   sender: {
     firstName: string;
     lastName: string;
@@ -301,6 +305,7 @@ export async function sendConversationMessage(
   conversationId: string,
   senderId: string,
   rawContent: string,
+  replyToId?: string | null,
 ): Promise<SentMessage> {
   const supabase = getServiceClient();
 
@@ -309,6 +314,18 @@ export async function sendConversationMessage(
 
   // Filter content — mandatory, never skip
   const { filteredContent, wasFiltered, filterReasons } = filterMessageContent(rawContent);
+
+  // If replying, verify the target message belongs to the same conversation
+  if (replyToId) {
+    const { data: parent } = await supabase
+      .from('messages')
+      .select('id, conversation_id')
+      .eq('id', replyToId)
+      .single();
+    if (!parent || (parent as { conversation_id: string }).conversation_id !== conversationId) {
+      throw new AppError('Invalid reply target', 400);
+    }
+  }
 
   // Insert message — id must be supplied explicitly; @default(cuid()) is client-side only
   const { data: msgData, error: msgError } = await supabase
@@ -320,6 +337,7 @@ export async function sendConversationMessage(
       content:         filteredContent,
       is_filtered:     wasFiltered,
       filter_reason:   wasFiltered ? filterReasons.join(', ') : null,
+      reply_to_id:     replyToId ?? null,
     })
     .select('id, conversation_id, sender_id, content, is_filtered, filter_reason, created_at')
     .single();
@@ -383,7 +401,7 @@ export async function getConversationMessages(
   // We fetch messages first, then JOIN sender data in a second query.
   let query = supabase
     .from('messages')
-    .select('id, conversation_id, sender_id, content, is_filtered, created_at')
+    .select('id, conversation_id, sender_id, content, is_filtered, created_at, edited_at, deleted_at, reply_to_id')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false }) // newest first for cursor pagination
     .limit(limit + 1);                          // +1 to detect hasMore
@@ -408,6 +426,7 @@ export async function getConversationMessages(
   const rows = (data ?? []) as Array<{
     id: string; conversation_id: string; sender_id: string;
     content: string; is_filtered: boolean; created_at: string;
+    edited_at: string | null; deleted_at: string | null; reply_to_id: string | null;
   }>;
 
   const hasMore   = rows.length > limit;
@@ -422,6 +441,24 @@ export async function getConversationMessages(
   });
   const senderMap = new Map(senders.map((s) => [s.id, s]));
 
+  // Fetch reply-to previews in one query
+  const replyIds = pageRows.map((r) => r.reply_to_id).filter((x): x is string => !!x);
+  const replyMap = new Map<string, { id: string; senderId: string; content: string; deletedAt: string | null }>();
+  if (replyIds.length > 0) {
+    const { data: replies } = await supabase
+      .from('messages')
+      .select('id, sender_id, content, deleted_at')
+      .in('id', [...new Set(replyIds)]);
+    for (const r of (replies ?? []) as Array<{ id: string; sender_id: string; content: string; deleted_at: string | null }>) {
+      replyMap.set(r.id, {
+        id:        r.id,
+        senderId:  r.sender_id,
+        content:   r.deleted_at ? '' : r.content.slice(0, 200),
+        deletedAt: r.deleted_at,
+      });
+    }
+  }
+
   // Reverse to ascending order (oldest first) for the response
   const messages: MessageWithSender[] = pageRows.reverse().map((row) => {
     const sender = senderMap.get(row.sender_id);
@@ -429,9 +466,13 @@ export async function getConversationMessages(
       id:             row.id,
       conversationId: row.conversation_id,
       senderId:       row.sender_id,
-      content:        row.content,
+      content:        row.deleted_at ? '' : row.content,
       isFiltered:     row.is_filtered,
       createdAt:      row.created_at,
+      editedAt:       row.edited_at,
+      deletedAt:      row.deleted_at,
+      replyToId:      row.reply_to_id,
+      replyTo:        row.reply_to_id ? (replyMap.get(row.reply_to_id) ?? null) : null,
       sender: {
         firstName: sender?.firstName ?? '',
         lastName:  sender?.lastName  ?? '',
@@ -472,6 +513,103 @@ export async function createMessage(
     data:    { jobId, senderId, body, isAiGenerated },
     include: { sender: SENDER_SELECT },
   });
+}
+
+// ── Per-message actions: edit / delete / report ──────────────────────────────
+
+const EDIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes after send
+
+async function fetchOwnedMessage(messageId: string, userId: string) {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id, conversation_id, sender_id, deleted_at, created_at')
+    .eq('id', messageId)
+    .single();
+  if (error || !data) throw new AppError('Message not found', 404);
+  const row = data as { id: string; conversation_id: string; sender_id: string; deleted_at: string | null; created_at: string };
+  if (row.sender_id !== userId) throw new AppError('You can only modify your own messages', 403);
+  if (row.deleted_at)           throw new AppError('Message has been deleted', 400);
+  return row;
+}
+
+export async function editConversationMessage(
+  messageId: string,
+  userId:    string,
+  rawContent: string,
+): Promise<SentMessage> {
+  const row = await fetchOwnedMessage(messageId, userId);
+  if (Date.now() - new Date(row.created_at).getTime() > EDIT_WINDOW_MS) {
+    throw new AppError('Edit window has expired', 400);
+  }
+
+  const { filteredContent, wasFiltered, filterReasons } = filterMessageContent(rawContent);
+  const supabase = getServiceClient();
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('messages')
+    .update({
+      content:       filteredContent,
+      is_filtered:   wasFiltered,
+      filter_reason: wasFiltered ? filterReasons.join(', ') : null,
+      edited_at:     now,
+    })
+    .eq('id', messageId)
+    .select('id, conversation_id, sender_id, content, is_filtered, filter_reason, created_at')
+    .single();
+  if (error || !data) throw new AppError('Failed to edit message', 500);
+
+  const r = data as { id: string; conversation_id: string; sender_id: string; content: string; is_filtered: boolean; filter_reason: string | null; created_at: string };
+  return {
+    id:             r.id,
+    conversationId: r.conversation_id,
+    senderId:       r.sender_id,
+    content:        r.content,
+    isFiltered:     r.is_filtered,
+    filterReason:   r.filter_reason,
+    createdAt:      r.created_at,
+    ...(wasFiltered ? { filterWarning: FILTER_WARNING } : {}),
+  };
+}
+
+export async function deleteConversationMessage(
+  messageId: string,
+  userId:    string,
+): Promise<void> {
+  await fetchOwnedMessage(messageId, userId);
+  const supabase = getServiceClient();
+  // Soft delete — keep the row so reply chains stay intact.
+  const { error } = await supabase
+    .from('messages')
+    .update({ deleted_at: new Date().toISOString(), content: '' })
+    .eq('id', messageId);
+  if (error) throw new AppError('Failed to delete message', 500);
+}
+
+export async function reportConversationMessage(
+  messageId:   string,
+  reporterId:  string,
+  reason:      string,
+  description: string | null,
+): Promise<void> {
+  if (!reason || reason.trim().length === 0) throw new AppError('Reason is required', 400);
+
+  const supabase = getServiceClient();
+  // Verify the message exists AND the reporter is a participant in its conversation
+  const { data: msg } = await supabase
+    .from('messages')
+    .select('id, conversation_id, sender_id')
+    .eq('id', messageId)
+    .single();
+  if (!msg) throw new AppError('Message not found', 404);
+  const m = msg as { id: string; conversation_id: string; sender_id: string };
+  if (m.sender_id === reporterId) throw new AppError("You can't report your own message", 400);
+  await assertParticipant(m.conversation_id, reporterId);
+
+  await prisma.$executeRaw(Prisma.sql`
+    INSERT INTO "MessageReport" (id, "messageId", "reporterId", reason, description)
+    VALUES (${randomUUID()}, ${messageId}, ${reporterId}, ${reason}, ${description})
+  `);
 }
 
 export async function getJobMessages(jobId: string, requesterId: string) {

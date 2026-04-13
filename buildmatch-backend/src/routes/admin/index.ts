@@ -29,6 +29,7 @@ import adminAnalyticsRouter    from './analytics.routes';
 import adminHealthRouter       from './health.routes';
 import adminOverviewRouter        from './overview.routes';
 import adminTestimonialsRouter   from './testimonials.routes';
+import adminBugReportsRouter     from './bug-reports.routes';
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
@@ -57,5 +58,6 @@ adminRouter.use('/analytics',     adminAnalyticsRouter);
 adminRouter.use('/health',        adminHealthRouter);
 adminRouter.use('/overview',      adminOverviewRouter);
 adminRouter.use('/testimonials',  adminTestimonialsRouter);
+adminRouter.use('/bug-reports',   adminBugReportsRouter);
 
 export default adminRouter;
