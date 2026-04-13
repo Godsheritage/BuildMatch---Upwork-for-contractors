@@ -2,6 +2,151 @@
 
 Base URL: `http://localhost:3001` (dev) · `https://api.buildmatch.us` (production)
 
+---
+
+## Local Setup
+
+### Prerequisites
+
+- **Node.js** v18.12+ (v18.x recommended — v20+ works but may show engine warnings)
+- **npm** v8+
+- A **Supabase** project (free tier works) — provides PostgreSQL + Storage + Realtime
+- An **Anthropic API key** (for AI features — optional, app runs without it if `AI_ENABLED=false`)
+
+### 1. Clone and install
+
+```bash
+cd buildmatch-backend
+npm install
+```
+
+### 2. Create your `.env` file
+
+Copy the example and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+**Required variables:**
+
+| Variable | Where to get it | Notes |
+|----------|----------------|-------|
+| `DATABASE_URL` | Supabase → Settings → Database → Connection string (Transaction mode, port 6543) | Append `?pgbouncer=true&connection_limit=1` |
+| `DIRECT_URL` | Supabase → Settings → Database → Connection string (Session mode, port 5432) | Used only for migrations |
+| `JWT_SECRET` | Generate: `openssl rand -hex 32` | At least 32 chars |
+| `SUPABASE_URL` | Supabase → Settings → API → Project URL | `https://xxxxx.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → `service_role` key | **Never expose to frontend** |
+
+**Optional variables:**
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `PORT` | `3001` | |
+| `JWT_EXPIRES_IN` | `7d` | |
+| `FRONTEND_URL` | `http://localhost:5173` | CORS allow-list (comma-separated for multiple origins) |
+| `ANTHROPIC_API_KEY` | — | Required for AI features |
+| `AI_ENABLED` | `true` | Set `false` to disable all `/api/ai/*` routes |
+| `GOOGLE_CLIENT_ID` | — | For Google OAuth login |
+| `RESEND_API_KEY` | — | For real email delivery. When unset, emails log to console |
+| `EMAIL_FROM` | `BuildMatch <noreply@buildmatch.us>` | |
+
+### 3. Set up the database
+
+Generate the Prisma client and apply migrations:
+
+```bash
+npm run db:generate       # Generate Prisma client from schema
+npm run db:migrate        # Apply Prisma-managed migrations
+```
+
+> **Important:** Some tables (disputes, saved contractors, properties, estimates) are managed outside Prisma via raw SQL. These are created by one-shot migration scripts (`.migrate_*.js` files). If you're starting from a fresh database, the tables were already created during initial setup. If they're missing, ask a team member for the SQL or check `prisma/supabase_disputes_tables.sql`.
+
+### 4. Create Supabase Storage buckets
+
+Go to **Supabase Dashboard → Storage** and create these buckets:
+
+| Bucket | Public | Notes |
+|--------|--------|-------|
+| `avatars` | Yes | User profile photos |
+| `job-photos` | Yes | Job posting photos |
+| `dispute-evidence` | Yes | Dispute evidence + ID documents |
+| `draw-evidence` | Yes | Draw request evidence |
+| `bug-reports` | Yes | Bug report screenshots |
+| `estimate-photos` | Yes | Property estimate photos |
+
+Set file size limit to 15 MB and allowed MIME types to `image/jpeg, image/png, image/webp, image/heic` on each.
+
+### 5. Seed the database (optional)
+
+```bash
+npm run db:seed           # Creates sample users (investor + contractor)
+npm run db:seed-jobs      # Creates sample jobs with bids
+```
+
+### 6. Start the dev server
+
+```bash
+npm run dev
+```
+
+The server starts at `http://localhost:3001` with hot reload via `ts-node-dev`.
+
+Verify it's running:
+```bash
+curl http://localhost:3001/health
+# → { "success": true, "data": { "status": "ok" } }
+```
+
+### Available scripts
+
+| Command | What it does |
+|---------|-------------|
+| `npm run dev` | Start dev server with hot reload (port 3001) |
+| `npm run build` | Compile TypeScript → `dist/` |
+| `npm start` | Run compiled production build |
+| `npm run db:generate` | Regenerate Prisma client after schema changes |
+| `npm run db:migrate` | Create and apply a new Prisma migration |
+| `npm run db:studio` | Open Prisma Studio GUI at localhost:5555 |
+| `npm run db:seed` | Seed sample users |
+| `npm run db:seed-jobs` | Seed sample jobs + bids |
+
+### Project structure
+
+```
+src/
+  app.ts              # Express app setup (middleware + route mounting)
+  server.ts           # HTTP listener entry point
+  routes/             # Express routers (thin — just middleware chains)
+    admin/            # Admin-only routes (auth + requireAdmin applied once in index.ts)
+    ai/               # AI feature routes
+  controllers/        # Request handlers — call service, send response
+  services/           # Business logic + database calls
+    ai/               # AI service files (one per feature)
+    admin/            # Admin-only services
+  middleware/         # auth, validate, error, admin
+  schemas/            # Zod validation schemas
+  config/             # Configuration files (estimator areas, etc.)
+  types/              # TypeScript type definitions
+  utils/              # JWT, password hashing, response helpers, content filter
+  lib/                # Prisma singleton, Supabase client
+  prisma/
+    schema.prisma     # Database schema
+```
+
+### Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `MaxClientsInSessionMode` | Use port 6543 (transaction mode) in `DATABASE_URL` with `?pgbouncer=true&connection_limit=1` |
+| `ANTHROPIC_API_KEY not set` | Set `AI_ENABLED=false` in `.env` if you don't need AI features |
+| Prisma client out of date | Run `npm run db:generate` after any schema change |
+| Missing dispute/property tables | These are Supabase raw-SQL tables — ask a team member for the migration scripts |
+| CORS errors from frontend | Ensure `FRONTEND_URL` in `.env` matches your frontend's origin exactly |
+| Emails not sending | Check `RESEND_API_KEY` is set. Without it, emails log to the console (this is fine for dev) |
+
+---
+
 All responses follow the shape:
 ```json
 { "success": true|false, "data": ..., "message": "...", "errors": [...] }
