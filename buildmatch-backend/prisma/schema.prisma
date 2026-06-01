@@ -694,3 +694,13 @@ model DrawScheduleEdit {
 
   @@map("draw_schedule_edits")
 }
+
+model WaitlistSignup {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String?
+  createdAt DateTime @default(now())
+
+  @@map("waitlist_signups")
+}

@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 
+import waitlistRoutes from './routes/waitlist.routes';
 import authRoutes from './routes/auth.routes';
 import idVerificationRoutes from './routes/id-verification.routes';
 import bugReportRoutes from './routes/bug-report.routes';
@@ -95,6 +96,7 @@ app.get('/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok' } });
 });
 
+app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/identity', idVerificationRoutes);
 app.use('/api/bug-reports', bugReportRoutes);
