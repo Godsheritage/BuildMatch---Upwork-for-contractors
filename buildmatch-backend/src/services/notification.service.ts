@@ -1,4 +1,8 @@
 import prisma from '../lib/prisma';
+import { getPreferences } from './notification-prefs.service';
+
+const BID_TYPES = new Set(['bid_received', 'bid_accepted', 'bid_rejected', 'bid_withdrawn']);
+const JOB_TYPES = new Set(['job_awarded', 'job_cancelled', 'job_completed']);
 
 export interface Notification {
   id:        string;
@@ -140,7 +144,15 @@ export async function getNotificationsForUser(userId: string, role: string): Pro
     }
   }
 
+  // Apply user notification preferences — drop categories the user has opted out of.
+  const prefs = await getPreferences(userId);
+  const filtered = notifications.filter((n) => {
+    if (BID_TYPES.has(n.type)) return prefs.bidActivity;
+    if (JOB_TYPES.has(n.type)) return prefs.jobUpdates;
+    return true;
+  });
+
   // Sort by date descending
-  notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  return notifications.slice(0, 20);
+  filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return filtered.slice(0, 20);
 }

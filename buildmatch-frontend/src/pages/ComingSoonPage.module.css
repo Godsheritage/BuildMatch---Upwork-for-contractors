@@ -1,0 +1,288 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--color-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+}
+
+/* ── Logo ──────────────────────────────────────────────────────────────────── */
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-10);
+}
+
+.logoMark {
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-semibold);
+  color: #fff;
+  letter-spacing: var(--tracking-tight);
+}
+
+/* ── Headline ──────────────────────────────────────────────────────────────── */
+
+.headline {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: var(--font-weight-semibold);
+  color: #fff;
+  letter-spacing: var(--tracking-tighter);
+  line-height: 1.15;
+  margin-bottom: var(--space-4);
+  max-width: 600px;
+}
+
+.subheadline {
+  font-size: 1.0625rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: var(--leading-body);
+  max-width: 480px;
+  margin-bottom: var(--space-10);
+}
+
+/* ── Countdown ─────────────────────────────────────────────────────────────── */
+
+.countdown {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-12);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.countUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.countBox {
+  background-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-md);
+  width: 80px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: var(--font-weight-semibold);
+  color: #fff;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.countLabel {
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-medium);
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.countSep {
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-medium);
+  color: rgba(255, 255, 255, 0.3);
+  align-self: flex-start;
+  margin-top: 18px;
+}
+
+/* ── Form ──────────────────────────────────────────────────────────────────── */
+
+.formWrap {
+  width: 100%;
+  max-width: 400px;
+}
+
+.formTitle {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-semibold);
+  color: #fff;
+  margin-bottom: var(--space-6);
+  letter-spacing: var(--tracking-tight);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ── Role selector ─────────────────────────────────────────────────────────── */
+
+.roleRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+
+.roleCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  text-align: center;
+}
+
+.roleCard:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+  background-color: rgba(255, 255, 255, 0.13);
+  color: #fff;
+}
+
+.roleCardActive {
+  border-color: #fff;
+  background-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.roleCardTitle {
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.roleCardSub {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.roleCardActive .roleCardSub {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.input {
+  width: 100%;
+  padding: 12px var(--space-4);
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  background-color: #fff;
+  outline: none;
+  font-family: var(--font-family);
+  box-sizing: border-box;
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input:focus {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 14px var(--space-4);
+  border-radius: var(--radius-sm);
+  border: none;
+  background-color: #fff;
+  color: var(--color-primary);
+  font-size: 0.9375rem;
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: opacity 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.submitBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.errorMsg {
+  font-size: 0.875rem;
+  color: rgba(255, 180, 180, 1);
+  margin-top: var(--space-1);
+  text-align: center;
+}
+
+/* ── Success ───────────────────────────────────────────────────────────────── */
+
+.success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-6);
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+}
+
+.successIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.successTitle {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-semibold);
+  color: #fff;
+  letter-spacing: var(--tracking-tight);
+}
+
+.successSub {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: var(--leading-body);
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .countBox {
+    width: 64px;
+    height: 58px;
+    font-size: 1.5rem;
+  }
+
+  .countSep {
+    font-size: 1.25rem;
+  }
+}

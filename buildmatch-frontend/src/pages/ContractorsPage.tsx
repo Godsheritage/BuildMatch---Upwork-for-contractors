@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, ChevronDown, ChevronUp, Check, Star, X, BookMarked } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getContractors } from '../services/contractor.service';
@@ -155,8 +155,12 @@ export function ContractorsPage() {
   const { t } = useLang();
   const { user } = useAuth();
   const { totalSaved } = useSavedContractors();
+  const [searchParams] = useSearchParams();
   const isInvestor = user?.role === 'INVESTOR';
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [filters, setFilters] = useState<Filters>({
+    ...EMPTY_FILTERS,
+    search: searchParams.get('search') ?? '',
+  });
   const [sort, setSort] = useState<SortKey>('rating');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
 

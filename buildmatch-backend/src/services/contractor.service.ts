@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { AppError } from '../utils/app-error';
 import type { UpdateContractorProfileInput } from '../schemas/contractor.schemas';
+import { parseSearchIntent, type SearchIntent } from './ai/search-intent.service';
 
 // Fields returned on list queries
 const LIST_SELECT = {
@@ -51,6 +52,122 @@ export interface ListContractorsQuery {
   search?: string;
 }
 
+// ── AI-powered search intent parsing ─────────────────────────────────────────
+
+async function applySmartSearch(
+  where: Prisma.ContractorProfileWhereInput,
+  raw: string,
+): Promise<boolean> {
+  try {
+    const intent = await parseSearchIntent(raw);
+    if (!intent) return false;
+
+    const andClauses: Prisma.ContractorProfileWhereInput[] = [];
+
+    // Apply specialty filter (AND — contractor must have at least one)
+    if (intent.specialties.length > 0) {
+      andClauses.push({
+        OR: intent.specialties.map(s => ({ specialties: { has: s } })),
+      });
+    }
+
+    // Apply city filter (override if not already set by explicit filter)
+    if (intent.city && !where.city) {
+      andClauses.push({ city: { contains: intent.city, mode: 'insensitive' } });
+    }
+
+    // Apply state filter
+    if (intent.state && !where.state) {
+      andClauses.push({
+        OR: [
+          { state: { equals: intent.state.toUpperCase(), mode: 'insensitive' } },
+          { state: { contains: intent.state, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    // Apply rating filter
+    if (intent.minRating != null && !where.averageRating) {
+      andClauses.push({ averageRating: { gte: intent.minRating } });
+    }
+
+    // Apply availability filter
+    if (intent.available != null && where.isAvailable === undefined) {
+      andClauses.push({ isAvailable: intent.available });
+    }
+
+    // Apply keyword search across bio/name
+    if (intent.keywords.length > 0) {
+      const keywordOr: Prisma.ContractorProfileWhereInput[] = [];
+      for (const kw of intent.keywords) {
+        keywordOr.push(
+          { bio:  { contains: kw, mode: 'insensitive' } },
+          { user: { firstName: { contains: kw, mode: 'insensitive' } } },
+          { user: { lastName:  { contains: kw, mode: 'insensitive' } } },
+        );
+      }
+      andClauses.push({ OR: keywordOr });
+    }
+
+    if (andClauses.length === 0) return false;
+
+    // Merge with existing where using AND
+    where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), ...andClauses];
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ── Fallback word-based search ───────────────────────────────────────────────
+
+const SPECIALTY_MAP: Record<string, string> = {
+  electrical: 'ELECTRICAL', electric: 'ELECTRICAL', wiring: 'ELECTRICAL', rewire: 'ELECTRICAL',
+  plumbing: 'PLUMBING', plumber: 'PLUMBING', pipes: 'PLUMBING',
+  hvac: 'HVAC', heating: 'HVAC', cooling: 'HVAC', furnace: 'HVAC',
+  roofing: 'ROOFING', roof: 'ROOFING', shingles: 'ROOFING',
+  flooring: 'FLOORING', floor: 'FLOORING', floors: 'FLOORING', hardwood: 'FLOORING', tile: 'FLOORING',
+  painting: 'PAINTING', paint: 'PAINTING', painter: 'PAINTING',
+  landscaping: 'LANDSCAPING', landscape: 'LANDSCAPING', lawn: 'LANDSCAPING',
+  demolition: 'DEMOLITION', demo: 'DEMOLITION',
+  general: 'GENERAL', renovation: 'GENERAL', remodel: 'GENERAL', contractor: 'GENERAL',
+};
+
+function applyWordSearch(
+  where: Prisma.ContractorProfileWhereInput,
+  raw: string,
+): void {
+  const words = raw.trim().split(/\s+/).filter(w => w.length >= 3).map(w => w.toLowerCase());
+  const matchedSpecialties = [...new Set(
+    words.map(w => SPECIALTY_MAP[w]).filter((s): s is string => !!s),
+  )];
+
+  const orClauses: Prisma.ContractorProfileWhereInput[] = [];
+
+  for (const word of words) {
+    if (SPECIALTY_MAP[word]) continue;
+    orClauses.push(
+      { bio:   { contains: word, mode: 'insensitive' } },
+      { city:  { contains: word, mode: 'insensitive' } },
+      { state: { contains: word, mode: 'insensitive' } },
+      { user:  { firstName: { contains: word, mode: 'insensitive' } } },
+      { user:  { lastName:  { contains: word, mode: 'insensitive' } } },
+    );
+  }
+
+  for (const spec of matchedSpecialties) {
+    orClauses.push({ specialties: { has: spec } });
+  }
+
+  if (raw.trim().length >= 3) {
+    orClauses.push({ bio: { contains: raw.trim(), mode: 'insensitive' } });
+  }
+
+  if (orClauses.length > 0) {
+    where.OR = orClauses;
+  }
+}
+
 export async function listContractors(query: ListContractorsQuery) {
   const page = Math.max(1, query.page ?? 1);
   const limit = Math.min(50, Math.max(1, query.limit ?? 12));
@@ -81,13 +198,13 @@ export async function listContractors(query: ListContractorsQuery) {
     where.specialties = { has: query.specialty };
   }
 
-  // search: bio contains OR specialties array has the term
+  // search: AI-powered intent parsing with word-based fallback
   if (query.search) {
-    const term = query.search;
-    where.OR = [
-      { bio: { contains: term, mode: 'insensitive' } },
-      { specialties: { has: term } },
-    ];
+    const searchApplied = await applySmartSearch(where, query.search);
+    if (!searchApplied) {
+      // Fallback: simple word-based matching
+      applyWordSearch(where, query.search);
+    }
   }
 
   const [contractors, total] = await Promise.all([

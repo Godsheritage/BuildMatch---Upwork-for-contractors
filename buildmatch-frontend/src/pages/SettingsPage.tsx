@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { User, UserCog, Lock, Bell, BadgeCheck, ChevronRight } from 'lucide-react';
+import { User, UserCog, Lock, Bell, BadgeCheck, CreditCard, ChevronRight } from 'lucide-react';
 import styles from './SettingsPage.module.css';
 
 const STATIC_CARDS = [
@@ -42,6 +42,14 @@ const STATIC_CARDS = [
     desc:  'Help BuildMatch maintain a safe and trustworthy marketplace.',
     bg:    '#D1FAE5',
     color: '#065F46',
+  },
+  {
+    to:    '/dashboard/settings/billing',
+    icon:  CreditCard,
+    title: 'Billing & payments',
+    desc:  'Manage your billing methods and view your payment history.',
+    bg:    '#E0F2FE',
+    color: '#0369A1',
   },
 ] as const;
 

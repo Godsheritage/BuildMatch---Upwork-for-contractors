@@ -82,6 +82,36 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// ── GET /api/admin/users/id-verifications ─────────────────────────────────────
+// Static segment MUST be declared before /:userId.
+
+router.get('/id-verifications', async (req: Request, res: Response): Promise<void> => {
+  const status = typeof req.query.status === 'string' ? req.query.status : 'PENDING';
+  const allowed = new Set(['PENDING', 'APPROVED', 'REJECTED']);
+  if (!allowed.has(status)) {
+    sendError(res, 'Invalid status', 400);
+    return;
+  }
+  try {
+    const prisma = (await import('../../lib/prisma')).default;
+    const users = await prisma.user.findMany({
+      where:  { idVerificationStatus: status },
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        id: true, firstName: true, lastName: true, email: true, role: true,
+        avatarUrl: true,
+        idVerificationStatus: true, idDocumentUrl: true, idSelfieUrl: true,
+        idCountry: true, idType: true, idVerifiedAt: true, idVerificationNote: true,
+        updatedAt: true,
+      },
+    });
+    sendSuccess(res, { users });
+  } catch (err) {
+    console.error('[admin/users] GET /id-verifications error:', err);
+    sendError(res, 'Failed to fetch verifications', 500);
+  }
+});
+
 // ── GET /api/admin/users/flagged ──────────────────────────────────────────────
 // Static segment MUST be declared before /:userId.
 

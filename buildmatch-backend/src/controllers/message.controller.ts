@@ -63,12 +63,51 @@ export async function getUnreadCount(req: Request, res: Response): Promise<void>
 
 export async function sendConversationMessage(req: Request, res: Response): Promise<void> {
   try {
+    const { content, replyToId } = req.body as { content: string; replyToId?: string };
     const message = await messageService.sendConversationMessage(
       req.params.conversationId,
       req.user!.userId,
-      req.body.content as string,
+      content,
+      replyToId ?? null,
     );
     sendSuccess(res, message, 'Message sent', 201);
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+export async function editConversationMessage(req: Request, res: Response): Promise<void> {
+  try {
+    const message = await messageService.editConversationMessage(
+      req.params.messageId,
+      req.user!.userId,
+      (req.body?.content as string) ?? '',
+    );
+    sendSuccess(res, message, 'Message updated');
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+export async function deleteConversationMessage(req: Request, res: Response): Promise<void> {
+  try {
+    await messageService.deleteConversationMessage(req.params.messageId, req.user!.userId);
+    sendSuccess(res, null, 'Message deleted');
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+export async function reportConversationMessage(req: Request, res: Response): Promise<void> {
+  try {
+    const { reason, description } = req.body as { reason?: string; description?: string };
+    await messageService.reportConversationMessage(
+      req.params.messageId,
+      req.user!.userId,
+      reason ?? '',
+      typeof description === 'string' ? description : null,
+    );
+    sendSuccess(res, null, 'Thanks — we received your report.');
   } catch (err) {
     handleError(res, err);
   }

@@ -16,6 +16,7 @@
  */
 
 import prisma from '../lib/prisma';
+import { isOptedIn } from './notification-prefs.service';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,7 @@ export async function notifyScheduleReady(
     getUser(contractorId),
   ]);
   if (!contractor || !investor) return;
+  if (!(await isOptedIn(contractorId, 'drawUpdates'))) return;
 
   const investorName = `${investor.firstName} ${investor.lastName}`;
 
@@ -101,6 +103,7 @@ export async function notifyPartyApproved(
 ): Promise<void> {
   const other = await getUser(otherPartyId);
   if (!other) return;
+  if (!(await isOptedIn(otherPartyId, 'drawUpdates'))) return;
 
   await deliverEmail({
     to:      other.email,
@@ -140,14 +143,14 @@ export async function notifyScheduleLocked(
   `;
 
   const sends: Promise<void>[] = [];
-  if (investor) {
+  if (investor && (await isOptedIn(investorId, 'drawUpdates'))) {
     sends.push(deliverEmail({
       to:      investor.email,
       subject: `Draw schedule locked — sign the contract for "${jobTitle}"`,
       html:    body(investor.firstName),
     }));
   }
-  if (contractor) {
+  if (contractor && (await isOptedIn(contractorId, 'drawUpdates'))) {
     sends.push(deliverEmail({
       to:      contractor.email,
       subject: `Draw schedule locked — sign the contract for "${jobTitle}"`,
@@ -172,6 +175,7 @@ export async function notifyDrawRequested(
 ): Promise<void> {
   const investor = await getUser(investorId);
   if (!investor) return;
+  if (!(await isOptedIn(investorId, 'drawUpdates'))) return;
 
   const fmtAmount = `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -202,6 +206,7 @@ export async function notifyDrawApproved(
 ): Promise<void> {
   const contractor = await getUser(contractorId);
   if (!contractor) return;
+  if (!(await isOptedIn(contractorId, 'drawUpdates'))) return;
 
   const fmtAmount = `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -229,6 +234,7 @@ export async function notifyDrawDisputed(
 ): Promise<void> {
   const contractor = await getUser(contractorId);
   if (!contractor) return;
+  if (!(await isOptedIn(contractorId, 'drawUpdates'))) return;
 
   await deliverEmail({
     to:      contractor.email,

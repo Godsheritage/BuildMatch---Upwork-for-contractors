@@ -5,14 +5,18 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Send, MessageSquare,
-  Check, CheckCheck, AlertTriangle, X, Loader, Info,
+  Check, CheckCheck, AlertTriangle, X, Loader, Info, CornerDownRight,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useMessaging } from '../../hooks/useMessaging';
 import { Avatar } from '../ui/Avatar';
 import { JobInfoDrawer } from './JobInfoDrawer';
+import { MessageActionsMenu } from './MessageActionsMenu';
+import { ReportMessageModal } from './ReportMessageModal';
 import type { Conversation, Message } from '../../types/message.types';
 import styles from './MessageThread.module.css';
+
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -120,16 +124,41 @@ function Spinner() {
 interface BubbleProps {
   prepared:      PreparedMsg;
   senderAvatar:  string | null;
+  isEditing:     boolean;
+  onReply:       () => void;
+  onStartEdit:   () => void;
+  onCancelEdit:  () => void;
+  onSubmitEdit:  (newContent: string) => Promise<void>;
+  onDelete:      () => void;
+  onReport:      () => void;
+  onJumpToReply: (id: string) => void;
 }
 
-function MessageBubble({ prepared, senderAvatar }: BubbleProps) {
+function MessageBubble({
+  prepared, senderAvatar, isEditing,
+  onReply, onStartEdit, onCancelEdit, onSubmitEdit, onDelete, onReport, onJumpToReply,
+}: BubbleProps) {
   const { msg, isOwn, showSenderName, showAvatar } = prepared;
+  const [hovered, setHovered] = useState(false);
+  const [editText, setEditText] = useState(msg.content);
+
+  useEffect(() => { if (isEditing) setEditText(msg.content); }, [isEditing, msg.content]);
+
   const senderName = msg.sender
     ? `${msg.sender.firstName} ${msg.sender.lastName}`.trim() || 'User'
     : 'User';
 
+  const isDeleted    = !!msg.deletedAt;
+  const isEdited     = !!msg.editedAt && !isDeleted;
+  const canEdit      = isOwn && !isDeleted &&
+    (Date.now() - new Date(msg.createdAt).getTime() < EDIT_WINDOW_MS);
+
   return (
-    <div className={`${styles.bubbleRow} ${isOwn ? styles.bubbleRowOwn : styles.bubbleRowOther}`}>
+    <div
+      className={`${styles.bubbleRow} ${isOwn ? styles.bubbleRowOwn : styles.bubbleRowOther}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       {/* Left-side avatar placeholder keeps alignment even when hidden */}
       <div className={styles.avatarSlot}>
         {!isOwn && showAvatar && (
@@ -137,30 +166,118 @@ function MessageBubble({ prepared, senderAvatar }: BubbleProps) {
         )}
       </div>
 
-      <div className={`${styles.bubbleGroup} ${isOwn ? styles.bubbleGroupOwn : ''}`}>
+      <div className={`${styles.bubbleGroup} ${isOwn ? styles.bubbleGroupOwn : ''}`} style={{ position: 'relative' }}>
         {/* Sender name — first of consecutive group only */}
         {showSenderName && (
           <span className={styles.senderName}>{senderName}</span>
         )}
 
-        {/* Filter warning ABOVE the bubble */}
-        {msg.isFiltered && <FilterWarningBanner />}
+        {/* Reply preview chip — clickable to jump to source */}
+        {msg.replyTo && (
+          <button
+            type="button"
+            onClick={() => onJumpToReply(msg.replyTo!.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              maxWidth: 360, padding: '6px 10px',
+              background: '#F8F7F5', border: '1px solid var(--color-border)',
+              borderLeft: '3px solid var(--color-primary)',
+              borderRadius: 8, marginBottom: 4, cursor: 'pointer',
+              fontSize: 12, color: 'var(--color-text-muted)',
+              textAlign: 'left',
+            }}
+          >
+            <CornerDownRight size={12} strokeWidth={2} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {msg.replyTo.deletedAt ? 'Original message was deleted' : msg.replyTo.content}
+            </span>
+          </button>
+        )}
 
-        {/* The bubble itself */}
-        <div className={`${styles.bubble} ${isOwn ? styles.bubbleOwn : styles.bubbleOther} ${msg.sending ? styles.bubbleSending : ''}`}>
-          {msg.content}
-          {msg.sending && <Spinner />}
-        </div>
+        {/* Filter warning ABOVE the bubble */}
+        {msg.isFiltered && !isDeleted && <FilterWarningBanner />}
+
+        {/* The bubble itself OR inline editor OR deleted placeholder */}
+        {isDeleted ? (
+          <div
+            className={`${styles.bubble} ${isOwn ? styles.bubbleOwn : styles.bubbleOther}`}
+            style={{ fontStyle: 'italic', opacity: 0.6 }}
+          >
+            This message was deleted
+          </div>
+        ) : isEditing ? (
+          <div className={`${styles.bubble} ${isOwn ? styles.bubbleOwn : styles.bubbleOther}`} style={{ padding: 8, minWidth: 240 }}>
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              autoFocus
+              rows={3}
+              maxLength={2000}
+              style={{
+                width: '100%', minHeight: 60, border: 'none', outline: 'none',
+                background: 'transparent', color: 'inherit', fontFamily: 'inherit',
+                fontSize: 14, resize: 'vertical',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 6 }}>
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'inherit', opacity: 0.8 }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!editText.trim() || editText.trim() === msg.content}
+                onClick={() => { void onSubmitEdit(editText.trim()); }}
+                style={{
+                  background: '#fff', color: 'var(--color-primary)',
+                  border: 'none', borderRadius: 6, padding: '4px 10px',
+                  fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className={`${styles.bubble} ${isOwn ? styles.bubbleOwn : styles.bubbleOther} ${msg.sending ? styles.bubbleSending : ''}`}>
+            {msg.content}
+            {msg.sending && <Spinner />}
+          </div>
+        )}
+
+        {/* Hover-only 3-dot actions menu — top-right of the bubble */}
+        {!msg.sending && !isEditing && !isDeleted && hovered && (
+          <div style={{
+            position: 'absolute',
+            top: showSenderName ? 22 : 0,
+            [isOwn ? 'left' : 'right']: -32,
+          } as React.CSSProperties}>
+            <MessageActionsMenu
+              isOwn={isOwn}
+              canEdit={canEdit}
+              onReply={onReply}
+              onEdit={onStartEdit}
+              onDelete={onDelete}
+              onReport={onReport}
+            />
+          </div>
+        )}
 
         {/* Filter warning from backend (global, shown below bubble) */}
         {msg.filterWarning && (
           <p className={styles.filterWarningText}>{msg.filterWarning}</p>
         )}
 
-        {/* Timestamp + read receipt */}
+        {/* Timestamp + read receipt + edited indicator */}
         <div className={`${styles.metaRow} ${isOwn ? styles.metaRowOwn : ''}`}>
           <span className={styles.bubbleTime}>{timeStr(msg.createdAt)}</span>
-          {isOwn && !msg.sending && (
+          {isEdited && (
+            <span className={styles.bubbleTime} style={{ fontStyle: 'italic' }}>· edited</span>
+          )}
+          {isOwn && !msg.sending && !isDeleted && (
             <span className={`${styles.readReceipt} ${msg.readAt ? styles.readReceiptRead : ''}`}>
               {msg.readAt ? (
                 <>
@@ -224,8 +341,11 @@ export function MessageThread({ conversation }: MessageThreadProps) {
   const [showReminder, setShowReminder] = useState(
     () => !sessionStorage.getItem(REMINDER_KEY),
   );
+  const [replyingTo,  setReplyingTo]  = useState<Message | null>(null);
+  const [editingId,   setEditingId]   = useState<string | null>(null);
+  const [reportingMsg, setReportingMsg] = useState<Message | null>(null);
 
-  const { messages, isLoading, sendMessage, loadMore, hasMore } =
+  const { messages, isLoading, sendMessage, editMessage, deleteMessage, reportMessage, loadMore, hasMore } =
     useMessaging(conversation.id);
 
   const otherUser  = conversation.otherUser;
@@ -277,15 +397,41 @@ export function MessageThread({ conversation }: MessageThreadProps) {
     const text = inputValue.trim();
     if (!text || isSending || text.length > MAX_CHARS) return;
     setInputValue('');
+    const replyId = replyingTo?.id;
+    setReplyingTo(null);
     if (inputRef.current) inputRef.current.style.height = 'auto';
     setIsSending(true);
     try {
-      await sendMessage(text);
+      await sendMessage(text, replyId);
     } finally {
       setIsSending(false);
       inputRef.current?.focus();
     }
-  }, [inputValue, isSending, sendMessage]);
+  }, [inputValue, isSending, sendMessage, replyingTo]);
+
+  const handleReply = useCallback((msg: Message) => {
+    setReplyingTo(msg);
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSubmitEdit = useCallback(async (id: string, content: string) => {
+    setEditingId(null);
+    await editMessage(id, content);
+  }, [editMessage]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    if (!window.confirm('Delete this message? It will be removed for everyone in this conversation.')) return;
+    await deleteMessage(id);
+  }, [deleteMessage]);
+
+  const handleJumpToReply = useCallback((id: string) => {
+    const el = document.querySelector(`[data-msg-id="${id}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add(styles.bubbleHighlight ?? '');
+      setTimeout(() => el.classList.remove(styles.bubbleHighlight ?? ''), 1500);
+    }
+  }, []);
 
   const dismissReminder = useCallback(() => {
     sessionStorage.setItem(REMINDER_KEY, '1');
@@ -390,7 +536,7 @@ export function MessageThread({ conversation }: MessageThreadProps) {
 
         {/* Messages */}
         {prepared.map(({ msg, showSeparator, separatorLabel, ...rest }) => (
-          <div key={msg.id}>
+          <div key={msg.id} data-msg-id={msg.id}>
             {showSeparator && <DateSeparator label={separatorLabel} />}
             <MessageBubble
               prepared={{ msg, showSeparator, separatorLabel, ...rest }}
@@ -399,6 +545,14 @@ export function MessageThread({ conversation }: MessageThreadProps) {
                   ? (user?.avatarUrl ?? null)
                   : (otherUser.avatarUrl ?? null)
               }
+              isEditing={editingId === msg.id}
+              onReply={() => handleReply(msg)}
+              onStartEdit={() => setEditingId(msg.id)}
+              onCancelEdit={() => setEditingId(null)}
+              onSubmitEdit={(content) => handleSubmitEdit(msg.id, content)}
+              onDelete={() => void handleDelete(msg.id)}
+              onReport={() => setReportingMsg(msg)}
+              onJumpToReply={handleJumpToReply}
             />
           </div>
         ))}
@@ -411,6 +565,37 @@ export function MessageThread({ conversation }: MessageThreadProps) {
 
         {/* Contact info reminder — shown once per session */}
         {showReminder && <ContactReminder onDismiss={dismissReminder} />}
+
+        {/* Reply preview banner */}
+        {replyingTo && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 8, padding: '8px 12px', marginBottom: 6,
+            background: '#F8F7F5',
+            borderLeft: '3px solid var(--color-primary)',
+            borderRadius: 8, fontSize: 12,
+          }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ color: 'var(--color-text-muted)', marginBottom: 2 }}>
+                Replying to {replyingTo.senderId === user?.id ? 'yourself' : otherName}
+              </div>
+              <div style={{
+                color: 'var(--color-text-primary)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {replyingTo.content || 'Original message'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReplyingTo(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: 4 }}
+              aria-label="Cancel reply"
+            >
+              <X size={14} strokeWidth={2} />
+            </button>
+          </div>
+        )}
 
         <div className={styles.inputRow}>
           <textarea
@@ -453,6 +638,15 @@ export function MessageThread({ conversation }: MessageThreadProps) {
           {charCount} / {MAX_CHARS}
         </p>
       </div>
+
+      {/* Report modal */}
+      {reportingMsg && (
+        <ReportMessageModal
+          message={{ id: reportingMsg.id, content: reportingMsg.content }}
+          onClose={() => setReportingMsg(null)}
+          onSubmit={(reason, description) => reportMessage(reportingMsg.id, reason, description)}
+        />
+      )}
     </div>
   );
 }

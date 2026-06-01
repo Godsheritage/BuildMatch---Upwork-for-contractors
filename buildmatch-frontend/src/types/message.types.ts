@@ -22,6 +22,13 @@ export interface Conversation {
   lastMessageAt: string;
 }
 
+export interface ReplyPreview {
+  id:        string;
+  senderId:  string;
+  content:   string;
+  deletedAt: string | null;
+}
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -31,6 +38,10 @@ export interface Message {
   filterWarning?: string;
   readAt: string | null;
   createdAt: string;
+  editedAt?:  string | null;
+  deletedAt?: string | null;
+  replyToId?: string | null;
+  replyTo?:   ReplyPreview | null;
   sender: {
     firstName: string;
     lastName: string;
